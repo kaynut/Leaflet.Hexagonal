@@ -1,5 +1,5 @@
 /*!
- * Leaflet.Hexagonal.js v1.0
+ * Leaflet.Hexagonal.js v0.8.0
  * 
  * Copyright (c) 2023-present Knut Wanzenberg
  * Released under the MIT License - https://choosealicense.com/licenses/mit/
