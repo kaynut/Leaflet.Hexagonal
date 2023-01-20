@@ -10,14 +10,14 @@ Leaflet.Hexagonal is a Leaflet-canvas-layer, that...
 
 ## Usage
 
-```
+```html
     <link rel="stylesheet" href="./leaflet.hexagonal.css" />
     <script src="./leaflet.hexagonal.min.js" />
 ```
 
 
 ## Example
-```
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
