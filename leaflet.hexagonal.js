@@ -49,7 +49,7 @@
 			// zIndex of container
 			zIndex: undefined,
 			// opacity of container
-			opacity: 1,
+			opacity: 0.5,
 			// layer visible
 			visible: !0,
 			// layer visible beginning at zoomlevel
