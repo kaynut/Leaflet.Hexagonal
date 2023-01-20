@@ -338,7 +338,7 @@
 			return 0;
 
 		},
-		removeItem: function removeItem(id, update = true) {
+		removeItem: function removeItem(id, refresh = true) {
 			if(this.items.length<1) { return false; }
 			if(typeof id != "number" && typeof id != "string") {
 				return false;
@@ -347,8 +347,8 @@
 			for(var j=0; j<this.items.length; j++) {
 				if(id===this.items[j].id) {
 					this.items.splice(j, 1);
-					if(update) {
-						this.update();
+					if(refresh) {
+						this.refresh();
 					}
 					return true;
 				}
@@ -356,11 +356,11 @@
 
 			return false;
 		},		
-		clearItems: function clearItems(update) {
+		clearItems: function clearItems(refresh) {
 			var c = this.items.length;
 			this.items = [];
-			if(update) {
-				this.update();
+			if(refresh) {
+				this.refresh();
 			}
 			return c;
 		},
@@ -368,15 +368,10 @@
 
 
 		// #######################################################
-		// update
-		update: function update() {
+		// draw
+		refresh: function refresh() {
 			this._update();
 		},
-
-
-
-		// #######################################################
-		// draw
 		_preDraw: function _preDraw() {
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
@@ -687,7 +682,7 @@
 				this.highlightIds = [];
 			}
 
-			this.update();
+			this.refresh();
 		},
 
 
