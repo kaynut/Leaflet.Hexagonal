@@ -30,7 +30,6 @@
  
 
 
-
 !function (t, e) {
 	"object" == typeof exports && "undefined" != typeof module ? e(exports, require("leaflet")) : "function" == typeof define && define.amd ? define(["exports", "leaflet"], e) : e(((t = t || self).Leaflet = t.Leaflet || {},
 		t.Leaflet.Hexagonal = {}), t.L);
