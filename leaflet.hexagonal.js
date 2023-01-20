@@ -338,7 +338,7 @@
 			return 0;
 
 		},
-		removeItem: function removeItem(id, redraw = true) {
+		removeItem: function removeItem(id, update = true) {
 			if(this.items.length<1) { return false; }
 			if(typeof id != "number" && typeof id != "string") {
 				return false;
@@ -347,8 +347,8 @@
 			for(var j=0; j<this.items.length; j++) {
 				if(id===this.items[j].id) {
 					this.items.splice(j, 1);
-					if(redraw) {
-						this.redraw();
+					if(update) {
+						this.update();
 					}
 					return true;
 				}
@@ -356,11 +356,11 @@
 
 			return false;
 		},		
-		clearItems: function clearItems(redraw) {
+		clearItems: function clearItems(update) {
 			var c = this.items.length;
 			this.items = [];
-			if(redraw) {
-				this.redraw();
+			if(update) {
+				this.update();
 			}
 			return c;
 		},
@@ -368,10 +368,15 @@
 
 
 		// #######################################################
-		// draw
-		redraw: function redraw() {
+		// update
+		update: function update() {
 			this._update();
 		},
+
+
+
+		// #######################################################
+		// draw
 		_preDraw: function _preDraw() {
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
@@ -682,7 +687,7 @@
 				this.highlightIds = [];
 			}
 
-			this.redraw();
+			this.update();
 		},
 
 

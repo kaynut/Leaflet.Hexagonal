@@ -25,20 +25,21 @@
 
       const map = L.map('map').setView([65, -18], 6);
 
-	  const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-			subdomains: 'abcd',
-			maxZoom: 20
-		}).addTo(map);
+	  const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 		
-
       const hexagonals = new L.Hexagonal().addTo(map);	
 
+	  hexagonals.addItem({lng:-16.0, lat:65.0});
+	  hexagonals.addItem({lng:-16.1, lat:65.0}, "A");
+	  hexagonals.addItem({lng:-16.2, lat:65.0}, "B");
+	  hexagonals.addItem({lng:-16.3, lat:65.0}, "C");
 
-	  hexagonals.addItem({lng:-16.05, lat:65},true);
-	  hexagonals.addItem({lng:-16.1, lat:65.05},true);
-	  hexagonals.addItem({lng:-16, lat:65.1},true);
-	  hexagonals.redraw();
+	  hexagonals.addItem({lng:-16.0, lat:65.1}, "D");
+	  hexagonals.addItem({lng:-16.1, lat:65.1}, "D");
+	  hexagonals.addItem({lng:-16.2, lat:65.1}, "D");
+	  hexagonals.addItem({lng:-16.3, lat:65.1}, "D");
+	  hexagonals.addItem({lng:-16.4, lat:65.1}, "D");
+	  hexagonals.update();
 
 
    </script>
