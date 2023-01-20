@@ -94,6 +94,7 @@
 		// #######################################################
 		// props
 		items: [],
+		increment: 0,
 		hexagonals: {},
 		highlightIds: [],
 
@@ -247,9 +248,10 @@
 
 			meta = meta || {};
 
-
+			this.increment++;
 			var item = {
 				id: id,
+				inc: this.increment,
 				latlng: latlng,
 				count: meta.count || 0,
 				secs: meta.secs || 0,
@@ -259,9 +261,6 @@
 			};
 
 			this.items.push(item);
-
-			// todo: maybe debouce refresh
-			this.refresh();
 
 		},
 		addItem_tiles15: function addItem_tiles15(tiles15, id, meta) { // "id", {"UxWd":{"count":105,"secs":1705,"dist":7694},....}
@@ -277,7 +276,7 @@
 
 			meta = meta || {};
 
-
+			
 
 			var keys = Object.keys(tiles15);
 			for (var i = 0; i < keys.length; i++) {
@@ -285,8 +284,10 @@
 				var bbox = this.getBbox_from_tile15(keys[i]);
 				var latlng= { lng: (bbox[0]+bbox[2])/2, lat: (bbox[1]+bbox[3])/2 };
 
+				this.increment++;
 				var item = {
 					id: id,
+					inc: this.increment,
 					latlng: latlng,
 					count: meta.count || tiles15[keys[i]].count || 0,
 					secs: meta.secs || tiles15[keys[i]].secs || 0,
@@ -342,7 +343,7 @@
 			return 0;
 
 		},
-		removeItem: function removeItem(id, refresh = true) {
+		removeItem: function removeItem(id) {
 			if(this.items.length<1) { return false; }
 			if(typeof id != "number" && typeof id != "string") {
 				return false;
@@ -351,31 +352,29 @@
 			for(var j=0; j<this.items.length; j++) {
 				if(id===this.items[j].id) {
 					this.items.splice(j, 1);
-					if(refresh) {
-						this.refresh();
-					}
 					return true;
 				}
 			}
 
 			return false;
 		},		
-		clearItems: function clearItems(refresh) {
+		clearItems: function clearItems(redraw = true) {
 			var c = this.items.length;
 			this.items = [];
-			if(refresh) {
+			this.increment = 0;
+			if(redraw) {
 				this.refresh();
 			}
 			return c;
+		},
+		refresh: function refresh() {
+			this._update();
 		},
 
 
 
 		// #######################################################
 		// draw
-		refresh: function refresh() {
-			this._update();
-		},
 		_preDraw: function _preDraw() {
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
