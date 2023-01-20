@@ -243,7 +243,7 @@
 			latlng.lat = latlng.lat || 0;
 			latlng.lng = latlng.lng || 0;
 
-			if (typeof id != "number" && typeof id !="string") { id = "uid_" + Date.now() + "_" + Math.floor(Math.random() * 100000); }
+			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
 
 			meta = meta || {};
 
@@ -260,6 +260,8 @@
 
 			this.items.push(item);
 
+			// todo: maybe debouce refresh
+			this.refresh();
 
 		},
 		addItem_tiles15: function addItem_tiles15(tiles15, id, meta) { // "id", {"UxWd":{"count":105,"secs":1705,"dist":7694},....}
@@ -271,7 +273,7 @@
 				return;
 			}
 
-			if (typeof id != "number" && typeof id !="string") { id = "uid_" + Date.now() + "_" + Math.floor(Math.random() * 100000); }
+			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
 
 			meta = meta || {};
 
@@ -306,8 +308,9 @@
 			}
 			if(g.type == "MultiPoint" || g.type == "LineString") {
 				var c = g.coordinates.length;
+				var id = this._genId();
 				for(var i=0; i<c; i++) {
-					this.addItem({lng:g.coordinates[i][0],lat:g.coordinates[i][1]});
+					this.addItem({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, id);
 				}
 				return c;
 			}
@@ -315,9 +318,10 @@
 				var c = 0;
 				for(var i=0; i<g.coordinates.length; i++) {
 					var ci = g.coordinates[i];
+					var id = this._genId();
 					for(var j=0; j<ci.length; j++) {
 						// properties
-						this.addItem({lng:ci[j][0],lat:ci[j][1]});
+						this.addItem({lng:ci[j][0],lat:ci[j][1]}, id);
 						c++;
 					}
 				}
@@ -883,6 +887,9 @@
 				}
 			}
 			return obj;
+		},
+		_genId: function _genId() {
+			return "uid_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
 		}
 
 
