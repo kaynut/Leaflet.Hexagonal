@@ -50,11 +50,15 @@
 			zIndex: undefined,
 			// opacity of container
 			opacity: 1,
+			// layer visible
+			visible: !0,
 			// layer visible beginning at zoomlevel
 			minZoom: 0,
 			// layer visible ending at zoomlevel
 			maxZoom: 18,
 
+			// size of hexagons
+			hexagonSize: false, // set to false, if you want to set the size depending on Zoom
 			// gap between hexagon-tiles (in pixels)
 			hexagonGap:0,
 			// if hexagon should be pointy on top (orientation of hexagon)
@@ -80,7 +84,6 @@
 
 		},
 		initialize: function initialize(t) {
-			t.visible = !0;
 			e.setOptions(this, t),
 				/* Built-in Date */
 				e.stamp(this), this._map = undefined, this._container = undefined, this._bounds = undefined,
@@ -152,7 +155,6 @@
 		},
 		// methods
 		_initContainer: function _initContainer() {
-			// container
 			var t = this._container = this.options.container;
 			e.DomUtil.addClass(t, "leaflet-layer"), this._zoomAnimated && e.DomUtil.addClass(this._container, "leaflet-zoom-animated");
 		},
@@ -688,9 +690,10 @@
 		// #######################################################
 		// hegagon
 		calcHexagonSize: function calcHexagonSize(zoom) {
-			var size = 8;
+			if(this.options.hexagonSize) { return this.options.hexagonSize; }
+			var size = 16;
 			if(zoom>9) {
-				size = Math.pow(2,zoom-6);
+				size = Math.pow(2,zoom-5);
 			}
 			return size;
 		},		
