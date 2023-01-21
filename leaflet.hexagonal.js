@@ -63,20 +63,18 @@
 			hexagonGap:0,
 			// if hexagon should be pointy on top (orientation of hexagon)
 			hexagonMode: "topFlat", // "topPointy",
-			// style hexagon
 			hexagonFill: "#fd1", // "color", false
 			hexagonLine: "#666", // color, false
 			heagonLineWidth: 1,
 
 			// if highlights should be shown
-			highlight: true, // true OR false
-			// style highlight
+			highlightVisible: true, // true OR false
 			highlightFill: "rgba(0,0,0,0.4)", // "color", false
 			highlightLine: false, // "color", false
 			highlightLineWidth: 1,
 			
 			// if and how info should be kept on zoom 
-			info: true, // true OR false
+			infoVisible: true, // true OR false
 			infoDisplayMode: "count", // "count" OR "ids" OR "custom" OR false
 			infoZoomMode: "adaptOnZoom", // "clearOnZoom" OR "preserveOnZoom" OR "adaptOnZoom" OR false
 			infoClassName: "leaflet-hexagonal-marker-container", // [className]
@@ -451,7 +449,7 @@
 
 
 			// exit if no highlight
-			if(!highlightIds.length || !this.options.highlight) {
+			if(!highlightIds.length || !this.options.highlightVisible) {
 				return;
 			}
 
@@ -608,7 +606,7 @@
 				return;
 			}
 
-			if(!this.options.info) {
+			if(!this.options.infoVisible) {
 				return;
 			}
 
@@ -696,7 +694,7 @@
 		// #######################################################
 		// highlight
 		setHighlight: function setHighlight(ids) {
-			if(!this.options.highlight) {
+			if(!this.options.highlightVisible) {
 				return;
 			}
 			if(typeof ids == "string") {
