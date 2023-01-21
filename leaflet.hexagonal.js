@@ -58,7 +58,7 @@
 			maxZoom: 18,
 
 			// size of hexagons
-			hexagonSize: false, // set to false, if you want to set the size depending on Zoom
+			hexagonSize: function(zoom) { return Math.max(16,Math.pow(2, zoom-5)); }, // number || function(zoom) { return size; }
 			// gap between hexagon-tiles (in pixels)
 			hexagonGap:0,
 			// if hexagon should be pointy on top (orientation of hexagon)
@@ -69,15 +69,17 @@
 			heagonLineWidth: 1,
 
 			// if highlights should be shown
-			highlightMode: true, // false, true
+			highlight: true, // true OR false
 			// style highlight
 			highlightFill: "rgba(0,0,0,0.4)", // "color", false
 			highlightLine: false, // "color", false
 			highlightLineWidth: 1,
 			
 			// if and how info should be kept on zoom 
-			infoMode: "adaptOnZoom", //false, "clearOnZoom", "preserveOnZoom", "adaptOnZoom"
-			infoClassName: "leaflet-hexagonal-marker-container",
+			info: true, // true OR false
+			infoDisplayMode: "count", // "count" OR "ids" OR "custom" OR false
+			infoZoomMode: "adaptOnZoom", // "clearOnZoom" OR "preserveOnZoom" OR "adaptOnZoom" OR false
+			infoClassName: "leaflet-hexagonal-marker-container", // [className]
 			infoItemsMax: 5
 
 
@@ -367,7 +369,7 @@
 			}
 			return c;
 		},
-		refresh: function refresh() {
+		refresh: function refresh() { // todo: refactor to updateItems???
 			this._update();
 		},
 
@@ -449,7 +451,7 @@
 
 
 			// exit if no highlight
-			if(!highlightIds.length || !this.options.highlightMode) {
+			if(!highlightIds.length || !this.options.highlight) {
 				return;
 			}
 
@@ -538,11 +540,11 @@
 				}	
 				
 
-				if(this.options.infoMode=="adaptOnZoom") {
+				if(this.options.infoZoomMode=="adaptOnZoom") {
 					this._preDraw();
 					this.updateInfo(this.info.adapt);
 				}
-				else if(this.options.infoMode=="preserveOnZoom") {}
+				else if(this.options.infoZoomMode=="preserveOnZoom") {}
 				else {
 					this.info = false;
 					this.setHighlight(false);
@@ -559,7 +561,7 @@
 		updateInfo: function(latlng) {
 
 			// if no latlng ==> clear
-			if(!latlng || !this.options.infoMode) { 
+			if(!latlng || !this.options.infoZoomMode) { 
 				//console.info("updateInfo - clear");
 				this.info = false;
 				this.setHighlight(false);
@@ -606,9 +608,15 @@
 				return;
 			}
 
+			if(!this.options.info) {
+				return;
+			}
+
+
 			// convert items{} to items[]
 			var items = this._toArray(info.items);
 
+			// get html for info
 			var html = this.buildInfo(items);
 
 			var iconHtml = document.createElement("DIV");
@@ -625,37 +633,50 @@
 			L.DomEvent.on(this.marker, 'click', L.DomEvent.stopPropagation);
 		},
 		buildInfo: function buildInfo(items) {
+
 			var html = "";
 			var more = "";
 			var br = "";
-			var maxItems = this.options.infoItemsMax;
+			var maxItems = 5;
 
-
-			// if no itemInfo
-			if(typeof this.itemInfo != "function") {
+			// infoDisplayMode: count
+			if(this.options.infoDisplayMode=="count") {
 				return items.length;
 			}
 
+			// infoDisplayMode: ids
+			if(this.options.infoDisplayMode=="ids") {
+				if(items.length>maxItems) {
+					more = "<br><span style='float:right'>[" + (items.length - maxItems) + " more]</span>"; 
+				}
+				maxItems = Math.min(items.length, maxItems);
 
-			// if too many items
-			if(items.length>maxItems-2) {
-				more = "<br><span style='float:right'>[" + (items.length - (maxItems - 2)) + " more]</span>"; 
+				for(var i=0;i<maxItems; i++) {
+					html += br + items[i].id;
+					br = "<br>";
+				}
+				return html + more;
 			}
-			maxItems = Math.min(items.length, maxItems-2);
 
+			// infoDisplayMode: custom
+			if(this.itemInfo) {
+				if(items.length>maxItems) {
+					more = "<br><span style='float:right'>[" + (items.length - maxItems) + " more]</span>"; 
+				}
+				maxItems = Math.min(items.length, maxItems);
 
-			// build info from itemInfos
-			for(var i=0;i<maxItems; i++) {
-				html += br + this.itemInfo(items[i]);
-				br = "<br>";
+				for(var i=0;i<maxItems; i++) {
+					html += br + this.itemIfo(items[i]);
+					br = "<br>";
+				}
+				return html + more;
 			}
-			return html + more;
+
+			// // infoDisplayMode: default
+			return items.length;
+
 		},
-		/*
-		itemInfo: function itemInfo(item) {
-			return item.id;
-		},
-		*/
+
 		showInfo: function showInfo() {
 			if(this.marker) {
 				document.querySelector('.leaflet-hexagonal-marker-container').style.display="block";
@@ -669,10 +690,13 @@
 
 
 
+
+
+
 		// #######################################################
 		// highlight
 		setHighlight: function setHighlight(ids) {
-			if(!this.options.highlightMode) {
+			if(!this.options.highlight) {
 				return;
 			}
 			if(typeof ids == "string") {
@@ -693,12 +717,16 @@
 		// #######################################################
 		// hegagon
 		calcHexagonSize: function calcHexagonSize(zoom) {
-			if(this.options.hexagonSize) { return this.options.hexagonSize; }
-			var size = 16;
-			if(zoom>9) {
-				size = Math.pow(2,zoom-5);
+			if(this.options.hexagonSize) { 
+				if(typeof hexagonSize == "number") {
+					return this.options.hexagonSize; 
+				}
+				if(typeof hexagonSize == "function") {
+					return this.options.hexagonSize(zoom);
+				}	
+				
 			}
-			return size;
+			return 16;
 		},		
 		calcHexagon: function calcHexagon(x,y, size, offset) { // hexagon top-flat
 			if(this.options.hexagonMode == "topPointy") {
