@@ -74,8 +74,8 @@
 			// hexagonLine: "color" || false
 			hexagonLine: "#666", 	
 
-			// heagonLineWidth: pixels
-			heagonLineWidth: 1,	
+			// hexagonLineWidth: pixels
+			hexagonLineWidth: 1,	
 
 
 
@@ -287,6 +287,7 @@
 				id: id,
 				_nr: this.increment,
 				_prev: this.getPrevItem({id:id,_nr:this.increment}),
+				cell: false,
 				latlng: latlng,
 				count: meta.count || 0,
 				secs: meta.secs || 0,
@@ -324,6 +325,7 @@
 					id: id,
 					_nr: this.increment,
 					_prev: this.getPrevItem({id:id,_nr:this.increment}),
+					cell: false,
 					latlng: latlng,
 					count: meta.count || tiles15[keys[i]].count || 0,
 					secs: meta.secs || tiles15[keys[i]].secs || 0,
@@ -452,26 +454,47 @@
 			this.hexagonals = {};
 			for (var i = 0; i < this.items.length; i++) {
 
-				var p = this.getPixels_from_latlng(this.items[i].latlng, w, h, hexagonSize);
+				var item = this.items[i];
+
+				var p = this.getPixels_from_latlng(item.latlng, w, h, hexagonSize);
 				if (p.visible) {
 
-					var h = this.calcHexagon(p.x,p.y,hexagonSize, hexagonOffset, hexagonGap)
+					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, hexagonGap)
 
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
 						this.hexagonals[h.cell].items = {};
-						this.hexagonals[h.cell].items[this.items[i].id] = this.items[i];
+						this.hexagonals[h.cell].items[item.id] = item;
 
 						var latlng = this._map.containerPointToLatLng([h.cx,h.cy]);
 						this.hexagonals[h.cell].latlng = latlng;
 					}
 					else {
-						this.hexagonals[h.cell].items[this.items[i].id] = this.items[i];
+						this.hexagonals[h.cell].items[item.id] = item;
 					}
 
 				}
 
+				item.cell = h;
+
 			}
+
+			// linup hexagons
+			this.lines = [];
+			if(this.items.length<2) { return; }
+			for (var i = 1; i < this.items.length; i++) {
+
+				var item0 = this.items[i-1];
+				var item1 = this.items[i];
+
+				// two items in succession with sam id but in different cells >> draw line
+				if(item0.id==item1.id && item0.cell.cell!=item1.cell.cell) {
+					var line = `M${item0.cell.cx} ${item0.cell.cy} L${item1.cell.cx} ${item1.cell.cy}`;
+					this.lines.push(line);
+				}
+
+			}
+
 		},
 		_onDraw: function _onDraw() {
 
@@ -483,6 +506,15 @@
 			// canvasContext
 			var ctx = canvas.getContext("2d");
 
+			// draw lines
+			if(this.lines.length) {
+				ctx.strokeStyle = "#f00";
+				ctx.lineWidth = 3;
+				for(var i=0; i<this.lines.length; i++) {
+					var line = new Path2D(this.lines[i]);
+					ctx.stroke(line);
+				}
+			}
 
 			// draw hexagonals
 			var hs = Object.keys(hexagonals);
@@ -770,7 +802,7 @@
 			}
 			return 16;
 		},		
-		calcHexagon: function calcHexagon(x,y, size, offset) { // hexagon top-flat
+		calcHexagonCell: function calcHexagonCell(x,y, size, offset) { // hexagon top-flat
 			if(this.options.hexagonMode == "topPointy") {
 				return this.calcHexagon_topPointy(x,y, size, offset);
 			}
@@ -901,7 +933,7 @@
 			var offset = this._map.project(nw, zoom);
 			var hexagonGap = this.options.hexagonGap || 0;
 			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, size);
-			var h = this.calcHexagon(p.x,p.y,size, offset, hexagonGap);
+			var h = this.calcHexagonCell(p.x,p.y,size, offset, hexagonGap);
 			if(this.hexagonals[h.cell]) {
 				return this.hexagonals[h.cell];
 			}
