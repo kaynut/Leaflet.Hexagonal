@@ -285,7 +285,8 @@
 			this.increment++;
 			var item = {
 				id: id,
-				inc: this.increment,
+				_nr: this.increment,
+				_prev: this.getPrevItem({id:id,_nr:this.increment}),
 				latlng: latlng,
 				count: meta.count || 0,
 				secs: meta.secs || 0,
@@ -318,9 +319,11 @@
 				var latlng= { lng: (bbox[0]+bbox[2])/2, lat: (bbox[1]+bbox[3])/2 };
 
 				this.increment++;
+
 				var item = {
 					id: id,
-					inc: this.increment,
+					_nr: this.increment,
+					_prev: this.getPrevItem({id:id,_nr:this.increment}),
 					latlng: latlng,
 					count: meta.count || tiles15[keys[i]].count || 0,
 					secs: meta.secs || tiles15[keys[i]].secs || 0,
@@ -391,17 +394,26 @@
 
 			return false;
 		},		
-		clearItems: function clearItems(redraw = true) {
+		clearItems: function clearItems(refresh = true) {
 			var c = this.items.length;
 			this.items = [];
 			this.increment = 0;
-			if(redraw) {
-				this.refresh();
+			if(refresh) {
+				this.refreshItems();
 			}
 			return c;
 		},
-		refresh: function refresh() { // todo: refactor to updateItems???
+		refreshItems: function refreshItems() { // todo: refactor to updateItems???
 			this._update();
+		},
+		getPrevItem: function getPrevItem(item) {
+			var il = this.items.length;
+			if(!il) { return false; }
+			var prevItem = this.items[il-1];
+			if(item.id==prevItem.id && item._nr-1 == prevItem._nr) {
+				return prevItem._nr;
+			}
+			return false;
 		},
 		// #endregion
 
@@ -738,7 +750,7 @@
 				this.highlights = [];
 			}
 
-			this.refresh();
+			this.refreshItems();
 		},
 		// #endregion
 

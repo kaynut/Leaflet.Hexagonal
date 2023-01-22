@@ -33,7 +33,7 @@
 		.then((response) => response.json())
 		.then((data) => {
 			hexagonals.addGeojson(data);
-			hexagonals.refresh();
+			hexagonals.refreshItems();
 		});
 
 	  
