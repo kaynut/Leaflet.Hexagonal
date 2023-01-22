@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Leaflet.Hexagonal - testBasic</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+
+   <link rel="stylesheet" href="./leaflet.hexagonal.css" />
+   <script src="./leaflet.hexagonal.js"></script>
+
+   <style type="text/css">
+      html, body { position:absolute; left:0; top:0; right:0; bottom:0; margin: 0; }
+      .leaflet-container { height: 100%; width: 100%; opacity:0.9; }
+   </style>
+
+</head>
+
+<body>
+
+   <div id="map"></div>
+
+   <script type="text/javascript">
+
+      var map = L.map('map').setView([65, -18], 6);
+
+	   var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+		
+
+      var options = {
+
+			// container, layer
+			container: document.createElement("CANVAS"),
+			zIndex: undefined,
+			opacity: 0.5,
+			visible: !0,
+			minZoom: 0,
+			maxZoom: 18,
+
+
+
+			// hexagonSize: number || function(zoom) { return size; }
+			hexagonSize: function(zoom) { return Math.max(32,Math.pow(2, zoom-5)); }, 
+
+			// hexagonGap: pixels (difference between display- and clustering-size of hexagon) 
+			hexagonGap: 0, 	
+
+			// hexagonMode: "topFlat" || "topPointy",
+			hexagonMode: "topFlat",
+
+			// hexagonFill: "color" || false
+			hexagonFill: "#fd1",
+
+			// hexagonLine: "color" || false
+			hexagonLine: "#666", 	
+
+			// heagonLineWidth: pixels
+			heagonLineWidth: 1,	
+
+
+
+			// highlightVisible: true || false
+			highlightVisible: true,
+
+			// highlightFill: "color" || false
+			highlightFill: "rgba(0,0,0,0.5)", 	
+
+			// highlightLine: "color" || false
+			highlightLine: false, 	
+
+			// highlightLineWidth: pixels
+			highlightLineWidth: 1,	
+			
+
+
+			// infoVisible: true || false
+			infoVisible: true,
+
+			// infoDisplayMode: "count" || "ids" || "custom" || false
+			infoDisplayMode: "count", 
+
+			// infoZoomMode: "clearOnZoom" || "preserveOnZoom" || "adaptOnZoom" || false
+			infoZoomMode: "adaptOnZoom", 
+
+			// infoClassName: class || ""
+			infoClassName: "leaflet-hexagonal-marker-container", 
+
+			// infoItemsMax: number (max items shown explicitly in info)
+			infoItemsMax: 5	
+      }
+
+      var hexagonals = new L.Hexagonal(options).addTo(map);	
+
+      hexagonals.addItem({lng:-16.0, lat:65.0});
+      hexagonals.addItem({lng:-16.1, lat:65.0}, "A");
+      hexagonals.addItem({lng:-16.2, lat:65.0}, "B");
+      hexagonals.addItem({lng:-16.3, lat:65.0}, "C");
+
+      hexagonals.addItem({lng:-16.5, lat:65.0}, "D");
+      hexagonals.addItem({lng:-16.6, lat:65.0}, "D");
+      hexagonals.addItem({lng:-16.7, lat:65.0}, "D");
+      hexagonals.addItem({lng:-16.8, lat:65.0}, "D");
+      hexagonals.addItem({lng:-16.9, lat:65.0}, "D");
+      hexagonals.refresh();
+
+
+   </script>
+
+</body>
+</html>
