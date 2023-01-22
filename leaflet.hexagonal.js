@@ -479,7 +479,7 @@
 
 			}
 
-			// linup hexagons
+			// lineup hexagons
 			this.lines = [];
 			if(this.items.length<2) { return; }
 			for (var i = 1; i < this.items.length; i++) {
@@ -489,8 +489,24 @@
 
 				// two items in succession with sam id but in different cells >> draw line
 				if(item0.id==item1.id && item0.cell.cell!=item1.cell.cell) {
-					var line = `M${item0.cell.cx} ${item0.cell.cy} L${item1.cell.cx} ${item1.cell.cy}`;
-					this.lines.push(line);
+
+					// calc connecting points
+					var a = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
+					if(this.options.hexagonMode == "topPointy") {
+						var a1 = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
+						a1 = Math.round((a1/(Math.PI/3)+6.5))%6;
+						var a0 = (a1+3)%6;
+						var line = `M${item0.cell.poly[a0][0]} ${item0.cell.poly[a0][1]} L${item1.cell.poly[a1][0]} ${item1.cell.poly[a1][1]}`;
+						this.lines.push(line);
+					}
+					else {
+						var a1 = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
+						a1 = Math.round((a1/(Math.PI/3)+6))%6;
+						var a0 = (a1+3)%6;
+						var line = `M${item0.cell.poly[a0][0]} ${item0.cell.poly[a0][1]} L${item1.cell.poly[a1][0]} ${item1.cell.poly[a1][1]}`;
+						this.lines.push(line);
+					}
+					
 				}
 
 			}
