@@ -43,8 +43,12 @@
 	*/
 	var i = (e = e && e.hasOwnProperty("default") ? e["default"] : e).Layer.extend({
 
+
+		// #######################################################
+		// #region options
+
 		options: {
-			
+
 			// container, layer
 			container: document.createElement("CANVAS"),
 			zIndex: undefined,
@@ -105,25 +109,30 @@
 			infoItemsMax: 5	
 
 		},
+		// #endregion
+
+
+
+		// #######################################################
+		// #region props
+		items: [],
+		increment: 0,
+		hexagonals: {},
+		highlights: [],
+		lines: [],
+		// #endregion
+
+
+
+		// #######################################################
+		// #region base
+		// lifecycle
 		initialize: function initialize(t) {
 			e.setOptions(this, t),
 				/* Built-in Date */
 				e.stamp(this), this._map = undefined, this._container = undefined, this._bounds = undefined,
 				this._center = undefined, this._zoom = undefined;
 		},
-
-
-		// #######################################################
-		// props
-		items: [],
-		increment: 0,
-		hexagonals: {},
-		highlightIds: [],
-
-
-		// #######################################################
-		// built-in
-		// lifecycle
 		beforeAdd: function beforeAdd() {
 			this._zoomVisible = !0;
 		},
@@ -255,9 +264,12 @@
 				this.getContainer().style.display = "none", this;
 		},
 
+		// #endregion
+
+
 
 		// #######################################################
-		// items
+		// #region items
 		addItem: function addItem(latlng, id, meta) { // "id", {lng,lat}, {count,secs,dist,ts}
 	
 			if(typeof latlng != "object") {
@@ -298,7 +310,6 @@
 
 			meta = meta || {};
 
-			
 
 			var keys = Object.keys(tiles15);
 			for (var i = 0; i < keys.length; i++) {
@@ -392,11 +403,12 @@
 		refresh: function refresh() { // todo: refactor to updateItems???
 			this._update();
 		},
+		// #endregion
 
 
 
 		// #######################################################
-		// draw
+		// #region draw
 		_preDraw: function _preDraw() {
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
@@ -433,18 +445,16 @@
 
 					var h = this.calcHexagon(p.x,p.y,hexagonSize, hexagonOffset, hexagonGap)
 
-					if(!this.hexagonals[h.grid]) {
-						this.hexagonals[h.grid] = h;
-						this.hexagonals[h.grid].items = {};
-						this.hexagonals[h.grid].items[this.items[i].id] = this.items[i];
+					if(!this.hexagonals[h.cell]) {
+						this.hexagonals[h.cell] = h;
+						this.hexagonals[h.cell].items = {};
+						this.hexagonals[h.cell].items[this.items[i].id] = this.items[i];
 
 						var latlng = this._map.containerPointToLatLng([h.cx,h.cy]);
-						this.hexagonals[h.grid].latlng = latlng;
-
-
+						this.hexagonals[h.cell].latlng = latlng;
 					}
 					else {
-						this.hexagonals[h.grid].items[this.items[i].id] = this.items[i];
+						this.hexagonals[h.cell].items[this.items[i].id] = this.items[i];
 					}
 
 				}
@@ -454,9 +464,9 @@
 		_onDraw: function _onDraw() {
 
 			this._preDraw();
-			this.onDraw(this._container, this.hexagonals, this.highlightIds);
+			this.onDraw(this._container, this.hexagonals, this.highlights);
 		},
-		onDraw: function onDraw(canvas, hexagonals, highlightIds) {
+		onDraw: function onDraw(canvas, hexagonals, highlights) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
@@ -471,7 +481,7 @@
 
 
 			// exit if no highlight
-			if(!highlightIds.length || !this.options.highlightVisible) {
+			if(!highlights.length || !this.options.highlightVisible) {
 				return;
 			}
 
@@ -479,8 +489,8 @@
 			// draw highlights
 			for (var h=0; h<hs.length; h++) {
 				var hexa = hexagonals[hs[h]];
-				for(var i=0; i<highlightIds.length; i++) {
-					var hl = highlightIds[i];
+				for(var i=0; i<highlights.length; i++) {
+					var hl = highlights[i];
 					if(hexa.items[hl]) {
 						this.drawHighlight(ctx, hexa);
 						break;
@@ -516,12 +526,12 @@
 				ctx.stroke(hPath);
 			}
 		},
-
+		// #endregion
 
 
 
 		// #######################################################
-		// events
+		// #region events
 		_onClick: function _onClick(e) {
 
 			var info = this.updateInfo(e.latlng);
@@ -573,11 +583,12 @@
 
 			}
 		},
+		// #endregion
 
 
 
 		// #######################################################
-		// info
+		// #region info
 		updateInfo: function(latlng) {
 
 			// if no latlng ==> clear
@@ -707,35 +718,34 @@
 				document.querySelector('.leaflet-hexagonal-marker-container').style.display="none";
 			}
 		},
-
-
-
+		// #endregion
 
 
 
 		// #######################################################
-		// highlight
+		// #region highlight
 		setHighlight: function setHighlight(ids) {
 			if(!this.options.highlightVisible) {
 				return;
 			}
 			if(typeof ids == "string") {
-				this.highlightIds = [ids];
+				this.highlights = [ids];
 			}
 			else if(Array.isArray(ids)) {
-				this.highlightIds = ids;
+				this.highlights = ids;
 			}
 			else {
-				this.highlightIds = [];
+				this.highlights = [];
 			}
 
 			this.refresh();
 		},
+		// #endregion
 
 
 
 		// #######################################################
-		// hegagon
+		// #region hegagon
 		calcHexagonSize: function calcHexagonSize(zoom) {
 			if(this.options.hexagonSize) { 
 				if(typeof this.options.hexagonSize == "number") {
@@ -761,7 +771,7 @@
 			var t = Math.floor(ys + sqrt3 * xs + 1);
 			var idy = Math.floor((Math.floor(2 * ys + 1) + t) / 3);
 			var idx = Math.floor((t + Math.floor(-ys + sqrt3 * xs + 1)) / 3);
-			var grid = (idx + "_" + idy); 
+			var cell = (idx + "_" + idy); 
 			var cy = (idy - idx/2) * size - offset.y;
 			var cx = idx/2 * sqrt3 * size - offset.x;
 			
@@ -781,7 +791,7 @@
 
 			var path = "M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z";
 
-			return { grid:grid, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
 		},
 		calcHexagon_topPointy: function calcHexagon_topPointy(x,y, size, offset) { // hexagon top-pointy
 
@@ -793,7 +803,7 @@
 			var t = Math.floor(xs + sqrt3 * ys + 1);
 			var idx = Math.floor((Math.floor(2 * xs + 1) + t) / 3);
 			var idy = Math.floor((t + Math.floor(-xs + sqrt3 * ys + 1)) / 3);
-			var grid = (idx + "_" + idy); 
+			var cell = (idx + "_" + idy); 
 			var cx = (idx-idy/2) * size - offset.x;
 			var cy = idy/2 * sqrt3 * size - offset.y;
 
@@ -813,13 +823,14 @@
 
 			var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
 
-			return { grid:grid, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
 		},
+		// #endregion
 
 
 
 		// #######################################################
-		// helpers
+		// #region helpers
 		getBbox_from_tile15: function getBbox_from_tile15(t15) {
 			t15 = t15 + "AAAAA";
 			var z = 15;
@@ -879,8 +890,8 @@
 			var hexagonGap = this.options.hexagonGap || 0;
 			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, size);
 			var h = this.calcHexagon(p.x,p.y,size, offset, hexagonGap);
-			if(this.hexagonals[h.grid]) {
-				return this.hexagonals[h.grid];
+			if(this.hexagonals[h.cell]) {
+				return this.hexagonals[h.cell];
 			}
 			else {
 				return false;
@@ -938,7 +949,7 @@
 		_genId: function _genId() {
 			return "uid_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
 		}
-
+		// #endregion
 
 	});
 
