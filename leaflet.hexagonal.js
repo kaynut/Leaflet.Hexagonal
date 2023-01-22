@@ -44,43 +44,65 @@
 	var i = (e = e && e.hasOwnProperty("default") ? e["default"] : e).Layer.extend({
 
 		options: {
-			// container: auto generated
+			
+			// container, layer
 			container: document.createElement("CANVAS"),
-			// zIndex of container
 			zIndex: undefined,
-			// opacity of container
 			opacity: 0.5,
-			// layer visible
 			visible: !0,
-			// layer visible beginning at zoomlevel
 			minZoom: 0,
-			// layer visible ending at zoomlevel
 			maxZoom: 18,
 
-			// size of hexagons
-			hexagonSize: function(zoom) { return Math.max(16,Math.pow(2, zoom-5)); }, // number || function(zoom) { return size; }
-			// gap between hexagon-tiles (in pixels)
-			hexagonGap:0,
-			// if hexagon should be pointy on top (orientation of hexagon)
-			hexagonMode: "topFlat", // "topPointy",
-			hexagonFill: "#fd1", // "color", false
-			hexagonLine: "#666", // color, false
-			heagonLineWidth: 1,
 
-			// if highlights should be shown
-			highlightVisible: true, // true OR false
-			highlightFill: "rgba(0,0,0,0.4)", // "color", false
-			highlightLine: false, // "color", false
-			highlightLineWidth: 1,
+
+			// hexagonSize: number || function(zoom) { return size; }
+			hexagonSize: function(zoom) { return Math.max(32,Math.pow(2, zoom-5)); }, 
+
+			// hexagonGap: pixels (difference between display- and clustering-size of hexagon) 
+			hexagonGap: 0, 	
+
+			// hexagonMode: "topFlat" || "topPointy",
+			hexagonMode: "topFlat",
+
+			// hexagonFill: "color" || false
+			hexagonFill: "#fd1",
+
+			// hexagonLine: "color" || false
+			hexagonLine: "#666", 	
+
+			// heagonLineWidth: pixels
+			heagonLineWidth: 1,	
+
+
+
+			// highlightVisible: true || false
+			highlightVisible: true,
+
+			// highlightFill: "color" || false
+			highlightFill: "rgba(0,0,0,0.5)", 	
+
+			// highlightLine: "color" || false
+			highlightLine: false, 	
+
+			// highlightLineWidth: pixels
+			highlightLineWidth: 1,	
 			
-			// if and how info should be kept on zoom 
-			infoVisible: true, // true OR false
-			infoDisplayMode: "count", // "count" OR "ids" OR "custom" OR false
-			infoZoomMode: "adaptOnZoom", // "clearOnZoom" OR "preserveOnZoom" OR "adaptOnZoom" OR false
-			infoClassName: "leaflet-hexagonal-marker-container", // [className]
-			infoItemsMax: 5
 
 
+			// infoVisible: true || false
+			infoVisible: true,
+
+			// infoDisplayMode: "count" || "ids" || "custom" || false
+			infoDisplayMode: "count", 
+
+			// infoZoomMode: "clearOnZoom" || "preserveOnZoom" || "adaptOnZoom" || false
+			infoZoomMode: "adaptOnZoom", 
+
+			// infoClassName: class || ""
+			infoClassName: "leaflet-hexagonal-marker-container", 
+
+			// infoItemsMax: number (max items shown explicitly in info)
+			infoItemsMax: 5	
 
 		},
 		initialize: function initialize(t) {
@@ -399,7 +421,7 @@
 			// hexagonOffset 
 			var nw = this._map.getBounds().getNorthWest();
 			var hexagonOffset = this._map.project(nw, zoom);
-			var hexagonGap = this.options.hexagonGap;
+			var hexagonGap = this.options.hexagonGap || 0;
 
 
 			// cluster hexagons
@@ -716,10 +738,10 @@
 		// hegagon
 		calcHexagonSize: function calcHexagonSize(zoom) {
 			if(this.options.hexagonSize) { 
-				if(typeof hexagonSize == "number") {
+				if(typeof this.options.hexagonSize == "number") {
 					return this.options.hexagonSize; 
 				}
-				if(typeof hexagonSize == "function") {
+				if(typeof this.options.hexagonSize == "function") {
 					return this.options.hexagonSize(zoom);
 				}	
 				
@@ -732,7 +754,7 @@
 			}
 
 			offset = offset || {x:0,y:0};
-			var gap = this.options.hexagonGap;
+			var gap = this.options.hexagonGap || 0;
 			var xs = (x+offset.x)/size;
 			var ys = (y+offset.y)/size;
 			var sqrt3 = 1.73205081;        
@@ -764,7 +786,7 @@
 		calcHexagon_topPointy: function calcHexagon_topPointy(x,y, size, offset) { // hexagon top-pointy
 
 			offset = offset || {x:0,y:0};
-			var gap = this.options.hexagonGap;
+			var gap = this.options.hexagonGap || 0;
 			var xs = (x+offset.x)/size;
 			var ys = (y+offset.y)/size;
 			var sqrt3 = 1.73205081;        
@@ -854,7 +876,7 @@
 			var size = this.calcHexagonSize(zoom);
 			var nw = this._map.getBounds().getNorthWest();
 			var offset = this._map.project(nw, zoom);
-			var hexagonGap = this.options.hexagonGap;
+			var hexagonGap = this.options.hexagonGap || 0;
 			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, size);
 			var h = this.calcHexagon(p.x,p.y,size, offset, hexagonGap);
 			if(this.hexagonals[h.grid]) {
