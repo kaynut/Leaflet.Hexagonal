@@ -487,58 +487,11 @@
 				var item0 = this.items[i-1];
 				var item1 = this.items[i];
 
-				// two items in succession with sam id but in different cells >> draw line
-				if(item0.id==item1.id && item0.cell.cell!=item1.cell.cell) {
-
-					// calc connecting points
-					var a = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
-					if(this.options.hexagonMode == "topPointy") {
-						var a1 = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
-						a1 = Math.round((a1/(Math.PI/3)+6.5))%6;
-						var a0 = (a1+3)%6;
-						var line = `M${item0.cell.poly[a0][0]} ${item0.cell.poly[a0][1]} L${item1.cell.poly[a1][0]} ${item1.cell.poly[a1][1]}`;
+				if(item0.id==item1.id) {
+					var line = this.lineupHexagons(item0.cell,item1.cell,hexagonSize, hexagonOffset);
+					if(line) {
 						this.lines.push(line);
 					}
-					else {
-						/*
-						var a = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
-						a = Math.round((a/(Math.PI/3)+6));
-						//console.log(a);
-						var pmin, dmin=10000000,a0,a1,dx,dy,d;
-						for(var b=-1;b<2;b++) {
-							a0 = (a+3+b)%6;
-							for(var c=-1;c<2;c++) {
-								a1 = (a+c)%6;
-								dx = item1.cell.poly[a1][0] - item0.cell.poly[a0][0]; 
-								dy = item1.cell.poly[a1][1] - item0.cell.poly[a0][1]; 
-								d =  dx*dx+dy*dy;
-								if(d<dmin) { 
-									pmin = `M${item0.cell.poly[a0][0]} ${item0.cell.poly[a0][1]} L${item1.cell.poly[a1][0]} ${item1.cell.poly[a1][1]}`; 
-									dmin = d;
-								}
-							}
-						}
-						this.lines.push(pmin);
-						*/
-						
-						// absolute vertical/horizontal connection
-						var dx = Math.abs(item1.cell.cx - item0.cell.cx);
-						var dy = Math.abs(item1.cell.cy - item0.cell.cy);
-						if(dx<2 || dy<2) {
-							var line = `M${item0.cell.cx} ${item0.cell.cy} L${item1.cell.cx} ${item1.cell.cy}`;
-							this.lines.push(line);
-						}
-						// other connections
-						else {
-							var a1 = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
-							a1 = Math.round((a1/(Math.PI/3)+6))%6;
-							var a0 = (a1+3)%6;
-							var line = `M${item0.cell.poly[a0][0]} ${item0.cell.poly[a0][1]} L${item1.cell.poly[a1][0]} ${item1.cell.poly[a1][1]}`;
-							this.lines.push(line);
-						}
-						
-					}
-					
 				}
 
 			}
@@ -556,10 +509,13 @@
 
 			// draw lines
 			if(this.lines.length) {
-				ctx.strokeStyle = "#f00";
-				ctx.lineWidth = 3;
 				for(var i=0; i<this.lines.length; i++) {
 					var line = new Path2D(this.lines[i]);
+					ctx.strokeStyle = "#555";
+					ctx.lineWidth = 5;
+					ctx.stroke(line);
+					ctx.strokeStyle = "#ca0";
+					ctx.lineWidth = 3;
 					ctx.stroke(line);
 				}
 			}
@@ -852,7 +808,7 @@
 		},		
 		calcHexagonCell: function calcHexagonCell(x,y, size, offset) { // hexagon top-flat
 			if(this.options.hexagonMode == "topPointy") {
-				return this.calcHexagon_topPointy(x,y, size, offset);
+				return this.calcHexagonCell_topPointy(x,y, size, offset);
 			}
 
 			offset = offset || {x:0,y:0};
@@ -888,7 +844,7 @@
 
 			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
 		},
-		calcHexagon_topPointy: function calcHexagon_topPointy(x,y, size, offset) { // hexagon top-pointy
+		calcHexagonCell_topPointy: function calcHexagonCell_topPointy(x,y, size, offset) { // hexagon top-pointy
 
 			offset = offset || {x:0,y:0};
 			var gap = this.options.hexagonGap || 0;
@@ -923,7 +879,7 @@
 
 			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
 		},
-		lineHexagons: function lineHexagons(h0,h1,size) {
+		lineupHexagons: function lineupHexagons(h0,h1,size,offset) {
 
 			// distance between hexagon-centers
 			var dx = h0.cx - h1.cx;
@@ -942,17 +898,16 @@
 			for(var t=d; t<1-d/2; t+=d) {
 			   var x = h0.cx + (h1.cx-h0.cx) * t;
 			   var y = h0.cy + (h1.cy-h0.cy) * t;
-			   if (this.options.hexagonMode == "topPointy") {
-				  h = pointToHexagon_pointy(x, y, size);
-			   }
-			   else {
-				  h = pointToHexagon(x, y, size);
-			   }
+			   h = this.calcHexagonCell(x,y,size,offset);
 			   if(!hs[h.cell]) {
 				  hs[h.cell] = h;
 			   }
 			}
-   
+			console.log(h0,h1);
+			console.log(size, offset);
+			console.log(dist);
+
+			console.log(hs);
 			// build line 
 			var bindFactor = 0.5; // 0.5 = start and end bind to the line right at there border 
 			var ks = Object.keys(hs);
