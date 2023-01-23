@@ -500,11 +500,43 @@
 						this.lines.push(line);
 					}
 					else {
-						var a1 = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
-						a1 = Math.round((a1/(Math.PI/3)+6))%6;
-						var a0 = (a1+3)%6;
-						var line = `M${item0.cell.poly[a0][0]} ${item0.cell.poly[a0][1]} L${item1.cell.poly[a1][0]} ${item1.cell.poly[a1][1]}`;
-						this.lines.push(line);
+						/*
+						var a = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
+						a = Math.round((a/(Math.PI/3)+6));
+						//console.log(a);
+						var pmin, dmin=10000000,a0,a1,dx,dy,d;
+						for(var b=-1;b<2;b++) {
+							a0 = (a+3+b)%6;
+							for(var c=-1;c<2;c++) {
+								a1 = (a+c)%6;
+								dx = item1.cell.poly[a1][0] - item0.cell.poly[a0][0]; 
+								dy = item1.cell.poly[a1][1] - item0.cell.poly[a0][1]; 
+								d =  dx*dx+dy*dy;
+								if(d<dmin) { 
+									pmin = `M${item0.cell.poly[a0][0]} ${item0.cell.poly[a0][1]} L${item1.cell.poly[a1][0]} ${item1.cell.poly[a1][1]}`; 
+									dmin = d;
+								}
+							}
+						}
+						this.lines.push(pmin);
+						*/
+						
+						// absolute vertical/horizontal connection
+						var dx = Math.abs(item1.cell.cx - item0.cell.cx);
+						var dy = Math.abs(item1.cell.cy - item0.cell.cy);
+						if(dx<2 || dy<2) {
+							var line = `M${item0.cell.cx} ${item0.cell.cy} L${item1.cell.cx} ${item1.cell.cy}`;
+							this.lines.push(line);
+						}
+						// other connections
+						else {
+							var a1 = Math.atan2(item1.cell.cy - item0.cell.cy , item1.cell.cx - item0.cell.cx);
+							a1 = Math.round((a1/(Math.PI/3)+6))%6;
+							var a0 = (a1+3)%6;
+							var line = `M${item0.cell.poly[a0][0]} ${item0.cell.poly[a0][1]} L${item1.cell.poly[a1][0]} ${item1.cell.poly[a1][1]}`;
+							this.lines.push(line);
+						}
+						
 					}
 					
 				}
@@ -827,18 +859,21 @@
 			var gap = this.options.hexagonGap || 0;
 			var xs = (x+offset.x)/size;
 			var ys = (y+offset.y)/size;
-			var sqrt3 = 1.73205081;        
-			var t = Math.floor(ys + sqrt3 * xs + 1);
-			var idy = Math.floor((Math.floor(2 * ys + 1) + t) / 3);
-			var idx = Math.floor((t + Math.floor(-ys + sqrt3 * xs + 1)) / 3);
-			var cell = (idx + "_" + idy); 
-			var cy = (idy - idx/2) * size - offset.y;
-			var cx = idx/2 * sqrt3 * size - offset.x;
-			
+			var sqrt3 = 1.73205081; 
 			var s0 = size - gap;
 			var s2 = s0/sqrt3;
 			var s4 = s2/2;
-			var h = s0/2;
+			var h = s0/2;  
+
+			var t = Math.floor(ys + sqrt3 * xs + 1);
+			var idy = Math.floor((Math.floor(2 * ys + 1) + t) / 3);
+			var idx = Math.floor((t + Math.floor(-ys + sqrt3 * xs + 1)) / 3);
+			
+			var cy = (idy - idx/2) * size - offset.y;
+			var cx = idx/2 * sqrt3 * size - offset.x;
+			idy -= Math.floor(idx/2); // flat - offset even-q
+			var cell = (idx + "_" + idy); 
+
 			var poly = [ 
 			[cx-s2,cy],
 			[cx-s4, cy-h],
@@ -859,18 +894,21 @@
 			var gap = this.options.hexagonGap || 0;
 			var xs = (x+offset.x)/size;
 			var ys = (y+offset.y)/size;
-			var sqrt3 = 1.73205081;        
-			var t = Math.floor(xs + sqrt3 * ys + 1);
-			var idx = Math.floor((Math.floor(2 * xs + 1) + t) / 3);
-			var idy = Math.floor((t + Math.floor(-xs + sqrt3 * ys + 1)) / 3);
-			var cell = (idx + "_" + idy); 
-			var cx = (idx-idy/2) * size - offset.x;
-			var cy = idy/2 * sqrt3 * size - offset.y;
-
+			var sqrt3 = 1.73205081; 
 			var s0 = size - gap;
 			var s2 = s0/sqrt3;
 			var s4 = s2/2;
 			var h = s0/2;
+
+			var t = Math.floor(xs + sqrt3 * ys + 1);
+			var idx = Math.floor((Math.floor(2 * xs + 1) + t) / 3);
+			var idy = Math.floor((t + Math.floor(-xs + sqrt3 * ys + 1)) / 3);
+			
+			var cx = (idx-idy/2) * size - offset.x;
+			var cy = idy/2 * sqrt3 * size - offset.y;
+			idx -= Math.floor(idy/2); // pointy - offset even-r
+			var cell = (idx + "_" + idy); 
+
 			var poly = [ 
 			[cx,cy-s2],
 			[cx-h, cy-s4],
@@ -884,6 +922,55 @@
 			var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
 
 			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
+		},
+		lineHexagons: function lineHexagons(h0,h1,size) {
+
+			// distance between hexagon-centers
+			var dx = h0.cx - h1.cx;
+			var dy = h0.cy - h1.cy;
+			var dist = Math.sqrt((dx*dx+dy*dy)) / size;
+   
+			// identity or direct neighbor
+			if(dist<1.1) {
+			   return false;
+			}
+   
+			// collect unique hexagons on connecting line
+			var h;
+			var hs = {};
+			var d = 1/(Math.ceil(dist));
+			for(var t=d; t<1-d/2; t+=d) {
+			   var x = h0.cx + (h1.cx-h0.cx) * t;
+			   var y = h0.cy + (h1.cy-h0.cy) * t;
+			   if (this.options.hexagonMode == "topPointy") {
+				  h = pointToHexagon_pointy(x, y, size);
+			   }
+			   else {
+				  h = pointToHexagon(x, y, size);
+			   }
+			   if(!hs[h.cell]) {
+				  hs[h.cell] = h;
+			   }
+			}
+   
+			// build line 
+			var bindFactor = 0.5; // 0.5 = start and end bind to the line right at there border 
+			var ks = Object.keys(hs);
+	
+			var x = h0.cx + (hs[ks[0]].cx-h0.cx) * bindFactor;
+			var y = h0.cy + (hs[ks[0]].cy-h0.cy) * bindFactor;
+			var path = `M${x} ${y} `;
+   
+			for(var i=0; i<ks.length; i++) {
+			   path += `L${hs[ks[i]].cx} ${hs[ks[i]].cy} `;
+			}
+
+			x = h1.cx + (hs[ks[ks.length-1]].cx-h1.cx) * bindFactor;
+			y = h1.cy + (hs[ks[ks.length-1]].cy-h1.cy) * bindFactor;
+			path += `L${x} ${y}`;
+
+			return path;
+   
 		},
 		// #endregion
 

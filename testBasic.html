@@ -27,7 +27,7 @@
 
 	  const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 		
-      const hexagonals = new L.Hexagonal({hexagonMode:"aaatopPointy"}).addTo(map);	
+      const hexagonals = new L.Hexagonal().addTo(map);	
 
 	  hexagonals.addItem({lng:-16.0, lat:65.0});
 	  hexagonals.addItem({lng:-16.1, lat:65.0}, "A");
@@ -41,6 +41,7 @@
 	  hexagonals.addItem({lng:-16.6, lat:65.3}, "D");
 	  hexagonals.addItem({lng:-16.5, lat:65.3}, "D");
      hexagonals.addItem({lng:-16.5, lat:65.2}, "D");
+     hexagonals.addItem({lng:-16.4, lat:65.2}, "D");
 
 	  hexagonals.refreshItems();
 
