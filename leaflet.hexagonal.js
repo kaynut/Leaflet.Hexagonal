@@ -106,7 +106,7 @@
 			highlightFill: "rgba(0,0,0,0.5)", 	
 
 			// highlightLine: "color" || false
-			highlightLine: false, 	
+			highlightLine: "rgba(0,0,0,0.5)", 	 	
 
 			// highlightLineWidth: pixels
 			highlightLineWidth: 1,	
@@ -526,7 +526,7 @@
 				if(point0.id==point1.id) {
 					var path = this.linkHexagons(point0.cell,point1.cell,hexagonSize, hexagonOffset);
 					if(path) {
-						this.links.push({start:point0, end:point1, path:path});
+						this.links.push({id: point1.id, start:point0, end:point1, path:path});
 					}
 				}
 
@@ -536,9 +536,9 @@
 		_onDraw: function _onDraw() {
 
 			this._preDraw();
-			this.onDraw(this._container, this.hexagonals, this.highlights);
+			this.onDraw(this._container, this.hexagonals, this.highlights, this.links);
 		},
-		onDraw: function onDraw(canvas, hexagonals, highlights) {
+		onDraw: function onDraw(canvas, hexagonals, highlights, links) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
@@ -550,6 +550,19 @@
 				}
 			}
 
+
+			// draw highlightlinks
+			if(highlights.length  && this.options.highlightVisible) {
+				var hlo = this._toObject(highlights);
+				console.log(hlo,highlights);
+				for(var l=0; l<links.length; l++) {
+					if(hlo[links[l].id]) {
+						this.drawHighlightLink(ctx, links[l]);
+					}
+				}
+			}
+
+
 			// draw hexagonals
 			var hs = Object.keys(hexagonals);
 			for (var h=0; h<hs.length; h++) {
@@ -558,24 +571,19 @@
 			}
 
 
-			// exit if no highlight
-			if(!highlights.length || !this.options.highlightVisible) {
-				return;
-			}
-
-
 			// draw highlights
-			for (var h=0; h<hs.length; h++) {
-				var hexa = hexagonals[hs[h]];
-				for(var i=0; i<highlights.length; i++) {
-					var hl = highlights[i];
-					if(hexa.points[hl]) {
-						this.drawHighlight(ctx, hexa);
-						break;
+			if(highlights.length && this.options.highlightVisible) {
+				for (var h=0; h<hs.length; h++) {
+					var hexa = hexagonals[hs[h]];
+					for(var i=0; i<highlights.length; i++) {
+						var hl = highlights[i];
+						if(hexa.points[hl]) {
+							this.drawHighlight(ctx, hexa);
+							break;
+						}
 					}
 				}
 			}
-
 
 		},
 		drawHexagon: function drawHexagon(ctx, hexagon) {
@@ -615,8 +623,16 @@
 			ctx.lineWidth = this.options.linkLineWidth;
 			ctx.stroke(path);
 		},
-		drawLinklight: function drawLinklight(ctx, link) {
-			// todo:
+		drawHighlightLink: function drawHighlightlink(ctx, link) {
+			var path = new Path2D(link.path);
+			if(this.options.linkLineBorder && this.options.highlightLine) {
+				ctx.strokeStyle = this.options.highlightLine;
+				ctx.lineWidth = this.options.linkLineWidth + this.options.linkLineBorder*2;
+				ctx.stroke(path);
+			}
+			ctx.strokeStyle = this.options.highlightFill;
+			ctx.lineWidth = this.options.linkLineWidth;
+			ctx.stroke(path);
 		},
 		// #endregion
 
@@ -1115,7 +1131,20 @@
 		_toObject: function _toObject(arr, id) {
 			var obj = {};
 			if(!Array.isArray(arr)) { return obj; }
-			if(typeof id != "string") { return obj; }
+			if(!arr.length) { return obj; }
+			
+			// if no id
+			if(typeof id != "string") { 
+				// if flat alphanumeric array
+				if(typeof arr[0] == "string" || typeof arr[0] == "number") {
+					for(var i=0;i<arr.length; i++) {
+						obj[arr[i]] = arr[i];
+					}
+				}
+				return obj; 
+			}
+
+			// if id
 			for(var i=0;i<arr.length; i++) {
 				if(arr[i][id]) {
 					obj[arr[i][id]] = arr[i];
