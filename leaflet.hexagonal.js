@@ -123,7 +123,7 @@
 			infoZoomMode: "adaptOnZoom", 
 
 			// infoClassName: class || ""
-			infoClassName: "leaflet-hexagonal-marker-container", 
+			infoClassName: "leaflet-hexagonal-infobox-container", 
 
 			// infoItemsMax: number (max items shown explicitly in info)
 			infoItemsMax: 5	
@@ -135,8 +135,9 @@
 
 		// #######################################################
 		// #region props
-		items: [],
 		increment: 0,
+		items: [],
+		tags:[],
 		hexagonals: {},
 		highlights: [],
 		lineups: [],
@@ -309,11 +310,13 @@
 				_prev: this.getPrevItem({id:id,_nr:this.increment}),
 				cell: false,
 				latlng: latlng,
+
 				count: meta.count || 0,
 				secs: meta.secs || 0,
 				dist: meta.dist || 0,
 				weight: meta.weight || 0,
 				ts: meta.ts || 0
+
 			};
 
 			this.items.push(item);
@@ -654,7 +657,7 @@
 				else {
 					this.info = false;
 					this.setHighlight(false);
-					this.setMarker(false);
+					this.setInfobox(false);
 				}
 
 			}
@@ -672,7 +675,7 @@
 				//console.info("updateInfo - clear");
 				this.info = false;
 				this.setHighlight(false);
-				this.setMarker(false);
+				this.setInfobox(false);
 				return false; 
 			}
 
@@ -686,7 +689,7 @@
 				//console.info("updateInfo - no items", info);
 				this.info = false;
 				this.setHighlight(false);
-				this.setMarker(false);
+				this.setInfobox(false);
 				return false;
 			}
 
@@ -694,8 +697,8 @@
 			// adapt
 			info.adapt = info.items[Object.keys(info.items)[0]].latlng;
 
-			// set marker
-			this.setMarker(info);
+			// set infobox
+			this.setInfobox(info);
 
 			// set highlight
 			var itemKeys = Object.keys(info.items);
@@ -705,10 +708,10 @@
 			return true;
 
 		},
-		setMarker: function setMarker(info) {
+		setInfobox: function setInfobox(info) {
 
-			if(this.marker) {
-				this._map.removeLayer(this.marker);
+			if(this.infobox) {
+				this._map.removeLayer(this.infobox);
 			} 
 
 			if(!info) {
@@ -727,17 +730,17 @@
 			var html = this.buildInfo(items);
 
 			var iconHtml = document.createElement("DIV");
-			iconHtml.className = "leaflet-hexagonal-marker leftTop";
+			iconHtml.className = "leaflet-hexagonal-infobox leftTop";
 			iconHtml.innerHTML = html;
-			var icon = L.divIcon({
+			var divicon = L.divIcon({
 				iconSize:null,
 				html: iconHtml,
 				className: this.options.infoClassName
 			});
 
-			this.marker = L.marker(info.latlng, {icon: icon}).addTo(this._map);
-			L.DomEvent.on(this.marker, 'mousewheel', L.DomEvent.stopPropagation);
-			L.DomEvent.on(this.marker, 'click', L.DomEvent.stopPropagation);
+			this.infobox = L.marker(info.latlng, {icon: divicon}).addTo(this._map);
+			L.DomEvent.on(this.infobox, 'mousewheel', L.DomEvent.stopPropagation);
+			L.DomEvent.on(this.infobox, 'click', L.DomEvent.stopPropagation);
 		},
 		buildInfo: function buildInfo(items) {
 
@@ -785,13 +788,13 @@
 		},
 
 		showInfo: function showInfo() {
-			if(this.marker) {
-				document.querySelector('.leaflet-hexagonal-marker-container').style.display="block";
+			if(this.infobox) {
+				document.querySelector('.leaflet-hexagonal-infobox-container').style.display="block";
 			}
 		},
 		hideInfo: function hideInfo() {
-			if(this.marker) {
-				document.querySelector('.leaflet-hexagonal-marker-container').style.display="none";
+			if(this.infobox) {
+				document.querySelector('.leaflet-hexagonal-infobox-container').style.display="none";
 			}
 		},
 		// #endregion
