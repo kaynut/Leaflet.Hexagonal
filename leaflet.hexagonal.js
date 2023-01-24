@@ -586,7 +586,7 @@
 			// markerHexagonals: clustered markers 
 			this.markerHexagonals = {};
 			for (var i = 0; i < this.markers.length; i++) {
-				/*
+				
 				var marker = this.markers[i];
 
 				var p = this.getPixels_from_latlng(marker.latlng, w, h, hexagonSize);
@@ -594,18 +594,18 @@
 
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, hexagonGap)
 
-					if(!this.pointHexagonals[h.cell]) {
-						this.pointHexagonals[h.cell] = h;
-						this.pointHexagonals[h.cell].points = {};
-						this.pointHexagonals[h.cell].points[point.id] = point;
+					if(!this.markerHexagonals[h.cell]) {
+						this.markerHexagonals[h.cell] = h;
+						this.markerHexagonals[h.cell].markers = {};
+						this.markerHexagonals[h.cell].markers[marker.id] = marker;
 					}
 					else {
-						this.pointHexagonals[h.cell].points[point.id] = point;
+						this.markerHexagonals[h.cell].markers[marker.id] = marker;
 					}
 
 				}
-				point.cell = h;
-				*/
+				marker.cell = h;
+				
 			}
 
 
@@ -633,9 +633,9 @@
 		_onDraw: function _onDraw() {
 
 			this._preDraw();
-			this.onDraw(this._container, this.pointHexagonals, this.highlights, this.links);
+			this.onDraw(this._container, this.pointHexagonals, this.markerHexagonals, this.highlights, this.links);
 		},
-		onDraw: function onDraw(canvas, pointHexagonals, highlights, links) {
+		onDraw: function onDraw(canvas, pointHexagonals, markerHexagonals, highlights, links) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
@@ -660,17 +660,24 @@
 
 
 			// draw pointHexagonals
-			var hs = Object.keys(pointHexagonals);
-			for (var h=0; h<hs.length; h++) {
-				var hexa = pointHexagonals[hs[h]];
+			var phs = Object.keys(pointHexagonals);
+			for (var h=0; h<phs.length; h++) {
+				var hexa = pointHexagonals[phs[h]];
 				this.drawHexagon(ctx, hexa);
 			}
 
+			// draw markerHexagonals
+			// todo: maybe setting a map.marker would be better than drawing on canvas (thinking about images,.. easy on svg. performance?)
+			var mhs = Object.keys(markerHexagonals);
+			for (var h=0; h<mhs.length; h++) {
+				var hexa = markerHexagonals[mhs[h]];
+				this.drawHexagon(ctx, hexa, true);
+			}
 
-			// draw highlights
+			// draw highlights (for points, not for markers??)
 			if(highlights.length && this.options.highlightVisible) {
-				for (var h=0; h<hs.length; h++) {
-					var hexa = pointHexagonals[hs[h]];
+				for (var h=0; h<phs.length; h++) {
+					var hexa = pointHexagonals[phs[h]];
 					for(var i=0; i<highlights.length; i++) {
 						var hl = highlights[i];
 						if(hexa.points[hl]) {
@@ -682,11 +689,17 @@
 			}
 
 		},
-		drawHexagon: function drawHexagon(ctx, hexagon) {
+		drawHexagon: function drawHexagon(ctx, hexagon, isMarker) {
 			var hPath = new Path2D(hexagon.path);
 
 			if(this.options.hexagonFill) {
-				ctx.fillStyle = this.options.hexagonFill;
+				if(isMarker) {
+					ctx.fillStyle = "#f00";
+				}
+				else {
+					ctx.fillStyle = this.options.hexagonFill;
+				}
+				
 				ctx.fill(hPath);
 			}
 			if(this.options.hexagonLine) {
