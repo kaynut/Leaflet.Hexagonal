@@ -29,21 +29,21 @@
 		
       const hexagonals = new L.Hexagonal().addTo(map);	
 
-	  hexagonals.addItem({lng:-16.0, lat:65.0});
-	  hexagonals.addItem({lng:-16.1, lat:65.0}, "A");
-	  hexagonals.addItem({lng:-16.2, lat:65.0}, "B");
-	  hexagonals.addItem({lng:-16.3, lat:65.0}, "C");
+	  hexagonals.addPoint({lng:-16.0, lat:65.0});
+	  hexagonals.addPoint({lng:-16.1, lat:65.0}, "A");
+	  hexagonals.addPoint({lng:-16.2, lat:65.0}, "B");
+	  hexagonals.addPoint({lng:-16.3, lat:65.0}, "C");
 
-	  hexagonals.addItem({lng:-16.5, lat:65.0}, "D");
-	  hexagonals.addItem({lng:-16.6, lat:65.0}, "D");
-	  hexagonals.addItem({lng:-16.7, lat:65.1}, "D");
-	  hexagonals.addItem({lng:-16.7, lat:65.2}, "D");
-	  hexagonals.addItem({lng:-16.6, lat:65.3}, "D");
-	  hexagonals.addItem({lng:-16.5, lat:65.3}, "D");
-     hexagonals.addItem({lng:-16.5, lat:65.2}, "D");
-     hexagonals.addItem({lng:-16.4, lat:65.2}, "D");
+	  hexagonals.addPoint({lng:-16.5, lat:65.0}, "D");
+	  hexagonals.addPoint({lng:-16.6, lat:65.0}, "D");
+	  hexagonals.addPoint({lng:-16.7, lat:65.1}, "D");
+	  hexagonals.addPoint({lng:-16.7, lat:65.2}, "D");
+	  hexagonals.addPoint({lng:-16.6, lat:65.3}, "D");
+	  hexagonals.addPoint({lng:-16.5, lat:65.3}, "D");
+     hexagonals.addPoint({lng:-16.5, lat:65.2}, "D");
+     hexagonals.addPoint({lng:-16.4, lat:65.2}, "D");
 
-     console.log(hexagonals.items);
+     console.log(hexagonals.points);
 
 
    </script>

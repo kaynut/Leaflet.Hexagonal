@@ -86,22 +86,22 @@
 			// infoClassName: class || ""
 			infoClassName: "leaflet-hexagonal-marker-container", 
 
-			// infoItemsMax: number (max items shown explicitly in info)
+			// infoPointsMax: number (max items shown explicitly in info)
 			infoItemsMax: 5	
       }
 
       var hexagonals = new L.Hexagonal(options).addTo(map);	
 
-      hexagonals.addItem({lng:-16.0, lat:65.0});
-      hexagonals.addItem({lng:-16.1, lat:65.0}, "A");
-      hexagonals.addItem({lng:-16.2, lat:65.0}, "B");
-      hexagonals.addItem({lng:-16.3, lat:65.0}, "C");
+      hexagonals.addPoint({lng:-16.0, lat:65.0});
+      hexagonals.addPoint({lng:-16.1, lat:65.0}, "A");
+      hexagonals.addPoint({lng:-16.2, lat:65.0}, "B");
+      hexagonals.addPoint({lng:-16.3, lat:65.0}, "C");
 
-      hexagonals.addItem({lng:-16.5, lat:65.0}, "D");
-      hexagonals.addItem({lng:-16.6, lat:65.0}, "D");
-      hexagonals.addItem({lng:-16.7, lat:65.0}, "D");
-      hexagonals.addItem({lng:-16.8, lat:65.0}, "D");
-      hexagonals.addItem({lng:-16.9, lat:65.0}, "D");
+      hexagonals.addPoint({lng:-16.5, lat:65.0}, "D");
+      hexagonals.addPoint({lng:-16.6, lat:65.0}, "D");
+      hexagonals.addPoint({lng:-16.7, lat:65.0}, "D");
+      hexagonals.addPoint({lng:-16.8, lat:65.0}, "D");
+      hexagonals.addPoint({lng:-16.9, lat:65.0}, "D");
 
 
    </script>

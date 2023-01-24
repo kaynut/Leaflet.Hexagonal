@@ -79,23 +79,23 @@
 
 
 
-			// lineupMode: "centered" || "straight" || "hexagonal" || false
-			lineupMode: "straight",
+			// linkMode: "centered" || "straight" || "hexagonal" || false
+			linkMode: "straight",
 
-			// lineupJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
-			lineupJoin: 1,  
+			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
+			linkJoin: 1,  
 
-			// lineupFill: "color" || false
-			lineupFill: "#fd1",
+			// linkFill: "color" || false
+			linkFill: "#fd1",
 
-			// lineupLine: "color" || false
-			lineupLine: "#666", 	
+			// linkLine: "color" || false
+			linkLine: "#666", 	
 
-			// lineupLineWidth: pixels
-			lineupLineWidth: 3,	
+			// linkLineWidth: pixels
+			linkLineWidth: 3,	
 
-			// lineupLineBorder: pixels
-			lineupLineBorder: 1,	
+			// linkLineBorder: pixels
+			linkLineBorder: 1,	
 
 
 
@@ -136,11 +136,11 @@
 		// #######################################################
 		// #region props
 		increment: 0,
-		items: [],
+		points: [],
 		tags:[],
 		hexagonals: {},
 		highlights: [],
-		lineups: [],
+		links: [],
 		// #endregion
 
 
@@ -291,11 +291,11 @@
 
 
 		// #######################################################
-		// #region items
-		addItem: function addItem(latlng, id, meta) { // "id", {lng,lat}, {count,secs,dist,ts}
+		// #region points
+		addPoint: function addPoint(latlng, id, meta) { // "id", {lng,lat}, {count,secs,dist,ts}
 	
 			if(typeof latlng != "object") {
-				console.warn("hexagonal.addItem: latlng not valid", latlng);
+				console.warn("hexagonal.addPoint: latlng not valid", latlng);
 			}
 			latlng.lat = latlng.lat || 0;
 			latlng.lng = latlng.lng || 0;
@@ -305,10 +305,10 @@
 			meta = meta || {};
 
 			this.increment++;
-			var item = {
+			var point = {
 				id: id,
 				_nr: this.increment,
-				_prev: this.getPrevItem({id:id,_nr:this.increment}),
+				_prev: this.getPrevPoint({id:id,_nr:this.increment}),
 				cell: false,
 				latlng: latlng,
 
@@ -320,17 +320,17 @@
 
 			};
 
-			this.items.push(item);
+			this.points.push(point);
 
-			this.refreshItems();
+			this.refreshPoints();
 
 		},
-		addItem_tiles15: function addItem_tiles15(tiles15, id, meta) { // "id", {"UxWd":{"count":105,"secs":1705,"dist":7694},....}
+		addPoint_tiles15: function addPoint_tiles15(tiles15, id, meta) { // "id", {"UxWd":{"count":105,"secs":1705,"dist":7694},....}
 			if (typeof tiles15 == "string") {
 				tiles15 = JSON.parse(tiles15);
 			}
 			if (typeof tiles15 != "object") {
-				console.warn("hexagonal.addItem_tiles15: unknown format", tiles15);
+				console.warn("hexagonal.addPoint_tiles15: unknown format", tiles15);
 				return;
 			}
 
@@ -347,10 +347,10 @@
 
 				this.increment++;
 
-				var item = {
+				var point = {
 					id: id,
 					_nr: this.increment,
-					_prev: this.getPrevItem({id:id,_nr:this.increment}),
+					_prev: this.getPrevPoint({id:id,_nr:this.increment}),
 					cell: false,
 					latlng: latlng,
 					count: meta.count || tiles15[keys[i]].count || 0,
@@ -360,9 +360,9 @@
 					ts: meta.ts || tiles15[keys[i]].dist || 0
 				};
 
-				this.items.push(item);
+				this.points.push(point);
 
-				this.refreshItems();
+				this.refreshPoints();
 
 			}
 
@@ -370,14 +370,14 @@
 		addGeojson: function addGeojson(g) {
 			if(typeof g != "object" || typeof g.type != "string") { return 0; }
 			if(g.type == "Point" && g.coordinates) {
-				this.addItem({lng:g.coordinates[0],lat:g.coordinates[1]});
+				this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]});
 				return 1;
 			}
 			if(g.type == "MultiPoint" || g.type == "LineString") {
 				var c = g.coordinates.length;
 				var id = this._genUID();
 				for(var i=0; i<c; i++) {
-					this.addItem({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, id);
+					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, id);
 				}
 				return c;
 			}
@@ -388,7 +388,7 @@
 					var id = this._genUID();
 					for(var j=0; j<ci.length; j++) {
 						// properties
-						this.addItem({lng:ci[j][0],lat:ci[j][1]}, id);
+						this.addPoint({lng:ci[j][0],lat:ci[j][1]}, id);
 						c++;
 					}
 				}
@@ -410,47 +410,43 @@
 			return 0;
 
 		},
-		removeItem: function removeItem(id) {
-			if(this.items.length<1) { return false; }
+		removePoint: function removePoint(id) {
+			if(this.points.length<1) { return false; }
 			if(typeof id != "number" && typeof id != "string") {
 				return false;
 			}
 
-			for(var j=0; j<this.items.length; j++) {
-				if(id===this.items[j].id) {
-					this.items.splice(j, 1);
+			for(var j=0; j<this.points.length; j++) {
+				if(id===this.points[j].id) {
+					this.points.splice(j, 1);
 					return true;
 				}
 			}
 
 			return false;
 		},		
-		clearItems: function clearItems(refresh = true) {
-			var c = this.items.length;
-			this.items = [];
+		clearPoints: function clearPoints(refresh = true) {
+			var c = this.points.length;
+			this.points = [];
 			this.increment = 0;
 			if(refresh) {
-				this.refreshItems();
+				this.refreshPoints();
 			}
 			return c;
 		},
-		refreshItems: function refreshItems() { 
+		refreshPoints: function refreshPoints() { 
 			var self = this;
-			console.log("call ri");
-			window.clearTimeout(self._refreshItems_debounce);
-			self._refreshItems_debounce = window.setTimeout(function () {
-				console.log("refreshItems", Date.now());
+			window.clearTimeout(self._refreshPoints_debounce);
+			self._refreshPoints_debounce = window.setTimeout(function () {
 				self._update();
 			}, 50);
-
-			//this._update();
 		},
-		getPrevItem: function getPrevItem(item) {
-			var il = this.items.length;
+		getPrevPoint: function getPrevPoint(point) {
+			var il = this.points.length;
 			if(!il) { return false; }
-			var prevItem = this.items[il-1];
-			if(item.id==prevItem.id && item._nr-1 == prevItem._nr) {
-				return prevItem._nr;
+			var prevPoint = this.points[il-1];
+			if(point.id==prevPoint.id && point._nr-1 == prevPoint._nr) {
+				return prevPoint._nr;
 			}
 			return false;
 		},
@@ -489,48 +485,48 @@
 
 			// cluster hexagons
 			this.hexagonals = {};
-			for (var i = 0; i < this.items.length; i++) {
+			for (var i = 0; i < this.points.length; i++) {
 
-				var item = this.items[i];
+				var point = this.points[i];
 
-				var p = this.getPixels_from_latlng(item.latlng, w, h, hexagonSize);
+				var p = this.getPixels_from_latlng(point.latlng, w, h, hexagonSize);
 				if (p.visible) {
 
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, hexagonGap)
 
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
-						this.hexagonals[h.cell].items = {};
-						this.hexagonals[h.cell].items[item.id] = item;
+						this.hexagonals[h.cell].points = {};
+						this.hexagonals[h.cell].points[point.id] = point;
 
 						var latlng = this._map.containerPointToLatLng([h.cx,h.cy]);
 						this.hexagonals[h.cell].latlng = latlng;
 					}
 					else {
-						this.hexagonals[h.cell].items[item.id] = item;
+						this.hexagonals[h.cell].points[point.id] = point;
 					}
 
 				}
 
-				item.cell = h;
+				point.cell = h;
 
 			}
 
-			// lineup hexagons
-			this.lineups = [];
-			if(!this.options.lineupMode) {
+			// link hexagons
+			this.links = [];
+			if(!this.options.linkMode) {
 				return;
 			}
-			if(this.items.length<2) { return; }
-			for (var i = 1; i < this.items.length; i++) {
+			if(this.points.length<2) { return; }
+			for (var i = 1; i < this.points.length; i++) {
 
-				var item0 = this.items[i-1];
-				var item1 = this.items[i];
+				var point0 = this.points[i-1];
+				var point1 = this.points[i];
 
-				if(item0.id==item1.id) {
-					var path = this.lineupHexagons(item0.cell,item1.cell,hexagonSize, hexagonOffset);
+				if(point0.id==point1.id) {
+					var path = this.linkHexagons(point0.cell,point1.cell,hexagonSize, hexagonOffset);
 					if(path) {
-						this.lineups.push({start:item0, end:item1, path:path});
+						this.links.push({start:point0, end:point1, path:path});
 					}
 				}
 
@@ -547,10 +543,10 @@
 			// canvasContext
 			var ctx = canvas.getContext("2d");
 
-			// draw lineups
-			if(this.lineups.length) {
-				for(var i=0; i<this.lineups.length; i++) {
-					this.drawLineup(ctx, this.lineups[i]);
+			// draw links
+			if(this.links.length) {
+				for(var i=0; i<this.links.length; i++) {
+					this.drawLink(ctx, this.links[i]);
 				}
 			}
 
@@ -573,7 +569,7 @@
 				var hexa = hexagonals[hs[h]];
 				for(var i=0; i<highlights.length; i++) {
 					var hl = highlights[i];
-					if(hexa.items[hl]) {
+					if(hexa.points[hl]) {
 						this.drawHighlight(ctx, hexa);
 						break;
 					}
@@ -608,16 +604,19 @@
 				ctx.stroke(hPath);
 			}
 		},
-		drawLineup: function drawLineup(ctx, lineup) {
-			var path = new Path2D(lineup.path);
-			if(this.options.lineupLineBorder) {
-				ctx.strokeStyle = this.options.lineupLine;
-				ctx.lineWidth = this.options.lineupLineWidth + this.options.lineupLineBorder*2;
+		drawLink: function drawLink(ctx, link) {
+			var path = new Path2D(link.path);
+			if(this.options.linkLineBorder) {
+				ctx.strokeStyle = this.options.linkLine;
+				ctx.lineWidth = this.options.linkLineWidth + this.options.linkLineBorder*2;
 				ctx.stroke(path);
 			}
-			ctx.strokeStyle = this.options.lineupFill;
-			ctx.lineWidth = this.options.lineupLineWidth;
+			ctx.strokeStyle = this.options.linkFill;
+			ctx.lineWidth = this.options.linkLineWidth;
 			ctx.stroke(path);
+		},
+		drawLinklight: function drawLinklight(ctx, link) {
+			// todo:
 		},
 		// #endregion
 
@@ -698,9 +697,9 @@
 			var info = this.getInfo_for_latlng(latlng);
 			
 
-			// if no items got hit
-			if(!info.items) {
-				//console.info("updateInfo - no items", info);
+			// if no points got hit
+			if(!info.points) {
+				//console.info("updateInfo - no points", info);
 				this.info = false;
 				this.setHighlight(false);
 				this.setInfobox(false);
@@ -709,14 +708,14 @@
 
 
 			// adapt
-			info.adapt = info.items[Object.keys(info.items)[0]].latlng;
+			info.adapt = info.points[Object.keys(info.points)[0]].latlng;
 
 			// set infobox
 			this.setInfobox(info);
 
 			// set highlight
-			var itemKeys = Object.keys(info.items);
-			this.setHighlight(itemKeys);
+			var pointKeys = Object.keys(info.points);
+			this.setHighlight(pointKeys);
 
 			this.info = info;
 			return true;
@@ -737,11 +736,11 @@
 			}
 
 
-			// convert items{} to items[]
-			var items = this._toArray(info.items);
+			// convert points{} to points[]
+			var points = this._toArray(info.points);
 
 			// get html for info
-			var html = this.buildInfo(items);
+			var html = this.buildInfo(points);
 
 			var iconHtml = document.createElement("DIV");
 			iconHtml.className = "leaflet-hexagonal-infobox leftTop";
@@ -756,48 +755,48 @@
 			L.DomEvent.on(this.infobox, 'mousewheel', L.DomEvent.stopPropagation);
 			L.DomEvent.on(this.infobox, 'click', L.DomEvent.stopPropagation);
 		},
-		buildInfo: function buildInfo(items) {
+		buildInfo: function buildInfo(points) {
 
 			var html = "";
 			var more = "";
 			var br = "";
-			var maxItems = 5;
+			var maxPoints = this.options.infoItemsMax;
 
 			// infoDisplayMode: count
 			if(this.options.infoDisplayMode=="count") {
-				return items.length;
+				return points.length;
 			}
 
 			// infoDisplayMode: ids
 			if(this.options.infoDisplayMode=="ids") {
-				if(items.length>maxItems) {
-					more = "<br><span style='float:right'>[" + (items.length - maxItems) + " more]</span>"; 
+				if(points.length>maxPoints) {
+					more = "<br><span style='float:right'>[" + (points.length - maxPoints) + " more]</span>"; 
 				}
-				maxItems = Math.min(items.length, maxItems);
+				maxPoints = Math.min(points.length, maxPoints);
 
-				for(var i=0;i<maxItems; i++) {
-					html += br + items[i].id;
+				for(var i=0;i<maxPoints; i++) {
+					html += br + points[i].id;
 					br = "<br>";
 				}
 				return html + more;
 			}
 
 			// infoDisplayMode: custom
-			if(this.itemInfo) {
-				if(items.length>maxItems) {
-					more = "<br><span style='float:right'>[" + (items.length - maxItems) + " more]</span>"; 
+			if(this.pointInfo) {
+				if(points.length>maxPoints) {
+					more = "<br><span style='float:right'>[" + (points.length - maxPoints) + " more]</span>"; 
 				}
-				maxItems = Math.min(items.length, maxItems);
+				maxPoints = Math.min(points.length, maxPoints);
 
-				for(var i=0;i<maxItems; i++) {
-					html += br + this.itemIfo(items[i]);
+				for(var i=0;i<maxPoints; i++) {
+					html += br + this.pointInfo(points[i]);
 					br = "<br>";
 				}
 				return html + more;
 			}
 
 			// // infoDisplayMode: default
-			return items.length;
+			return points.length;
 
 		},
 
@@ -831,7 +830,7 @@
 				this.highlights = [];
 			}
 
-			this.refreshItems();
+			this.refreshPoints();
 		},
 		// #endregion
 
@@ -924,7 +923,7 @@
 
 			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
 		},
-		lineupHexagons: function lineupHexagons(h0,h1,size,offset) {
+		linkHexagons: function linkHexagons(h0,h1,size,offset) {
 
 			// distance between hexagon-centers
 			var dx = h0.cx - h1.cx;
@@ -936,9 +935,9 @@
 			   return false;
 			}
    
-			// lineupMode = centered
-			if(this.options.lineupMode=="centered") {			
-				var join = 1 - this.options.lineupJoin; 
+			// linkMode = centered
+			if(this.options.linkMode=="centered") {			
+				var join = 1 - this.options.linkJoin; 
 		
 				var mx = (h0.cx+h1.cx)/2;
 				var my = (h0.cy+h1.cy)/2;
@@ -968,9 +967,9 @@
 			}
 
 
-			// lineupMode = straight
-			if(this.options.lineupMode=="straight") {			
-				var join = 1 - this.options.lineupJoin;
+			// linkMode = straight
+			if(this.options.linkMode=="straight") {			
+				var join = 1 - this.options.linkJoin;
 				var ks = Object.keys(hs);
 		
 				var x = h0.cx + (hs[ks[0]].cx-h0.cx) * join;
@@ -988,8 +987,8 @@
 			}
 
 
-			// lineupMode = hexagonal
-			var join = 1 - this.options.lineupJoin;
+			// linkMode = hexagonal
+			var join = 1 - this.options.linkJoin;
 			var ks = Object.keys(hs);
 			var x = h0.cx + (hs[ks[0]].cx-h0.cx) * join;
 			var y = h0.cy + (hs[ks[0]].cy-h0.cy) * join;
