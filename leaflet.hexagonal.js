@@ -438,7 +438,9 @@
 			var self = this;
 			window.clearTimeout(self._refreshPoints_debounce);
 			self._refreshPoints_debounce = window.setTimeout(function () {
+				console.time("_update");
 				self._update();
+				console.timeEnd("_update");
 			}, 50);
 		},
 		getPrevPoint: function getPrevPoint(point) {
@@ -499,8 +501,8 @@
 						this.hexagonals[h.cell].points = {};
 						this.hexagonals[h.cell].points[point.id] = point;
 
-						var latlng = this._map.containerPointToLatLng([h.cx,h.cy]);
-						this.hexagonals[h.cell].latlng = latlng;
+						//var latlng = this._map.containerPointToLatLng([h.cx,h.cy]);
+						//this.hexagonals[h.cell].latlng = latlng;
 					}
 					else {
 						this.hexagonals[h.cell].points[point.id] = point;
@@ -554,7 +556,6 @@
 			// draw highlightlinks
 			if(highlights.length  && this.options.highlightVisible) {
 				var hlo = this._toObject(highlights);
-				console.log(hlo,highlights);
 				for(var l=0; l<links.length; l++) {
 					if(hlo[links[l].id]) {
 						this.drawHighlightLink(ctx, links[l]);
@@ -734,7 +735,7 @@
 			this.setHighlight(pointKeys);
 
 			this.info = info;
-			return true;
+			return info;
 
 		},
 		setInfobox: function setInfobox(info) {
@@ -887,6 +888,7 @@
 			
 			var cy = (idy - idx/2) * size - offset.y;
 			var cx = idx/2 * sqrt3 * size - offset.x;
+			var clatlng = this._map.containerPointToLatLng([cx,cy]);
 			idy -= Math.floor(idx/2); // flat - offset even-q
 			var cell = (idx + "_" + idy); 
 
@@ -902,7 +904,7 @@
 
 			var path = "M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z";
 
-			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng };
 		},
 		calcHexagonCell_topPointy: function calcHexagonCell_topPointy(x,y, size, offset) { // hexagon top-pointy
 
@@ -922,6 +924,7 @@
 			
 			var cx = (idx-idy/2) * size - offset.x;
 			var cy = idy/2 * sqrt3 * size - offset.y;
+			var clatlng = this._map.containerPointToLatLng([cx,cy]);
 			idx -= Math.floor(idy/2); // pointy - offset even-r
 			var cell = (idx + "_" + idy); 
 
@@ -937,7 +940,7 @@
 
 			var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
 
-			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng };
 		},
 		linkHexagons: function linkHexagons(h0,h1,size,offset) {
 
