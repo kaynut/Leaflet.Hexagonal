@@ -82,8 +82,20 @@
 			// lineupMode: "centered" || "straight" || "hexagonal" || false
 			lineupMode: "straight",
 
-			// lineupFactor: number (0-1: 0.5 = start and end bind to the line right at there border )
-			lineupFactor: 0.5,  
+			// lineupJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
+			lineupJoin: 1,  
+
+			// lineupFill: "color" || false
+			lineupFill: "#fd1",
+
+			// lineupLine: "color" || false
+			lineupLine: "#666", 	
+
+			// lineupLineWidth: pixels
+			lineupLineWidth: 3,	
+
+			// lineupLineBorder: pixels
+			lineupLineBorder: 1,	
 
 
 
@@ -127,7 +139,7 @@
 		increment: 0,
 		hexagonals: {},
 		highlights: [],
-		lines: [],
+		lineups: [],
 		// #endregion
 
 
@@ -488,7 +500,7 @@
 			}
 
 			// lineup hexagons
-			this.lines = [];
+			this.lineups = [];
 			if(!this.options.lineupMode) {
 				return;
 			}
@@ -499,9 +511,9 @@
 				var item1 = this.items[i];
 
 				if(item0.id==item1.id) {
-					var line = this.lineupHexagons(item0.cell,item1.cell,hexagonSize, hexagonOffset);
-					if(line) {
-						this.lines.push(line);
+					var path = this.lineupHexagons(item0.cell,item1.cell,hexagonSize, hexagonOffset);
+					if(path) {
+						this.lineups.push({start:item0, end:item1, path:path});
 					}
 				}
 
@@ -518,16 +530,10 @@
 			// canvasContext
 			var ctx = canvas.getContext("2d");
 
-			// draw lines
-			if(this.lines.length) {
-				for(var i=0; i<this.lines.length; i++) {
-					var line = new Path2D(this.lines[i]);
-					ctx.strokeStyle = "#555";
-					ctx.lineWidth = 5;
-					ctx.stroke(line);
-					ctx.strokeStyle = "#ca0";
-					ctx.lineWidth = 3;
-					ctx.stroke(line);
+			// draw lineups
+			if(this.lineups.length) {
+				for(var i=0; i<this.lineups.length; i++) {
+					this.drawLineup(ctx, this.lineups[i]);
 				}
 			}
 
@@ -584,6 +590,17 @@
 				ctx.lineWidth = this.options.highlightLineWidth;
 				ctx.stroke(hPath);
 			}
+		},
+		drawLineup: function drawLineup(ctx, lineup) {
+			var path = new Path2D(lineup.path);
+			if(this.options.lineupLineBorder) {
+				ctx.strokeStyle = this.options.lineupLine;
+				ctx.lineWidth = this.options.lineupLineWidth + this.options.lineupLineBorder*2;
+				ctx.stroke(path);
+			}
+			ctx.strokeStyle = this.options.lineupFill;
+			ctx.lineWidth = this.options.lineupLineWidth;
+			ctx.stroke(path);
 		},
 		// #endregion
 
@@ -904,16 +921,16 @@
    
 			// lineupMode = centered
 			if(this.options.lineupMode=="centered") {			
-				var bindFactor = this.options.lineupFactor; // 0.5 = start and end bind to the line right at there border 
+				var join = 1 - this.options.lineupJoin; 
 		
 				var mx = (h0.cx+h1.cx)/2;
 				var my = (h0.cy+h1.cy)/2;
 
-				var x = h0.cx + (mx-h0.cx) * bindFactor;
-				var y = h0.cy + (my-h0.cy) * bindFactor;
+				var x = h0.cx + (mx-h0.cx) * join;
+				var y = h0.cy + (my-h0.cy) * join;
 				var path = `M${x} ${y} L${mx} ${my} `;
-				x = h1.cx + (mx-h1.cx) * bindFactor;
-				y = h1.cy + (my-h1.cy) * bindFactor;
+				x = h1.cx + (mx-h1.cx) * join;
+				y = h1.cy + (my-h1.cy) * join;
 				path += `L${x} ${y}`;
 
 				return path;
@@ -936,18 +953,18 @@
 
 			// lineupMode = straight
 			if(this.options.lineupMode=="straight") {			
-				var bindFactor = this.options.lineupFactor;; // 0.5 = start and end bind to the line right at there border 
+				var join = 1 - this.options.lineupJoin;
 				var ks = Object.keys(hs);
 		
-				var x = h0.cx + (hs[ks[0]].cx-h0.cx) * bindFactor;
-				var y = h0.cy + (hs[ks[0]].cy-h0.cy) * bindFactor;
+				var x = h0.cx + (hs[ks[0]].cx-h0.cx) * join;
+				var y = h0.cy + (hs[ks[0]].cy-h0.cy) * join;
 				var path = `M${x} ${y} `;
 				var i=0;
 				path += `L${hs[ks[i]].cx} ${hs[ks[i]].cy} `;
 				i = ks.length-1;
 				path += `L${hs[ks[i]].cx} ${hs[ks[i]].cy} `;
-				x = h1.cx + (hs[ks[i]].cx-h1.cx) * bindFactor;
-				y = h1.cy + (hs[ks[i]].cy-h1.cy) * bindFactor;
+				x = h1.cx + (hs[ks[i]].cx-h1.cx) * join;
+				y = h1.cy + (hs[ks[i]].cy-h1.cy) * join;
 				path += `L${x} ${y}`;
 
 				return path;
@@ -955,16 +972,16 @@
 
 
 			// lineupMode = hexagonal
-			var bindFactor = this.options.lineupFactor;; // 0.5 = start and end bind to the line right at there border 
+			var join = 1 - this.options.lineupJoin;
 			var ks = Object.keys(hs);
-			var x = h0.cx + (hs[ks[0]].cx-h0.cx) * bindFactor;
-			var y = h0.cy + (hs[ks[0]].cy-h0.cy) * bindFactor;
+			var x = h0.cx + (hs[ks[0]].cx-h0.cx) * join;
+			var y = h0.cy + (hs[ks[0]].cy-h0.cy) * join;
 			var path = `M${x} ${y} `;
 			for(var i=0; i<ks.length; i++) {
 				path += `L${hs[ks[i]].cx} ${hs[ks[i]].cy} `;
 			}
-			x = h1.cx + (hs[ks[ks.length-1]].cx-h1.cx) * bindFactor;
-			y = h1.cy + (hs[ks[ks.length-1]].cy-h1.cy) * bindFactor;
+			x = h1.cx + (hs[ks[ks.length-1]].cx-h1.cx) * join;
+			y = h1.cy + (hs[ks[ks.length-1]].cy-h1.cy) * join;
 			path += `L${x} ${y}`;
 			return path;
 			
