@@ -137,10 +137,13 @@
 		// #region props
 		increment: 0,
 		points: [],
-		tags:[],
-		hexagonals: {},
+		pointHexagonals: {},
+		markers:[],
+		markerLayer: false,
+		markerHexagonals: {},
 		highlights: [],
 		links: [],
+		
 		// #endregion
 
 
@@ -181,7 +184,8 @@
 			this.getPane().appendChild(this._container);
 			this._onZoomVisible();
 			this.fire("layer-mounted");
-			// Lifecycle mounted
+			this.markerLayer = L.layerGroup([]);
+			this.markerLayer.markerLayer = true;
 			this._update();
 		},
 		onRemove: function onRemove() {
@@ -292,7 +296,7 @@
 
 		// #######################################################
 		// #region points
-		addPoint: function addPoint(latlng, id, meta) { // "id", {lng,lat}, {count,secs,dist,ts}
+		addPoint: function addPoint(latlng, id, meta) { // "id", {lng,lat}, {count,secs,dist,ts, weight, marker}
 	
 			if(typeof latlng != "object") {
 				console.warn("hexagonal.addPoint: latlng not valid", latlng);
@@ -316,11 +320,16 @@
 				secs: meta.secs || 0,
 				dist: meta.dist || 0,
 				weight: meta.weight || 0,
-				ts: meta.ts || 0
+				ts: meta.ts || 0,
+				marker: meta.marker || false
 
 			};
 
 			this.points.push(point);
+
+			if(point.marker) {
+				this.markers.push(point);
+			}
 
 			this.refreshPoints();
 
@@ -357,23 +366,38 @@
 					secs: meta.secs || tiles15[keys[i]].secs || 0,
 					dist: meta.dist || tiles15[keys[i]].dist || 0,
 					weight: meta.weight || tiles15[keys[i]].weight || 0,
-					ts: meta.ts || tiles15[keys[i]].dist || 0
+					ts: meta.ts || tiles15[keys[i]].dist || 0,
+					marker: false // todo??
 				};
 
 				this.points.push(point);
+
+				if(point.marker) { // todo??
+					this.markers.push(point);
+				}
 
 				this.refreshPoints();
 
 			}
 
 		},
-		addGeojson: function addGeojson(g) {
+		addGeojson: function addGeojson(g,props) {
 			if(typeof g != "object" || typeof g.type != "string") { return 0; }
 			if(g.type == "Point" && g.coordinates) {
-				this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]});
+				var id = this._genUID();
+				var ps = props || {};
+				this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]},id, ps);
 				return 1;
 			}
-			if(g.type == "MultiPoint" || g.type == "LineString") {
+			if(g.type == "MultiPoint") {
+				var c = g.coordinates.length;
+				for(var i=0; i<c; i++) {
+					var id = this._genUID();
+					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, id);
+				}
+				return c;
+			}
+			if(g.type == "LineString") {
 				var c = g.coordinates.length;
 				var id = this._genUID();
 				for(var i=0; i<c; i++) {
@@ -395,13 +419,14 @@
 				return c;
 			}
 			if(g.type == "Feature") {
-				return this.addGeojson(g.geometry);
+				var ps = g.properties || {};
+				return this.addGeojson(g.geometry, ps);
 			}
 			if(g.type == "FeatureCollection") {
 				var c = 0;
 				for(var i=0; i<g.features.length; i++) {
-					// properties
-					c+= this.addGeojson(g.features[i].geometry);
+					var ps = g.features[i]?.properties || {};
+					c+= this.addGeojson(g.features[i].geometry, ps);
 				}
 				return c;
 			}
@@ -425,19 +450,18 @@
 
 			return false;
 		},		
-		clearPoints: function clearPoints(refresh = true) {
+		clearPoints: function clearPoints() {
 			var c = this.points.length;
 			this.points = [];
 			this.increment = 0;
-			if(refresh) {
-				this.refreshPoints();
-			}
+			this.refreshPoints();
 			return c;
 		},
 		refreshPoints: function refreshPoints() { 
 			var self = this;
 			window.clearTimeout(self._refreshPoints_debounce);
 			self._refreshPoints_debounce = window.setTimeout(function () {
+				console.log("_update ts:", Date.now());
 				console.time("_update");
 				self._update();
 				console.timeEnd("_update");
@@ -452,13 +476,62 @@
 			}
 			return false;
 		},
+
+		addMarker: function addMarker(latlng, id, meta) {
+			if(typeof latlng != "object") {
+				console.warn("hexagonal.addMarker: latlng not valid", latlng);
+			}
+			latlng.lat = latlng.lat || 0;
+			latlng.lng = latlng.lng || 0;
+
+			if (typeof id != "number" && typeof id !="string") { id = this._genUID(); }
+			meta = meta || {};
+
+			if(meta.marker) {
+				this.addPoint(latlng, id, meta);
+			}
+			else {
+				console.log("addMarker: no sufficient data");
+			}
+		},
+		removeMarker: function removeMarker(id) {
+			if(this.markers.length<1) { return false; }
+			if(typeof id != "number" && typeof id != "string") {
+				return false;
+			}
+			for(var j=0; j<this.markers.length; j++) {
+				if(id===this.markers[j].id) {
+					this.markers.splice(j, 1);
+					return true;
+				}
+			}
+			return false;
+		},	
+		clearMarker: function clearMarker() {
+			var c = this.markers.length;
+			this.markers = [];
+			this.increment = 0;
+			this.refreshPoints();
+			return c;
+		},
+
+		// todo build/draw markers
+		/*
+		buildMarker: function buildMarker(latlng, id, meta) {
+			console.log("buildMarker: ",latlng, id, meta);
+			var s = 0.02;
+			var latlngs = [ [latlng.lat-s, latlng.lng-s], [latlng.lat-s, latlng.lng+s],[latlng.lat+s, latlng.lng+s],[latlng.lat+s, latlng.lng-s] ];
+			var polygon = L.polygon(latlngs, {color: 'red'}).addTo(map);
+			this.markerLayer.addLayer(polygon)
+		},
+		*/
 		// #endregion
 
 
 
 		// #######################################################
 		// #region draw
-		_preDraw: function _preDraw() {
+		_preDraw: function _preDraw() { console.log("_preDraw");
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
 			var size = this._bounds.getSize();
@@ -485,8 +558,8 @@
 			var hexagonGap = this.options.hexagonGap || 0;
 
 
-			// cluster hexagons
-			this.hexagonals = {};
+			// hexagons: clustered points
+			this.pointHexagonals = {};
 			for (var i = 0; i < this.points.length; i++) {
 
 				var point = this.points[i];
@@ -496,23 +569,45 @@
 
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, hexagonGap)
 
-					if(!this.hexagonals[h.cell]) {
-						this.hexagonals[h.cell] = h;
-						this.hexagonals[h.cell].points = {};
-						this.hexagonals[h.cell].points[point.id] = point;
-
-						//var latlng = this._map.containerPointToLatLng([h.cx,h.cy]);
-						//this.hexagonals[h.cell].latlng = latlng;
+					if(!this.pointHexagonals[h.cell]) {
+						this.pointHexagonals[h.cell] = h;
+						this.pointHexagonals[h.cell].points = {};
+						this.pointHexagonals[h.cell].points[point.id] = point;
 					}
 					else {
-						this.hexagonals[h.cell].points[point.id] = point;
+						this.pointHexagonals[h.cell].points[point.id] = point;
 					}
 
 				}
-
 				point.cell = h;
-
 			}
+
+
+			// markerHexagonals: clustered markers 
+			this.markerHexagonals = {};
+			for (var i = 0; i < this.markers.length; i++) {
+				/*
+				var marker = this.markers[i];
+
+				var p = this.getPixels_from_latlng(marker.latlng, w, h, hexagonSize);
+				if (p.visible) {
+
+					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, hexagonGap)
+
+					if(!this.pointHexagonals[h.cell]) {
+						this.pointHexagonals[h.cell] = h;
+						this.pointHexagonals[h.cell].points = {};
+						this.pointHexagonals[h.cell].points[point.id] = point;
+					}
+					else {
+						this.pointHexagonals[h.cell].points[point.id] = point;
+					}
+
+				}
+				point.cell = h;
+				*/
+			}
+
 
 			// link hexagons
 			this.links = [];
@@ -538,9 +633,9 @@
 		_onDraw: function _onDraw() {
 
 			this._preDraw();
-			this.onDraw(this._container, this.hexagonals, this.highlights, this.links);
+			this.onDraw(this._container, this.pointHexagonals, this.highlights, this.links);
 		},
-		onDraw: function onDraw(canvas, hexagonals, highlights, links) {
+		onDraw: function onDraw(canvas, pointHexagonals, highlights, links) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
@@ -564,10 +659,10 @@
 			}
 
 
-			// draw hexagonals
-			var hs = Object.keys(hexagonals);
+			// draw pointHexagonals
+			var hs = Object.keys(pointHexagonals);
 			for (var h=0; h<hs.length; h++) {
-				var hexa = hexagonals[hs[h]];
+				var hexa = pointHexagonals[hs[h]];
 				this.drawHexagon(ctx, hexa);
 			}
 
@@ -575,7 +670,7 @@
 			// draw highlights
 			if(highlights.length && this.options.highlightVisible) {
 				for (var h=0; h<hs.length; h++) {
-					var hexa = hexagonals[hs[h]];
+					var hexa = pointHexagonals[hs[h]];
 					for(var i=0; i<highlights.length; i++) {
 						var hl = highlights[i];
 						if(hexa.points[hl]) {
@@ -1086,8 +1181,8 @@
 			var hexagonGap = this.options.hexagonGap || 0;
 			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, size);
 			var h = this.calcHexagonCell(p.x,p.y,size, offset, hexagonGap);
-			if(this.hexagonals[h.cell]) {
-				return this.hexagonals[h.cell];
+			if(this.pointHexagonals[h.cell]) {
+				return this.pointHexagonals[h.cell];
 			}
 			else {
 				return false;

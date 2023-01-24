@@ -29,7 +29,9 @@
 			
 		const hexagonals = new L.Hexagonal({hexagonSize:32}).addTo(map);	
 
-
+		hexagonals.addPoint({lng:-16.1, lat:65.1}, "A2", {marker:2});
+		hexagonals.addMarker({lng:-16.1, lat:65.2}, "A3", {marker:3});
+		hexagonals.addMarker({lng:-16.2, lat:65.3}, "A4");
 
 		fetch('./test.geojson')
 		.then((response) => response.json())
@@ -38,20 +40,6 @@
 		});
 
 	  
-		/*
-		hexagonals.pointInfo = function(point) {
-			var uds = app.store?.userdays.data; 
-			var ud = uds[point.id];
-
-			var ref = "app.message({'type':'updateMode', mode:'userdayMap', params: { user:'" + ud.user + "', day: " + ud.day + " } })";
-			var txt = ud.user + " &nbsp; <span = style='float:right'>" + app.getDayText(ud.start_ts) + "</span>";
-			var html = `<div style='white-space:nowrap; width:140px; cursor:pointer;' onclick="${ref}">${txt}</div>`;
-
-			return html;
-
-		};
-		*/
-
 
 
    	</script>

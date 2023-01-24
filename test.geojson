@@ -842,7 +842,7 @@
 	  },
 	  {
 		"type": "Feature",
-		"properties": {},
+		"properties": {"marker":1},
 		"geometry": {
 		  "coordinates": [
 			-16.346235506582644,
@@ -853,7 +853,7 @@
 	  },
 	  {
 		"type": "Feature",
-		"properties": {},
+		"properties": { "marker":6},
 		"geometry": {
 		  "coordinates": [
 			-16.242093040345964,
