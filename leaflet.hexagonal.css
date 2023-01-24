@@ -9,14 +9,11 @@
     float: left;
     margin: -1px 6px;
     padding: 10px 10px;    
-
     line-height:15px;
-
     background-color: rgb(30,32,34);
     color:#eee;
     border-radius: 2px; 
     opacity: 0.75;
-
     cursor: default;
 }
 .leaflet-hexagonal-infobox:after {
@@ -28,8 +25,6 @@
     margin-left: -6px;
     position: absolute;
 }
-
-
 .leaflet-hexagonal-infobox.leftTop {
     border-top-left-radius: 0;
 }
