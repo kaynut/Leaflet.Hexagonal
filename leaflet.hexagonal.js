@@ -153,6 +153,7 @@
 				/* Built-in Date */
 				e.stamp(this), this._map = undefined, this._container = undefined, this._bounds = undefined,
 				this._center = undefined, this._zoom = undefined;
+				this._instanceUID = this._genUID();
 		},
 		beforeAdd: function beforeAdd() {
 			this._zoomVisible = !0;
@@ -299,7 +300,7 @@
 			latlng.lat = latlng.lat || 0;
 			latlng.lng = latlng.lng || 0;
 
-			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
+			if (typeof id != "number" && typeof id !="string") { id = this._genUID(); }
 
 			meta = meta || {};
 
@@ -321,6 +322,8 @@
 
 			this.items.push(item);
 
+			this.refreshItems();
+
 		},
 		addItem_tiles15: function addItem_tiles15(tiles15, id, meta) { // "id", {"UxWd":{"count":105,"secs":1705,"dist":7694},....}
 			if (typeof tiles15 == "string") {
@@ -331,7 +334,7 @@
 				return;
 			}
 
-			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
+			if (typeof id != "number" && typeof id !="string") { id = this._genUID(); }
 
 			meta = meta || {};
 
@@ -359,6 +362,8 @@
 
 				this.items.push(item);
 
+				this.refreshItems();
+
 			}
 
 		},
@@ -370,7 +375,7 @@
 			}
 			if(g.type == "MultiPoint" || g.type == "LineString") {
 				var c = g.coordinates.length;
-				var id = this._genId();
+				var id = this._genUID();
 				for(var i=0; i<c; i++) {
 					this.addItem({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, id);
 				}
@@ -380,7 +385,7 @@
 				var c = 0;
 				for(var i=0; i<g.coordinates.length; i++) {
 					var ci = g.coordinates[i];
-					var id = this._genId();
+					var id = this._genUID();
 					for(var j=0; j<ci.length; j++) {
 						// properties
 						this.addItem({lng:ci[j][0],lat:ci[j][1]}, id);
@@ -398,6 +403,7 @@
 					// properties
 					c+= this.addGeojson(g.features[i].geometry);
 				}
+				return c;
 			}
 
 			console.log("no valid data in geojson");
@@ -428,8 +434,16 @@
 			}
 			return c;
 		},
-		refreshItems: function refreshItems() { // todo: refactor to updateItems???
-			this._update();
+		refreshItems: function refreshItems() { 
+			var self = this;
+			console.log("call ri");
+			window.clearTimeout(self._refreshItems_debounce);
+			self._refreshItems_debounce = window.setTimeout(function () {
+				console.log("refreshItems", Date.now());
+				self._update();
+			}, 50);
+
+			//this._update();
 		},
 		getPrevItem: function getPrevItem(item) {
 			var il = this.items.length;
@@ -1110,8 +1124,8 @@
 			}
 			return obj;
 		},
-		_genId: function _genId() {
-			return "uid_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+		_genUID: function _genUID() {
+			return Date.now() + "_" + Math.floor(Math.random() * 100000);
 		}
 		// #endregion
 
