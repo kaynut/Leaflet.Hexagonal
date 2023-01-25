@@ -1,3 +1,6 @@
+.leaflet-hexagonal-marker {
+    border:0;
+}
 .leaflet-hexagonal-infobox-container {
     border:0;
 }

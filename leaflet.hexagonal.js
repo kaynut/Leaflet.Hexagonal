@@ -184,7 +184,7 @@
 			this.getPane().appendChild(this._container);
 			this._onZoomVisible();
 			this.fire("layer-mounted");
-			this.markerLayer = L.layerGroup([]);
+			this.markerLayer = L.layerGroup([]).addTo(this._map);
 			this.markerLayer.markerLayer = true;
 			this._update();
 		},
@@ -299,7 +299,7 @@
 		addPoint: function addPoint(latlng, id, meta) { // "id", {lng,lat}, {count,secs,dist,ts, weight, marker}
 	
 			if(typeof latlng != "object") {
-				console.warn("hexagonal.addPoint: latlng not valid", latlng);
+				console.warn("Leaflet.hexagonal.addPoint: latlng not valid", latlng);
 			}
 			latlng.lat = latlng.lat || 0;
 			latlng.lng = latlng.lng || 0;
@@ -339,7 +339,7 @@
 				tiles15 = JSON.parse(tiles15);
 			}
 			if (typeof tiles15 != "object") {
-				console.warn("hexagonal.addPoint_tiles15: unknown format", tiles15);
+				console.warn("Leaflet.hexagonal.addPoint_tiles15: unknown format", tiles15);
 				return;
 			}
 
@@ -431,7 +431,7 @@
 				return c;
 			}
 
-			console.log("no valid data in geojson");
+			console.warn("Leaflet.hexagonal.addGeojson: no valid data in geojson");
 			return 0;
 
 		},
@@ -461,10 +461,9 @@
 			var self = this;
 			window.clearTimeout(self._refreshPoints_debounce);
 			self._refreshPoints_debounce = window.setTimeout(function () {
-				console.log("_update ts:", Date.now());
-				console.time("_update");
+				//console.time("_update");
 				self._update();
-				console.timeEnd("_update");
+				//console.timeEnd("_update");
 			}, 50);
 		},
 		getPrevPoint: function getPrevPoint(point) {
@@ -479,7 +478,7 @@
 
 		addMarker: function addMarker(latlng, id, meta) {
 			if(typeof latlng != "object") {
-				console.warn("hexagonal.addMarker: latlng not valid", latlng);
+				console.warn("Leaflet.hexagonal.addMarker: latlng not valid", latlng);
 			}
 			latlng.lat = latlng.lat || 0;
 			latlng.lng = latlng.lng || 0;
@@ -491,7 +490,7 @@
 				this.addPoint(latlng, id, meta);
 			}
 			else {
-				console.log("addMarker: no sufficient data");
+				console.warn("Leaflet.hexagonal.addMarker: no sufficient data");
 			}
 		},
 		removeMarker: function removeMarker(id) {
@@ -518,7 +517,6 @@
 		// todo build/draw markers
 		/*
 		buildMarker: function buildMarker(latlng, id, meta) {
-			console.log("buildMarker: ",latlng, id, meta);
 			var s = 0.02;
 			var latlngs = [ [latlng.lat-s, latlng.lng-s], [latlng.lat-s, latlng.lng+s],[latlng.lat+s, latlng.lng+s],[latlng.lat+s, latlng.lng-s] ];
 			var polygon = L.polygon(latlngs, {color: 'red'}).addTo(map);
@@ -531,7 +529,7 @@
 
 		// #######################################################
 		// #region draw
-		_preDraw: function _preDraw() { console.log("_preDraw");
+		_preDraw: function _preDraw() { 
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
 			var size = this._bounds.getSize();
@@ -669,9 +667,10 @@
 			// draw markerHexagonals
 			// todo: maybe setting a map.marker would be better than drawing on canvas (thinking about images,.. easy on svg. performance?)
 			var mhs = Object.keys(markerHexagonals);
+			this.markerLayer.clearLayers();
 			for (var h=0; h<mhs.length; h++) {
 				var hexa = markerHexagonals[mhs[h]];
-				this.drawHexagon(ctx, hexa, true);
+				this.markHexagon(hexa);
 			}
 
 			// draw highlights (for points, not for markers??)
@@ -689,17 +688,11 @@
 			}
 
 		},
-		drawHexagon: function drawHexagon(ctx, hexagon, isMarker) {
+		drawHexagon: function drawHexagon(ctx, hexagon) {
 			var hPath = new Path2D(hexagon.path);
 
 			if(this.options.hexagonFill) {
-				if(isMarker) {
-					ctx.fillStyle = "#f00";
-				}
-				else {
-					ctx.fillStyle = this.options.hexagonFill;
-				}
-				
+				ctx.fillStyle = this.options.hexagonFill;
 				ctx.fill(hPath);
 			}
 			if(this.options.hexagonLine) {
@@ -707,6 +700,31 @@
 				ctx.lineWidth = this.options.hexagonLineWidth;
 				ctx.stroke(hPath);
 			}
+		},
+		markHexagon: function markHexagon(hexagon) {
+
+			/* var icon = L.divIcon({
+				className: 'leaflet-hexagonal-marker',
+				html: `
+				<svg
+				  width="24"
+				  height="40"
+				  viewBox="0 0 100 100"
+				  version="1.1"
+				  preserveAspectRatio="none"
+				  xmlns="http://www.w3.org/2000/svg"
+				>
+				  <path d="M0 0 L50 100 L100 0 Z" fill="#7A8BE7"></path>
+				</svg>`,
+				  className: "",
+				  iconSize: [24, 40],
+				  iconAnchor: [12, 40],
+			}); 
+			L.marker([50.505, 30.57], {icon: icon}).addTo(this.markerLayer);
+			*/
+console.log(hexagon);
+			L.circleMarker(hexagon.latlng, { radius: 10, fill:true, fillColor:"#f00"}).addTo(this.markerLayer);
+
 		},
 		drawHighlight: function drawHighlight(ctx, hexagon) {
 			var hPath = new Path2D(hexagon.path);
@@ -810,7 +828,6 @@
 
 			// if no latlng ==> clear
 			if(!latlng || !this.options.infoZoomMode) { 
-				//console.info("updateInfo - clear");
 				this.info = false;
 				this.setHighlight(false);
 				this.setInfobox(false);
@@ -824,7 +841,6 @@
 
 			// if no points got hit
 			if(!info.points) {
-				//console.info("updateInfo - no points", info);
 				this.info = false;
 				this.setHighlight(false);
 				this.setInfobox(false);
@@ -1000,6 +1016,7 @@
 			idy -= Math.floor(idx/2); // flat - offset even-q
 			var cell = (idx + "_" + idy); 
 
+			/*
 			var poly = [ 
 			[cx-s2,cy],
 			[cx-s4, cy-h],
@@ -1009,10 +1026,11 @@
 			[cx-s4, cy+h],
 			[cx-s2,cy]          
 			];
-
+			*/
+			var poly = `${-s2} 0,${-s4} ${-h},${s4} ${-h},${s2} 0,${s4} ${h},${-s4} ${h}`;
 			var path = "M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z";
 
-			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng, size:size, width: Math.ceil(size*1.1547), height:size };
 		},
 		calcHexagonCell_topPointy: function calcHexagonCell_topPointy(x,y, size, offset) { // hexagon top-pointy
 
@@ -1036,6 +1054,7 @@
 			idx -= Math.floor(idy/2); // pointy - offset even-r
 			var cell = (idx + "_" + idy); 
 
+			/*
 			var poly = [ 
 			[cx,cy-s2],
 			[cx-h, cy-s4],
@@ -1045,10 +1064,11 @@
 			[cx+h, cy-s4],
 			[cx,cy-s2]          
 			];
-
+			*/
+			var poly = `0 ${-s2},${-h} ${-s4},${-h} ${s4},0 ${s2},${h} ${s4},${h} ${-s4}`;
 			var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
 
-			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng, size:size, width: size, height:Math.ceil(size*1.1547) };
 		},
 		linkHexagons: function linkHexagons(h0,h1,size,offset) {
 
