@@ -7,8 +7,8 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
 	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
 
-	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
-	<script src="./leaflet.hexagonal.js"></script>
+	<link rel="stylesheet" href="../leaflet.hexagonal.css" />
+	<script src="../leaflet.hexagonal.js"></script>
 
 	<style type="text/css">
 		html, body { position:absolute; left:0; top:0; right:0; bottom:0; margin: 0; }
@@ -27,11 +27,14 @@
 
 		const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 			
-		const hexagonals = new L.Hexagonal({hexagonSize:32}).addTo(map);	
+		const hexagonals = new L.Hexagonal({
+			hexagonSize:16, 
+			hexagonMode:"topFlat"}
+		).addTo(map);	
 
 
 
-		fetch('./test.geojson')
+		fetch('./assets/test.geojson')
 		.then((response) => response.json())
 		.then((data) => {
 			hexagonals.addGeojson(data);

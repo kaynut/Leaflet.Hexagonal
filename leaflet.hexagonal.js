@@ -78,6 +78,15 @@
 			hexagonLineWidth: 1,	
 
 
+			//markerFill: "color" || false
+			markerFill: "#fd1",
+			//markerLine: "color" || false
+			markerLine: "#333",
+			//markerLine: pixels
+			markerLineWidth: 1,
+			//markerOpacity: number (0-1)
+			markerOpacity: 1,
+
 
 			// linkMode: "centered" || "straight" || "hexagonal" || false
 			linkMode: "straight",
@@ -143,6 +152,10 @@
 		markerHexagonals: {},
 		highlights: [],
 		links: [],
+
+		images: { 
+			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
+		},
 		
 		// #endregion
 
@@ -570,6 +583,7 @@
 					if(!this.pointHexagonals[h.cell]) {
 						this.pointHexagonals[h.cell] = h;
 						this.pointHexagonals[h.cell].points = {};
+						this.pointHexagonals[h.cell].point0 = point;
 						this.pointHexagonals[h.cell].points[point.id] = point;
 					}
 					else {
@@ -595,6 +609,7 @@
 					if(!this.markerHexagonals[h.cell]) {
 						this.markerHexagonals[h.cell] = h;
 						this.markerHexagonals[h.cell].markers = {};
+						this.markerHexagonals[h.cell].marker0 = marker;
 						this.markerHexagonals[h.cell].markers[marker.id] = marker;
 					}
 					else {
@@ -665,7 +680,6 @@
 			}
 
 			// draw markerHexagonals
-			// todo: maybe setting a map.marker would be better than drawing on canvas (thinking about images,.. easy on svg. performance?)
 			var mhs = Object.keys(markerHexagonals);
 			this.markerLayer.clearLayers();
 			for (var h=0; h<mhs.length; h++) {
@@ -702,28 +716,35 @@
 			}
 		},
 		markHexagon: function markHexagon(hexagon) {
+console.log(hexagon);
+			var m0 = hexagon.marker0.marker;
+			
+			console.log(m0);
+			if(typeof m0 != "object") { m0 = {}; }
+			
+			var img = m0.image || m0.icon || this.images.default; 
 
-			/* var icon = L.divIcon({
+			if(typeof m0.text == "string") {
+				// todo add text marker
+				return;	
+			}
+
+			var icon = L.divIcon({
 				className: 'leaflet-hexagonal-marker',
 				html: `
-				<svg
-				  width="24"
-				  height="40"
-				  viewBox="0 0 100 100"
-				  version="1.1"
-				  preserveAspectRatio="none"
-				  xmlns="http://www.w3.org/2000/svg"
-				>
-				  <path d="M0 0 L50 100 L100 0 Z" fill="#7A8BE7"></path>
-				</svg>`,
+<svg width="${hexagon.width}" height="${hexagon.height}" opacity="${this.options.markerOpacity}" >
+<symbol id="hexa"><polygon points="${hexagon.poly}"></polygon></symbol>
+<mask id="mask"><use href="#hexa" fill="#fff" stroke="#000"/ stroke-width="${this.options.markerLineWidth}"></mask>
+<use href="#hexa" fill="${this.options.markerLine}"/>
+<image  preserveAspectRatio="xMidYMid slice" href="${img}" mask="url(#mask)" width="${hexagon.width}" height="${hexagon.height}" ></image>
+</svg>
+`,
 				  className: "",
-				  iconSize: [24, 40],
-				  iconAnchor: [12, 40],
+				  iconSize: [hexagon.width,hexagon.height],
+				  iconAnchor: [hexagon.width/2,hexagon.height/2],
 			}); 
-			L.marker([50.505, 30.57], {icon: icon}).addTo(this.markerLayer);
-			*/
-console.log(hexagon);
-			L.circleMarker(hexagon.latlng, { radius: 10, fill:true, fillColor:"#f00"}).addTo(this.markerLayer);
+			L.marker(hexagon.latlng, {icon: icon}).addTo(this.markerLayer);
+			
 
 		},
 		drawHighlight: function drawHighlight(ctx, hexagon) {
@@ -1003,7 +1024,9 @@ console.log(hexagon);
 			var sqrt3 = 1.73205081; 
 			var s0 = size - gap;
 			var s2 = s0/sqrt3;
+			var s22 = s2+s2;
 			var s4 = s2/2;
+			var s24 = s2+s4;
 			var h = s0/2;  
 
 			var t = Math.floor(ys + sqrt3 * xs + 1);
@@ -1012,7 +1035,7 @@ console.log(hexagon);
 			
 			var cy = (idy - idx/2) * size - offset.y;
 			var cx = idx/2 * sqrt3 * size - offset.x;
-			var clatlng = this._map.containerPointToLatLng([cx,cy]);
+			var clatlng = this._map.containerPointToLatLng([cx-0.5,cy-0.5]);
 			idy -= Math.floor(idx/2); // flat - offset even-q
 			var cell = (idx + "_" + idy); 
 
@@ -1027,7 +1050,7 @@ console.log(hexagon);
 			[cx-s2,cy]          
 			];
 			*/
-			var poly = `${-s2} 0,${-s4} ${-h},${s4} ${-h},${s2} 0,${s4} ${h},${-s4} ${h}`;
+			var poly = `0 ${h},${s4} 0,${s24} 0,${s22} ${h},${s24} ${s0},${s4} ${s0}`;
 			var path = "M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z";
 
 			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng, size:size, width: Math.ceil(size*1.1547), height:size };
@@ -1041,7 +1064,9 @@ console.log(hexagon);
 			var sqrt3 = 1.73205081; 
 			var s0 = size - gap;
 			var s2 = s0/sqrt3;
+			var s22 = s2*2;
 			var s4 = s2/2;
+			var s24 = s2+s4;
 			var h = s0/2;
 
 			var t = Math.floor(xs + sqrt3 * ys + 1);
@@ -1065,7 +1090,7 @@ console.log(hexagon);
 			[cx,cy-s2]          
 			];
 			*/
-			var poly = `0 ${-s2},${-h} ${-s4},${-h} ${s4},0 ${s2},${h} ${s4},${h} ${-s4}`;
+			var poly = `${h} 0,0 ${s4},0 ${s24},${h} ${s22},${s0} ${s24},${s0} ${s4}`;
 			var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
 
 			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng, size:size, width: size, height:Math.ceil(size*1.1547) };
