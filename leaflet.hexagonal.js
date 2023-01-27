@@ -59,25 +59,24 @@
 
 
 
+			// hexagonVisible: boolean
+			hexagonVisible: true,
 			// hexagonSize: number || function(zoom) { return size; }
 			hexagonSize: function(zoom) { return Math.max(32,Math.pow(2, zoom-5)); }, 
-
 			// hexagonGap: pixels (difference between display- and clustering-size of hexagon) 
 			hexagonGap: 0, 	
-
 			// hexagonMode: "topFlat" || "topPointy",
 			hexagonMode: "topFlat",
-
 			// hexagonFill: "color" || false
 			hexagonFill: "#fd1",
-
 			// hexagonLine: "color" || false
 			hexagonLine: "#666", 	
-
 			// hexagonLineWidth: pixels
 			hexagonLineWidth: 1,	
 
 
+			// markerVisible: boolean
+			markerVisible: true,
 			//markerFill: "color" || false
 			markerFill: "#fd1",
 			//markerLine: "color" || false
@@ -88,52 +87,40 @@
 			markerOpacity: 1,
 
 
+			// linkVisible: boolean
+			linkVisible: true,			
 			// linkMode: "centered" || "straight" || "hexagonal" || false
 			linkMode: "straight",
-
 			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
 			linkJoin: 1,  
-
 			// linkFill: "color" || false
 			linkFill: "#fd1",
-
 			// linkLine: "color" || false
 			linkLine: "#666", 	
-
 			// linkLineWidth: pixels
 			linkLineWidth: 3,	
-
 			// linkLineBorder: pixels
 			linkLineBorder: 1,	
 
 
-
 			// highlightVisible: true || false
 			highlightVisible: true,
-
 			// highlightFill: "color" || false
 			highlightFill: "rgba(0,0,0,0.5)", 	
-
 			// highlightLine: "color" || false
 			highlightLine: "rgba(0,0,0,0.5)", 	 	
-
 			// highlightLineWidth: pixels
 			highlightLineWidth: 1,	
 			
 
-
 			// infoVisible: true || false
 			infoVisible: true,
-
 			// infoDisplayMode: "count" || "ids" || "custom" || false
 			infoDisplayMode: "count", 
-
 			// infoZoomMode: "clearOnZoom" || "preserveOnZoom" || "adaptOnZoom" || false
 			infoZoomMode: "adaptOnZoom", 
-
 			// infoClassName: class || ""
 			infoClassName: "leaflet-hexagonal-infobox-container", 
-
 			// infoItemsMax: number (max items shown explicitly in info)
 			infoItemsMax: 5	
 
@@ -344,7 +331,7 @@
 				this.markers.push(point);
 			}
 
-			this.refreshPoints();
+			this.refresh();
 
 		},
 		addPoint_tiles15: function addPoint_tiles15(tiles15, id, meta) { // "id", {"UxWd":{"count":105,"secs":1705,"dist":7694},....}
@@ -389,7 +376,7 @@
 					this.markers.push(point);
 				}
 
-				this.refreshPoints();
+				this.refresh();
 
 			}
 
@@ -467,18 +454,10 @@
 			var c = this.points.length;
 			this.points = [];
 			this.increment = 0;
-			this.refreshPoints();
+			this.refresh();
 			return c;
 		},
-		refreshPoints: function refreshPoints() { 
-			var self = this;
-			window.clearTimeout(self._refreshPoints_debounce);
-			self._refreshPoints_debounce = window.setTimeout(function () {
-				//console.time("_update");
-				self._update();
-				//console.timeEnd("_update");
-			}, 50);
-		},
+
 		getPrevPoint: function getPrevPoint(point) {
 			var il = this.points.length;
 			if(!il) { return false; }
@@ -523,7 +502,7 @@
 			var c = this.markers.length;
 			this.markers = [];
 			this.increment = 0;
-			this.refreshPoints();
+			this.refresh();
 			return c;
 		},
 
@@ -542,6 +521,14 @@
 
 		// #######################################################
 		// #region draw
+		refresh: function refresh() { 
+			var self = this;
+			window.clearTimeout(self._refreshPoints_debounce);
+			self._refreshPoints_debounce = window.setTimeout(function () {
+				self._update();
+			}, 50);
+		},
+
 		_preDraw: function _preDraw() { 
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
@@ -578,7 +565,7 @@
 				var p = this.getPixels_from_latlng(point.latlng, w, h, hexagonSize);
 				if (p.visible) {
 
-					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, hexagonGap)
+					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset)
 
 					if(!this.pointHexagonals[h.cell]) {
 						this.pointHexagonals[h.cell] = h;
@@ -604,7 +591,7 @@
 				var p = this.getPixels_from_latlng(marker.latlng, w, h, hexagonSize);
 				if (p.visible) {
 
-					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, hexagonGap)
+					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset)
 
 					if(!this.markerHexagonals[h.cell]) {
 						this.markerHexagonals[h.cell] = h;
@@ -654,7 +641,7 @@
 			var ctx = canvas.getContext("2d");
 
 			// draw links
-			if(this.links.length) {
+			if(this.links.length && this.options.linkVisible) {
 				for(var i=0; i<this.links.length; i++) {
 					this.drawLink(ctx, this.links[i]);
 				}
@@ -662,7 +649,7 @@
 
 
 			// draw highlightlinks
-			if(highlights.length  && this.options.highlightVisible) {
+			if(highlights.length  && this.options.linkVisible && this.options.highlightVisible) {
 				var hlo = this._toObject(highlights);
 				for(var l=0; l<links.length; l++) {
 					if(hlo[links[l].id]) {
@@ -674,21 +661,26 @@
 
 			// draw pointHexagonals
 			var phs = Object.keys(pointHexagonals);
-			for (var h=0; h<phs.length; h++) {
-				var hexa = pointHexagonals[phs[h]];
-				this.drawHexagon(ctx, hexa);
+			if(phs.length && this.options.hexagonVisible) {
+				for (var h=0; h<phs.length; h++) {
+					var hexa = pointHexagonals[phs[h]];
+					this.drawHexagon(ctx, hexa);
+				}
 			}
 
 			// draw markerHexagonals
 			var mhs = Object.keys(markerHexagonals);
 			this.markerLayer.clearLayers();
-			for (var h=0; h<mhs.length; h++) {
-				var hexa = markerHexagonals[mhs[h]];
-				this.markHexagon(hexa);
+			if(mhs.length && this.options.markerVisible) {
+				for (var h=0; h<mhs.length; h++) {
+					var hexa = markerHexagonals[mhs[h]];
+					this.markHexagon(hexa);
+				}
 			}
 
+
 			// draw highlights (for points, not for markers??)
-			if(highlights.length && this.options.highlightVisible) {
+			if(highlights.length && this.options.highlightVisible && this.options.hexagonVisible) {
 				for (var h=0; h<phs.length; h++) {
 					var hexa = pointHexagonals[phs[h]];
 					for(var i=0; i<highlights.length; i++) {
@@ -699,6 +691,11 @@
 						}
 					}
 				}
+			}
+
+			// info
+			if(this.info && !this.options.infoVisible) {
+				this.setInfobox(false);
 			}
 
 		},
@@ -716,37 +713,48 @@
 			}
 		},
 		markHexagon: function markHexagon(hexagon) {
-console.log(hexagon);
 			var m0 = hexagon.marker0.marker;
-			
-			console.log(m0);
-			if(typeof m0 != "object") { m0 = {}; }
-			
-			var img = m0.image || m0.icon || this.images.default; 
+			if(typeof m0 != "object") { return; }
 
+			// marker type
+			var img = m0.image || m0.icon || this.images.default; 
 			if(typeof m0.text == "string") {
-				// todo add text marker
-				return;	
+				return;	// todo add text marker
+			}
+
+			var size = m0.size || hexagon.size;
+
+			// calc path
+			var w,h;
+			var poly = false;
+			if(!hexagon.topPointy) {
+				w = size*1.155;
+				h = size;
+				poly = `0 ${size*0.5},${size*0.289} 0,${size*0.866} 0,${size*1.155} ${size*0.5},${size*0.866} ${size},${size*0.289} ${size}`;
+			}
+
+			else {
+				w = size;
+				h = size*1.155;
+				poly = `0 ${size*0.289},${size*0.5} 0,${size*1} ${size*0.289},${size*1} ${size*0.866},${size*0.5} ${size*1.155},0 ${size*0.866}`;
 			}
 
 			var icon = L.divIcon({
 				className: 'leaflet-hexagonal-marker',
-				html: `
-<svg width="${hexagon.width}" height="${hexagon.height}" opacity="${this.options.markerOpacity}" >
-<symbol id="hexa"><polygon points="${hexagon.poly}"></polygon></symbol>
-<mask id="mask"><use href="#hexa" fill="#fff" stroke="#000"/ stroke-width="${this.options.markerLineWidth}"></mask>
-<use href="#hexa" fill="${this.options.markerLine}"/>
-<image  preserveAspectRatio="xMidYMid slice" href="${img}" mask="url(#mask)" width="${hexagon.width}" height="${hexagon.height}" ></image>
-</svg>
-`,
+				html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
+					<symbol id="hexa"><polygon points="${poly}"></polygon></symbol>
+					<mask id="mask"><use href="#hexa" fill="#fff" stroke="#000"/ stroke-width="${this.options.markerLineWidth}"></mask>
+					<use href="#hexa" fill="${this.options.markerLine}"/>
+					<image  preserveAspectRatio="xMidYMid slice" href="${img}" mask="url(#mask)" width="${w}" height="${h}" ></image>
+					</svg>`,
 				  className: "",
-				  iconSize: [hexagon.width,hexagon.height],
-				  iconAnchor: [hexagon.width/2,hexagon.height/2],
+				  iconSize: [w,h],
+				  iconAnchor: [w/2,h/2],
 			}); 
-			L.marker(hexagon.latlng, {icon: icon}).addTo(this.markerLayer);
-			
+			L.marker(hexagon.latlng, {icon: icon}).addTo(this.markerLayer);			
 
 		},
+
 		drawHighlight: function drawHighlight(ctx, hexagon) {
 			var hPath = new Path2D(hexagon.path);
 
@@ -848,7 +856,7 @@ console.log(hexagon);
 		updateInfo: function(latlng) {
 
 			// if no latlng ==> clear
-			if(!latlng || !this.options.infoZoomMode) { 
+			if(!latlng || !this.options.infoZoomMode || !this.options.infoVisible) { 
 				this.info = false;
 				this.setHighlight(false);
 				this.setInfobox(false);
@@ -890,10 +898,6 @@ console.log(hexagon);
 			} 
 
 			if(!info) {
-				return;
-			}
-
-			if(!this.options.infoVisible) {
 				return;
 			}
 
@@ -992,14 +996,14 @@ console.log(hexagon);
 				this.highlights = [];
 			}
 
-			this.refreshPoints();
+			this.refresh();
 		},
 		// #endregion
 
 
 
 		// #######################################################
-		// #region hegagon
+		// #region hexagon
 		calcHexagonSize: function calcHexagonSize(zoom) {
 			if(this.options.hexagonSize) { 
 				if(typeof this.options.hexagonSize == "number") {
@@ -1008,10 +1012,9 @@ console.log(hexagon);
 				if(typeof this.options.hexagonSize == "function") {
 					return this.options.hexagonSize(zoom);
 				}	
-				
 			}
 			return 16;
-		},		
+		},	
 		calcHexagonCell: function calcHexagonCell(x,y, size, offset) { // hexagon top-flat
 			if(this.options.hexagonMode == "topPointy") {
 				return this.calcHexagonCell_topPointy(x,y, size, offset);
@@ -1024,9 +1027,7 @@ console.log(hexagon);
 			var sqrt3 = 1.73205081; 
 			var s0 = size - gap;
 			var s2 = s0/sqrt3;
-			var s22 = s2+s2;
 			var s4 = s2/2;
-			var s24 = s2+s4;
 			var h = s0/2;  
 
 			var t = Math.floor(ys + sqrt3 * xs + 1);
@@ -1035,25 +1036,15 @@ console.log(hexagon);
 			
 			var cy = (idy - idx/2) * size - offset.y;
 			var cx = idx/2 * sqrt3 * size - offset.x;
-			var clatlng = this._map.containerPointToLatLng([cx-0.5,cy-0.5]);
+			var clatlng = this._map.containerPointToLatLng([Math.round(cx),Math.round(cy)]);
 			idy -= Math.floor(idx/2); // flat - offset even-q
 			var cell = (idx + "_" + idy); 
 
-			/*
-			var poly = [ 
-			[cx-s2,cy],
-			[cx-s4, cy-h],
-			[cx+s4, cy-h],
-			[cx+s2,cy],
-			[cx+s4, cy+h],
-			[cx-s4, cy+h],
-			[cx-s2,cy]          
-			];
-			*/
-			var poly = `0 ${h},${s4} 0,${s24} 0,${s22} ${h},${s24} ${s0},${s4} ${s0}`;
+			var topPointy=false;
+
 			var path = "M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z";
 
-			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng, size:size, width: Math.ceil(size*1.1547), height:size };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, topPointy:topPointy };
 		},
 		calcHexagonCell_topPointy: function calcHexagonCell_topPointy(x,y, size, offset) { // hexagon top-pointy
 
@@ -1064,9 +1055,7 @@ console.log(hexagon);
 			var sqrt3 = 1.73205081; 
 			var s0 = size - gap;
 			var s2 = s0/sqrt3;
-			var s22 = s2*2;
 			var s4 = s2/2;
-			var s24 = s2+s4;
 			var h = s0/2;
 
 			var t = Math.floor(xs + sqrt3 * ys + 1);
@@ -1079,21 +1068,11 @@ console.log(hexagon);
 			idx -= Math.floor(idy/2); // pointy - offset even-r
 			var cell = (idx + "_" + idy); 
 
-			/*
-			var poly = [ 
-			[cx,cy-s2],
-			[cx-h, cy-s4],
-			[cx-h, cy+s4],
-			[cx,cy+s2],
-			[cx+h, cy+s4],
-			[cx+h, cy-s4],
-			[cx,cy-s2]          
-			];
-			*/
-			var poly = `${h} 0,0 ${s4},0 ${s24},${h} ${s22},${s0} ${s24},${s0} ${s4}`;
+			var topPointy = true;
+
 			var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
 
-			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, poly:poly, path:path, latlng:clatlng, size:size, width: size, height:Math.ceil(size*1.1547) };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, topPointy:topPointy };
 		},
 		linkHexagons: function linkHexagons(h0,h1,size,offset) {
 
@@ -1238,7 +1217,7 @@ console.log(hexagon);
 			var offset = this._map.project(nw, zoom);
 			var hexagonGap = this.options.hexagonGap || 0;
 			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, size);
-			var h = this.calcHexagonCell(p.x,p.y,size, offset, hexagonGap);
+			var h = this.calcHexagonCell(p.x,p.y,size, offset);
 			if(this.pointHexagonals[h.cell]) {
 				return this.pointHexagonals[h.cell];
 			}
