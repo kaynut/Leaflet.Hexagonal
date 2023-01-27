@@ -23,12 +23,11 @@
 
    <script type="text/javascript">
 
-      var map = L.map('map').setView([65, -18], 6);
-
-	   var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+      	var map = L.map('map').setView([65, -18], 6);
+	   	var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 		
 
-      var options = {
+      	var options = {
 
 			// container, layer
 			container: document.createElement("CANVAS"),
@@ -90,21 +89,98 @@
 			infoItemsMax: 5	
       }
 
-      var hexagonals = new L.Hexagonal(options).addTo(map);	
+		var hexagonals = new L.Hexagonal(options).addTo(map);	
 
-      hexagonals.addPoint({lng:-16.0, lat:65.0});
-      hexagonals.addPoint({lng:-16.1, lat:65.0}, "A");
-      hexagonals.addPoint({lng:-16.2, lat:65.0}, "B");
-      hexagonals.addPoint({lng:-16.3, lat:65.0}, "C");
+		hexagonals.addPoint({lng:-16.1, lat:65.1}, "A2", {marker:{image:"./assets/image0.jpg"}});
+		hexagonals.addMarker({lng:-16.1, lat:65.2}, "A3", {marker:3});
+		hexagonals.addMarker({lng:-16.2, lat:65.3}, "A4");
 
-      hexagonals.addPoint({lng:-16.5, lat:65.0}, "D");
-      hexagonals.addPoint({lng:-16.6, lat:65.0}, "D");
-      hexagonals.addPoint({lng:-16.7, lat:65.0}, "D");
-      hexagonals.addPoint({lng:-16.8, lat:65.0}, "D");
-      hexagonals.addPoint({lng:-16.9, lat:65.0}, "D");
+		fetch('./assets/test.geojson')
+		.then((response) => response.json())
+		.then((data) => {
+			hexagonals.addGeojson(data);
+		});
 
 
-   </script>
+
+   	</script>
+
+	<script type="module">
+
+		import GUI from './assets/lil-gui.js';
+
+		var gui = new GUI();
+
+		var fVisible = gui.addFolder( 'Visibility' );
+		var oVisible = {
+			hexagonVisible:true,
+			markerVisible: true,
+			linkVisible: true,
+			highlightVisible: true,
+			infoVisible:true
+		};
+		fVisible.add( oVisible, 'hexagonVisible').onChange( value => {
+			hexagonals.options.hexagonVisible = value;
+			hexagonals.refresh(); 
+		} );
+		fVisible.add( oVisible, 'markerVisible').onChange( value => {
+			hexagonals.options.markerVisible = value;
+			hexagonals.refresh(); 
+		} );
+		fVisible.add( oVisible, 'linkVisible').onChange( value => {
+			hexagonals.options.linkVisible = value;
+			hexagonals.refresh(); 
+		} );
+		fVisible.add( oVisible, 'highlightVisible').onChange( value => {
+			hexagonals.options.highlightVisible = value;
+			hexagonals.refresh(); 
+		} );
+		fVisible.add( oVisible, 'infoVisible').onChange( value => {
+			hexagonals.options.infoVisible = value;
+			hexagonals.refresh(); 
+		} );
+
+
+		var fHexagons = gui.addFolder( 'Hexagons' );
+		var oHexagons = { 
+			orientation:"topFlat",
+			size:16
+		}
+		fHexagons.add( oHexagons, 'orientation', [ 'topFlat', 'topPointy' ] ).onChange( value => {
+			hexagonals.options.hexagonMode = value;
+			hexagonals.refresh(); 
+		} );
+		fHexagons.add( oHexagons, 'size', 0, 64, 4 ).onChange( value => {
+			hexagonals.options.hexagonSize = value; 
+			hexagonals.refresh(); 
+		} );
+
+
+		/*
+
+		folder.add( folderParams, 'hexagons', 0, 1 );
+		folder.add( folderParams, 'boolean' );
+		folder.addColor( folderParams, 'color' );
+		folder.add( folderParams, 'function' );
+
+		var params = {
+			options: 10,
+			boolean: true,
+			string: 'lil-gui',
+			number: 0,
+			color: '#aa00ff',
+			function() { console.log( 'hi' ) }
+		};
+
+		gui.add( params, 'options', { Small: 1, Medium: 10, Large: 100 } );
+		gui.add( params, 'boolean' );
+		gui.add( params, 'string' );
+		gui.add( params, 'number' );
+		gui.addColor( params, 'color' );
+		gui.add( params, 'function' ).name( 'Custom Name' );
+		*/
+
+	</script>
 
 </body>
 </html>
