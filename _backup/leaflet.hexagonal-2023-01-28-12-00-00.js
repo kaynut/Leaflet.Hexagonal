@@ -132,13 +132,13 @@
 		// #######################################################
 		// #region props
 		increment: 0,
-		allHexagonals: {},
 		points: [],
+		pointHexagonals: {},
 		markers:[],
 		markerLayer: false,
+		markerHexagonals: {},
 		highlights: [],
 		links: [],
-
 
 		images: { 
 			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
@@ -545,18 +545,19 @@
 			var w = dpr * size.x;
 			var h = dpr * size.y;
 
-			// allHexagonals
-			this.allHexagonals = {};
 
 			// hexagonSize
 			var hexagonSize = this.calcHexagonSize(zoom);
 
+
 			// hexagonOffset 
 			var nw = this._map.getBounds().getNorthWest();
 			var hexagonOffset = this._map.project(nw, zoom);
+			var hexagonGap = this.options.hexagonGap || 0;
 
 
-			// cluster points
+			// hexagons: clustered points
+			this.pointHexagonals = {};
 			for (var i = 0; i < this.points.length; i++) {
 
 				var point = this.points[i];
@@ -566,23 +567,23 @@
 
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset)
 
-					if(!this.allHexagonals[h.cell]) {
-						this.allHexagonals[h.cell] = h;
-						this.allHexagonals[h.cell].ids = {};
+					if(!this.pointHexagonals[h.cell]) {
+						this.pointHexagonals[h.cell] = h;
+						this.pointHexagonals[h.cell].points = {};
+						this.pointHexagonals[h.cell].point0 = point;
+						this.pointHexagonals[h.cell].points[point.id] = point;
 					}
-					if(!this.allHexagonals[h.cell].point0) {
-						this.allHexagonals[h.cell].point0 = point;
-						this.allHexagonals[h.cell].points = {};
+					else {
+						this.pointHexagonals[h.cell].points[point.id] = point;
 					}
-					this.allHexagonals[h.cell].points[point.id] = point;
-					this.allHexagonals[h.cell].ids[point.id] = point.id;
 
 				}
 				point.cell = h;
 			}
 
 
-			// cluster markers 
+			// markerHexagonals: clustered markers 
+			this.markerHexagonals = {};
 			for (var i = 0; i < this.markers.length; i++) {
 				
 				var marker = this.markers[i];
@@ -592,16 +593,15 @@
 
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset)
 
-					if(!this.allHexagonals[h.cell]) {
-						this.allHexagonals[h.cell] = h;
-						this.allHexagonals[h.cell].ids = {};
+					if(!this.markerHexagonals[h.cell]) {
+						this.markerHexagonals[h.cell] = h;
+						this.markerHexagonals[h.cell].markers = {};
+						this.markerHexagonals[h.cell].marker0 = marker;
+						this.markerHexagonals[h.cell].markers[marker.id] = marker;
 					}
-					if(!this.allHexagonals[h.cell].marker0) {
-						this.allHexagonals[h.cell].marker0 = marker;
-						this.allHexagonals[h.cell].markers = {};
+					else {
+						this.markerHexagonals[h.cell].markers[marker.id] = marker;
 					}
-					this.allHexagonals[h.cell].markers[marker.id] = marker;
-					this.allHexagonals[h.cell].ids[marker.id] = marker.id;
 
 				}
 				marker.cell = h;
@@ -609,20 +609,19 @@
 			}
 
 
-			// no links
+			// link hexagons
 			this.links = [];
-			if(!this.options.linkMode) { return; }
+			if(!this.options.linkMode) {
+				return;
+			}
 			if(this.points.length<2) { return; }
-
-
-			// collect links
 			for (var i = 1; i < this.points.length; i++) {
 
 				var point0 = this.points[i-1];
 				var point1 = this.points[i];
 
 				if(point0.id==point1.id) {
-					var path = this.getLinkPath(point0,point1,hexagonSize, hexagonOffset);
+					var path = this.linkHexagons(point0.cell,point1.cell,hexagonSize, hexagonOffset);
 					if(path) {
 						this.links.push({id: point1.id, start:point0, end:point1, path:path});
 					}
@@ -630,65 +629,74 @@
 
 			}
 
-
 		},
 		_onDraw: function _onDraw() {
 
 			this._preDraw();
-			this.onDraw(this._container, this.allHexagonals, this.highlights, this.links);
+			this.onDraw(this._container, this.pointHexagonals, this.markerHexagonals, this.highlights, this.links);
 		},
-		onDraw: function onDraw(canvas, hexagonals, highlights, links) {
+		onDraw: function onDraw(canvas, pointHexagonals, markerHexagonals, highlights, links) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
-
-
-			// layers
-			this.markerLayer.clearLayers();
-
 
 			// draw links
 			if(this.links.length && this.options.linkVisible) {
 				for(var i=0; i<this.links.length; i++) {
 					this.drawLink(ctx, this.links[i]);
-
-					if(this.highlights[this.links[i].id] && this.options.highlightVisible) {
-						this.drawHighlightLink(ctx, this.links[i]);
-					}
 				}
-
 			}
 
 
-			// draw points
-			var hexs = Object.keys(hexagonals);
-			if(hexs.length) {
-				for (var h=0; h<hexs.length; h++) {
-
-					// draw point
-					if(this.options.hexagonVisible && hexagonals[hexs[h]].point0) {
-						this.drawHexagon(ctx, hexagonals[hexs[h]]);
-
-						if(this.highlights[hexagonals[hexs[h]].point0.id] && this.options.highlightVisible) {
-							this.drawHighlight(ctx, hexagonals[hexs[h]]);
-						}
-
+			// draw highlightlinks
+			if(highlights.length  && this.options.linkVisible && this.options.highlightVisible) {
+				var hlo = this._toObject(highlights);
+				for(var l=0; l<links.length; l++) {
+					if(hlo[links[l].id]) {
+						this.drawHighlightLink(ctx, links[l]);
 					}
-
-
-					// draw marker
-					if(this.options.markerVisible && hexagonals[hexs[h]].marker0) {
-						this.markHexagon(hexagonals[hexs[h]]);
-					}
-
 				}
+			}
 
+
+			// draw pointHexagonals
+			var phs = Object.keys(pointHexagonals);
+			if(phs.length && this.options.hexagonVisible) {
+				for (var h=0; h<phs.length; h++) {
+					var hexa = pointHexagonals[phs[h]];
+					this.drawHexagon(ctx, hexa);
+				}
+			}
+
+			// draw markerHexagonals
+			var mhs = Object.keys(markerHexagonals);
+			this.markerLayer.clearLayers();
+			if(mhs.length && this.options.markerVisible) {
+				for (var h=0; h<mhs.length; h++) {
+					var hexa = markerHexagonals[mhs[h]];
+					this.markHexagon(hexa);
+				}
+			}
+
+
+			// draw highlights (for points, not for markers??)
+			if(highlights.length && this.options.highlightVisible && this.options.hexagonVisible) {
+				for (var h=0; h<phs.length; h++) {
+					var hexa = pointHexagonals[phs[h]];
+					for(var i=0; i<highlights.length; i++) {
+						var hl = highlights[i];
+						if(hexa.points[hl]) {
+							this.drawHighlight(ctx, hexa);
+							break;
+						}
+					}
+				}
 			}
 
 			// info
-			//if(this.info && !this.options.infoVisible) {
-				//this.setInfobox(false);
-			//}
+			if(this.info && !this.options.infoVisible) {
+				this.setInfobox(false);
+			}
 
 		},
 		drawHexagon: function drawHexagon(ctx, hexagon) {
@@ -705,17 +713,16 @@
 			}
 		},
 		markHexagon: function markHexagon(hexagon) {
-			var m0 = hexagon.marker0;
-			var m0m = hexagon.marker0.marker;
-			if(typeof m0m != "object") { return; }
+			var m0 = hexagon.marker0.marker;
+			if(typeof m0 != "object") { return; }
 
 			// marker type
-			var img = m0m.image || m0m.icon || this.images.default; 
-			if(typeof m0m.text == "string") {
+			var img = m0.image || m0.icon || this.images.default; 
+			if(typeof m0.text == "string") {
 				return;	// todo add text marker
 			}
 
-			var size = m0m.size || hexagon.size;
+			var size = m0.size || hexagon.size;
 
 			// calc path
 			var w,h;
@@ -791,13 +798,13 @@
 		// #region events
 		_onClick: function _onClick(e) {
 
-			var selection = this.setSelection(e.latlng);
-			this.onClick(e,selection);
+			var info = this.updateInfo(e.latlng);
+			this.onClick(e,info);
 
 		},
-		onClick: function onClick(e,selection) {
+		onClick: function onClick(e,info) {
 			
-			return selection;
+			return info;
 
 		},
 		_onMouseRest: function _onMouseRest(e) {
@@ -805,18 +812,18 @@
 			window.clearTimeout(self._onMouseRestDebounced_Hexagonal);
 			self._onMouseRestDebounced_Hexagonal = window.setTimeout(function () {
 				
-				var selection = self.getSelection_for_latlng(e.latlng);
-				self.onMouseRest(selection);
+				var info = self.getInfo_for_latlng(e.latlng);
+				self.onMouseRest(info);
 
 			}, 250);
 		},
-		onMouseRest: function onMouseRest(selection) {
-			//console.info("onMouseRest",selection);
+		onMouseRest: function onMouseRest(info) {
+			//console.info("onMouseRest",info);
 		},
 		onZoomEnd: function onZoomEnd() {
 
-			if(this.selection) { 
-/*
+			if(this.info) { 
+
 				var zoom = this._map.getZoom();
 				if(zoom<this.options.minZoom || zoom> this.options.maxZoom) { 
 					this.hideInfo(); 
@@ -829,15 +836,15 @@
 
 				if(this.options.infoZoomMode=="adaptOnZoom") {
 					this._preDraw();
-					//this.setSelection(this.info.adapt);
+					this.updateInfo(this.info.adapt);
 				}
 				else if(this.options.infoZoomMode=="preserveOnZoom") {}
 				else {
-					this.selection = false;
+					this.info = false;
 					this.setHighlight(false);
 					this.setInfobox(false);
 				}
-*/
+
 			}
 		},
 		// #endregion
@@ -845,25 +852,25 @@
 
 
 		// #######################################################
-		// #region selection
-		setSelection: function(latlng) {
+		// #region info
+		updateInfo: function(latlng) {
 
 			// if no latlng ==> clear
-			if(!latlng) { 
-				this.selection = false;
+			if(!latlng || !this.options.infoZoomMode || !this.options.infoVisible) { 
+				this.info = false;
 				this.setHighlight(false);
 				this.setInfobox(false);
 				return false; 
 			}
 
 
-			// get selection
-			var selection = this.getSelection_for_latlng(latlng);
-			console.log(selection);
+			// get info
+			var info = this.getInfo_for_latlng(latlng);
+			
 
 			// if no points got hit
-			if(!selection) {
-				this.selection = false;
+			if(!info.points) {
+				this.info = false;
 				this.setHighlight(false);
 				this.setInfobox(false);
 				return false;
@@ -871,17 +878,17 @@
 
 
 			// adapt
-			//selection.adapt = selection.points[Object.keys(selection.points)[0]].latlng;
+			info.adapt = info.points[Object.keys(info.points)[0]].latlng;
 
 			// set infobox
-			//this.setInfobox(selection);
+			this.setInfobox(info);
 
 			// set highlight
-			this.setHighlight(selection.ids);
+			var pointKeys = Object.keys(info.points);
+			this.setHighlight(pointKeys);
 
-			this.selection = selection;
-			//this.info = selection;
-			return selection;
+			this.info = info;
+			return info;
 
 		},
 		setInfobox: function setInfobox(info) {
@@ -961,14 +968,12 @@
 
 		showInfo: function showInfo() {
 			if(this.infobox) {
-				var i = document.querySelector('.leaflet-hexagonal-infobox-container');
-				if(i) { i.style.display="block"; }
+				document.querySelector('.leaflet-hexagonal-infobox-container').style.display="block";
 			}
 		},
 		hideInfo: function hideInfo() {
 			if(this.infobox) {
-				var i =document.querySelector('.leaflet-hexagonal-infobox-container');
-				if(i) { i.style.display="none"; }
+				document.querySelector('.leaflet-hexagonal-infobox-container').style.display="none";
 			}
 		},
 		// #endregion
@@ -978,21 +983,17 @@
 		// #######################################################
 		// #region highlight
 		setHighlight: function setHighlight(ids) {
+			if(!this.options.highlightVisible) {
+				return;
+			}
 			if(typeof ids == "string") {
-				this.highlights = {};
-				this.highlights[ids] = ids;
+				this.highlights = [ids];
 			}
 			else if(Array.isArray(ids)) {
-				this.highlights = {};
-				for(var i=0; i< ids.length; i++) {
-					this.highlights[ids[i]] = ids[i];
-				}
-			}
-			else if(typeof ids == "object") {
 				this.highlights = ids;
 			}
 			else {
-				this.highlights = {};
+				this.highlights = [];
 			}
 
 			this.refresh();
@@ -1073,11 +1074,7 @@
 
 			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, topPointy:topPointy };
 		},
-		getLinkPath: function getLinkPath(point0, point1, size,offset) {
-
-			var id = point0.id;
-			var h0 = point0.cell;
-			var h1 = point1.cell;
+		linkHexagons: function linkHexagons(h0,h1,size,offset) {
 
 			// distance between hexagon-centers
 			var dx = h0.cx - h1.cx;
@@ -1088,35 +1085,7 @@
 			if(dist<1.1) {
 			   return false;
 			}
-
-			// collect unique hexagons on connecting line
-			var h;
-			var hs = {};
-			var d = 1/(Math.ceil(dist));
-			for(var t=d; t<1-d/2; t+=d) {
-			   	var x = h0.cx + (h1.cx-h0.cx) * t;
-				var y = h0.cy + (h1.cy-h0.cy) * t;
-				h = this.calcHexagonCell(x,y,size,offset);
-				if(!hs[h.cell]) {
-
-					hs[h.cell] = h;
-
-					if(!this.allHexagonals[h.cell]) {
-						this.allHexagonals[h.cell] = { };
-						this.allHexagonals[h.cell].ids = {};
-					}
-					if(!this.allHexagonals[h.cell].link0) {
-						this.allHexagonals[h.cell].link0 = point0;
-						this.allHexagonals[h.cell].links = {};
-					}
-					this.allHexagonals[h.cell].links[point0.id] = point0;
-					this.allHexagonals[h.cell].ids[point0.id] = point0.id;
-				}
-
-			}
-
-
-
+   
 			// linkMode = centered
 			if(this.options.linkMode=="centered") {			
 				var join = 1 - this.options.linkJoin; 
@@ -1132,6 +1101,20 @@
 				path += `L${x} ${y}`;
 
 				return path;
+			}
+
+
+			// collect unique hexagons on connecting line
+			var h;
+			var hs = {};
+			var d = 1/(Math.ceil(dist));
+			for(var t=d; t<1-d/2; t+=d) {
+			   var x = h0.cx + (h1.cx-h0.cx) * t;
+			   var y = h0.cy + (h1.cy-h0.cy) * t;
+			   h = this.calcHexagonCell(x,y,size,offset);
+			   if(!hs[h.cell]) {
+				  hs[h.cell] = h;
+			   }
 			}
 
 
@@ -1226,24 +1209,21 @@
 			if (p.x < -pad || p.y < -pad || p.x > w+pad || p.y > h+pad) { visible = false; }
 			return { x: p.x, y: p.y, visible: true };
 		},
-		getSelection_for_latlng: function getSelection_for_latlng(latlng) {
+		getInfo_for_latlng: function(latlng) {
 			var wh = this._map.getSize();
 			var zoom = this._map.getZoom();
 			var size = this.calcHexagonSize(zoom);
 			var nw = this._map.getBounds().getNorthWest();
 			var offset = this._map.project(nw, zoom);
+			var hexagonGap = this.options.hexagonGap || 0;
 			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, size);
 			var h = this.calcHexagonCell(p.x,p.y,size, offset);
-		
-
-			// hexagonals
-			if(this.allHexagonals[h.cell]) {
-				return this.allHexagonals[h.cell];
+			if(this.pointHexagonals[h.cell]) {
+				return this.pointHexagonals[h.cell];
 			}
-
-			// no
-			return false;
-
+			else {
+				return false;
+			}
 		},
 		getDistance: function (lng1, lat1, lng2, lat2) { // lng1, lat1, lng2, lat2 || {lng1, lat1}, {lng2, lat2}
 			if (typeof lng1 == "object" && typeof lat1 == "object") {
