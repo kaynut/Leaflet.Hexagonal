@@ -136,6 +136,7 @@
 		points: [],
 		markers:[],
 		markerLayer: false,
+		markerLayerNeedsUpdate: true,
 		highlights: [],
 		links: [],
 
@@ -505,16 +506,6 @@
 			this.refresh();
 			return c;
 		},
-
-		// todo build/draw markers
-		/*
-		buildMarker: function buildMarker(latlng, id, meta) {
-			var s = 0.02;
-			var latlngs = [ [latlng.lat-s, latlng.lng-s], [latlng.lat-s, latlng.lng+s],[latlng.lat+s, latlng.lng+s],[latlng.lat+s, latlng.lng-s] ];
-			var polygon = L.polygon(latlngs, {color: 'red'}).addTo(map);
-			this.markerLayer.addLayer(polygon)
-		},
-		*/
 		// #endregion
 
 
@@ -525,6 +516,7 @@
 			var self = this;
 			window.clearTimeout(self._refreshPoints_debounce);
 			self._refreshPoints_debounce = window.setTimeout(function () {
+				self.markerLayerNeedsUpdate = true;
 				self._update();
 			}, 50);
 		},
@@ -644,8 +636,10 @@
 
 
 			// layers
-			this.markerLayer.clearLayers();
-
+			if(this.markerLayerNeedsUpdate) {
+				console.log("markerLayer - clear", Date.now());
+				this.markerLayer.clearLayers();
+			}
 
 			// draw links
 			if(this.links.length && this.options.linkVisible) {
@@ -660,7 +654,7 @@
 			}
 
 
-			// draw points
+			// draw points and marker
 			var hexs = Object.keys(hexagonals);
 			if(hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
@@ -669,21 +663,30 @@
 					if(this.options.hexagonVisible && hexagonals[hexs[h]].point0) {
 						this.drawHexagon(ctx, hexagonals[hexs[h]]);
 
-						if(this.highlights[hexagonals[hexs[h]].point0.id] && this.options.highlightVisible) {
-							this.drawHighlight(ctx, hexagonals[hexs[h]]);
+						if(this.options.highlightVisible) {
+							var hids = Object.keys(hexagonals[hexs[h]].ids);
+							for(var i=0;i<hids.length;i++) {
+								var hid = hexagonals[hexs[h]].ids[hids[i]];
+								if(this.highlights[hid]) {
+									this.drawHighlight(ctx, hexagonals[hexs[h]]);
+								}
+							}
 						}
-
 					}
 
 
 					// draw marker
-					if(this.options.markerVisible && hexagonals[hexs[h]].marker0) {
-						this.markHexagon(hexagonals[hexs[h]]);
+					if(this.markerLayerNeedsUpdate) {
+						if(this.options.markerVisible && hexagonals[hexs[h]].marker0) {
+							this.markHexagon(hexagonals[hexs[h]]);
+						}
 					}
-
 				}
 
 			}
+
+			this.markerLayerNeedsUpdate = false;
+
 
 			// info
 			//if(this.info && !this.options.infoVisible) {
@@ -815,6 +818,8 @@
 		},
 		onZoomEnd: function onZoomEnd() {
 
+			this.markerLayerNeedsUpdate = true;
+
 			if(this.selection) { 
 /*
 				var zoom = this._map.getZoom();
@@ -882,6 +887,11 @@
 			this.selection = selection;
 			//this.info = selection;
 			return selection;
+
+			// todo: selection <=> highlights
+			// ausgebaut ist aktuell .this.info/this.infobox
+
+			
 
 		},
 		setInfobox: function setInfobox(info) {
