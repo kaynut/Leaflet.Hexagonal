@@ -91,9 +91,14 @@
 
 		var hexagonals = new L.Hexagonal(options).addTo(map);	
 
-		hexagonals.addPoint({lng:-16.1, lat:65.1}, "A2", {marker:{image:"./assets/image0.jpg"}});
-		hexagonals.addMarker({lng:-16.1, lat:65.2}, "A3", {marker:3});
-		hexagonals.addMarker({lng:-16.2, lat:65.3}, "A4");
+		hexagonals.addPoint({lng:-16.1, lat:65.1}, "A2", {marker:{image:"./assets/image0.jpg", size:48 }});
+		//hexagonals.addMarker({lng:-15.9, lat:65.2}, "A3", {marker:{image:"./assets/image1.jpg", size:32 }});
+		hexagonals.addMarker({lng:-16.2, lat:65.3}, "A4", {marker:{image:"./assets/image2.jpg", size:48}});
+
+		hexagonals.addMarker({lng:-16.4, lat:65.1}, "A6", {marker:{icon:"person", size:32, fill:"#ac0" }});
+
+		hexagonals.addMarker({lng:-16.4, lat:65.5}, "A7", {marker:{icon:"person", size:32, fill:"#b64" }});
+
 
 		fetch('./assets/test.geojson')
 		.then((response) => response.json())

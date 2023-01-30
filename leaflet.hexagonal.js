@@ -145,6 +145,9 @@
 		images: { 
 			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
 		},
+		icons: {
+			person: "M9 22V8.775q-2.275-.6-3.637-2.513Q4 4.35 4 2h2q0 2.075 1.338 3.537Q8.675 7 10.75 7h2.5q.75 0 1.4.275.65.275 1.175.8L20.35 12.6l-1.4 1.4L15 10.05V22h-2v-6h-2v6Zm3-16q-.825 0-1.412-.588Q10 4.825 10 4t.588-1.413Q11.175 2 12 2t1.413.587Q14 3.175 14 4q0 .825-.587 1.412Q12.825 6 12 6Z"
+		},
 		
 		// #endregion
 
@@ -727,6 +730,7 @@
 			}
 
 			var size = m0m.size || hexagon.size;
+			var fill = m0m.fill || this.options.markerFill || "#303234";
 
 			// calc path
 			var w,h;
@@ -743,18 +747,42 @@
 				poly = `0 ${size*0.289},${size*0.5} 0,${size*1} ${size*0.289},${size*1} ${size*0.866},${size*0.5} ${size*1.155},0 ${size*0.866}`;
 			}
 
-			var icon = L.divIcon({
-				className: 'leaflet-hexagonal-marker',
-				html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
-					<symbol id="hexa"><polygon points="${poly}"></polygon></symbol>
-					<mask id="mask"><use href="#hexa" fill="#fff" stroke="#000"/ stroke-width="${this.options.markerLineWidth}"></mask>
-					<use href="#hexa" fill="${this.options.markerLine}"/>
-					<image  preserveAspectRatio="xMidYMid slice" href="${img}" mask="url(#mask)" width="${w}" height="${h}" ></image>
-					</svg>`,
-				  className: "",
-				  iconSize: [w,h],
-				  iconAnchor: [w/2,h/2],
-			}); 
+			var icon;
+
+			// image
+			if(m0m.image) {
+				icon = L.divIcon({
+					className: 'leaflet-hexagonal-marker',
+					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
+						<symbol id="hexa${m0._nr}"><polygon points="${poly}"></polygon></symbol>
+						<mask id="mask${m0._nr}"><use href="#hexa${m0._nr}" fill="#fff" stroke="#000" stroke-width="${this.options.markerLineWidth}" /></mask>
+						<use href="#hexa${m0._nr}" fill="${this.options.markerLine}" shape-rendering="geometricPrecision" />
+						<image preserveAspectRatio="xMidYMid slice" href="${img}" mask="url(#mask${m0._nr})" width="${w}" height="${h}" ></image>
+						</svg>`,
+					className: "",
+					iconSize: [w,h],
+					iconAnchor: [w/2,h/2],
+				}); 
+			}
+			else if(m0m.icon) {
+				var svg = "";
+				if(this.icons[m0m.icon]) {
+					svg = `<path opacity="0.75" transform="translate(${w/2-12},${h/2-12})" d="${this.icons[m0m.icon]}"  />`; 
+				}
+				icon = L.divIcon({
+					className: 'leaflet-hexagonal-marker',
+					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
+						<symbol id="hexa${m0._nr}"><polygon points="${poly}"></polygon></symbol>
+						<mask id="mask${m0._nr}"><use href="#hexa${m0._nr}" fill="#fff" stroke="#000" stroke-width="${this.options.markerLineWidth}" /></mask>
+						<use href="#hexa${m0._nr}" fill="${fill}" stroke="${this.options.markerLine}" stroke-width="${this.options.markerLineWidth}" shape-rendering="geometricPrecision" />
+						${svg}
+						</svg>`,
+					className: "",
+					iconSize: [w,h],
+					iconAnchor: [w/2,h/2],
+				}); 				
+			}
+
 			L.marker(hexagon.latlng, {icon: icon}).addTo(this.markerLayer);			
 
 		},
