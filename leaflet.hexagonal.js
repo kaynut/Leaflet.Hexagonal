@@ -103,14 +103,14 @@
 			linkLineBorder: 1,	
 
 
-			// highlightVisible: true || false
-			highlightVisible: true,
-			// highlightFill: "color" || false
-			highlightFill: "rgba(0,0,0,0.5)", 	
-			// highlightLine: "color" || false
-			highlightLine: "rgba(0,0,0,0.5)", 	 	
-			// highlightLineWidth: pixels
-			highlightLineWidth: 1,	
+			// selectionVisible: true || false
+			selectionVisible: true,
+			// selectionFill: "color" || false
+			selectionFill: "rgba(0,0,0,0.5)", 	
+			// selectionLine: "color" || false
+			selectionLine: "rgba(0,0,0,0.5)", 	 	
+			// selectionLineWidth: pixels
+			selectionLineWidth: 1,	
 			
 
 			// infoVisible: true || false
@@ -131,15 +131,21 @@
 
 		// #######################################################
 		// #region props
-		increment: 0,
-		allHexagonals: {},
+		
+		_incNr: 0,
+		_incId: 0,
+
+		hexagonals: {},
 		points: [],
+
+		links: [],
+		
 		markers:[],
 		markerLayer: false,
 		markerLayerNeedsUpdate: true,
-		highlights: [],
-		links: [],
-
+		
+		selection: {},
+		selectionIds: [],
 
 		images: { 
 			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
@@ -157,7 +163,6 @@
 				/* Built-in Date */
 				e.stamp(this), this._map = undefined, this._container = undefined, this._bounds = undefined,
 				this._center = undefined, this._zoom = undefined;
-				this._instanceUID = this._genUID();
 		},
 		beforeAdd: function beforeAdd() {
 			this._zoomVisible = !0;
@@ -185,6 +190,11 @@
 			this.getPane().appendChild(this._container);
 			this._onZoomVisible();
 			this.fire("layer-mounted");
+
+			this._instanceUID = Date.now();
+			this._incNr = (Date.now() & 16777215)*1000;
+			this._incId = (Date.now() & 16777215)*1000;
+
 			this.markerLayer = L.layerGroup([]).addTo(this._map);
 			this.markerLayer.markerLayer = true;
 			this._update();
@@ -305,15 +315,16 @@
 			latlng.lat = latlng.lat || 0;
 			latlng.lng = latlng.lng || 0;
 
-			if (typeof id != "number" && typeof id !="string") { id = this._genUID(); }
+			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
 
 			meta = meta || {};
 
-			this.increment++;
+			var _nr = this._genNr();
+
 			var point = {
 				id: id,
-				_nr: this.increment,
-				_prev: this.getPrevPoint({id:id,_nr:this.increment}),
+				_nr: _nr,
+				_prev: this.getPrevPoint({id:id , _nr:_nr}),
 				cell: false,
 				latlng: latlng,
 
@@ -344,7 +355,7 @@
 				return;
 			}
 
-			if (typeof id != "number" && typeof id !="string") { id = this._genUID(); }
+			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
 
 			meta = meta || {};
 
@@ -355,12 +366,12 @@
 				var bbox = this.getBbox_from_tile15(keys[i]);
 				var latlng= { lng: (bbox[0]+bbox[2])/2, lat: (bbox[1]+bbox[3])/2 };
 
-				this.increment++;
+				var _nr = this._genNr();
 
 				var point = {
 					id: id,
-					_nr: this.increment,
-					_prev: this.getPrevPoint({id:id,_nr:this.increment}),
+					_nr: _nr,
+					_prev: this.getPrevPoint({id:id , _nr:_nr}),
 					cell: false,
 					latlng: latlng,
 					count: meta.count || tiles15[keys[i]].count || 0,
@@ -385,7 +396,7 @@
 		addGeojson: function addGeojson(g,props) {
 			if(typeof g != "object" || typeof g.type != "string") { return 0; }
 			if(g.type == "Point" && g.coordinates) {
-				var id = this._genUID();
+				var id = this._genId();
 				var ps = props || {};
 				this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]},id, ps);
 				return 1;
@@ -393,14 +404,14 @@
 			if(g.type == "MultiPoint") {
 				var c = g.coordinates.length;
 				for(var i=0; i<c; i++) {
-					var id = this._genUID();
+					var id = this._genId();
 					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, id);
 				}
 				return c;
 			}
 			if(g.type == "LineString") {
 				var c = g.coordinates.length;
-				var id = this._genUID();
+				var id = this._genId();
 				for(var i=0; i<c; i++) {
 					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, id);
 				}
@@ -410,7 +421,7 @@
 				var c = 0;
 				for(var i=0; i<g.coordinates.length; i++) {
 					var ci = g.coordinates[i];
-					var id = this._genUID();
+					var id = this._genId();
 					for(var j=0; j<ci.length; j++) {
 						// properties
 						this.addPoint({lng:ci[j][0],lat:ci[j][1]}, id);
@@ -454,7 +465,6 @@
 		clearPoints: function clearPoints() {
 			var c = this.points.length;
 			this.points = [];
-			this.increment = 0;
 			this.refresh();
 			return c;
 		},
@@ -476,7 +486,7 @@
 			latlng.lat = latlng.lat || 0;
 			latlng.lng = latlng.lng || 0;
 
-			if (typeof id != "number" && typeof id !="string") { id = this._genUID(); }
+			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
 			meta = meta || {};
 
 			if(meta.marker) {
@@ -502,7 +512,6 @@
 		clearMarker: function clearMarker() {
 			var c = this.markers.length;
 			this.markers = [];
-			this.increment = 0;
 			this.refresh();
 			return c;
 		},
@@ -537,8 +546,8 @@
 			var w = dpr * size.x;
 			var h = dpr * size.y;
 
-			// allHexagonals
-			this.allHexagonals = {};
+			// hexagonals
+			this.hexagonals = {};
 
 			// hexagonSize
 			var hexagonSize = this.calcHexagonSize(zoom);
@@ -558,16 +567,16 @@
 
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset)
 
-					if(!this.allHexagonals[h.cell]) {
-						this.allHexagonals[h.cell] = h;
-						this.allHexagonals[h.cell].ids = {};
+					if(!this.hexagonals[h.cell]) {
+						this.hexagonals[h.cell] = h;
+						this.hexagonals[h.cell].ids = {};
 					}
-					if(!this.allHexagonals[h.cell].point0) {
-						this.allHexagonals[h.cell].point0 = point;
-						this.allHexagonals[h.cell].points = {};
+					if(!this.hexagonals[h.cell].point0) {
+						this.hexagonals[h.cell].point0 = point;
+						this.hexagonals[h.cell].points = {};
 					}
-					this.allHexagonals[h.cell].points[point.id] = point;
-					this.allHexagonals[h.cell].ids[point.id] = point.id;
+					this.hexagonals[h.cell].points[point.id] = point;
+					this.hexagonals[h.cell].ids[point.id] = point.id;
 
 				}
 				point.cell = h;
@@ -584,16 +593,16 @@
 
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset)
 
-					if(!this.allHexagonals[h.cell]) {
-						this.allHexagonals[h.cell] = h;
-						this.allHexagonals[h.cell].ids = {};
+					if(!this.hexagonals[h.cell]) {
+						this.hexagonals[h.cell] = h;
+						this.hexagonals[h.cell].ids = {};
 					}
-					if(!this.allHexagonals[h.cell].marker0) {
-						this.allHexagonals[h.cell].marker0 = marker;
-						this.allHexagonals[h.cell].markers = {};
+					if(!this.hexagonals[h.cell].marker0) {
+						this.hexagonals[h.cell].marker0 = marker;
+						this.hexagonals[h.cell].markers = {};
 					}
-					this.allHexagonals[h.cell].markers[marker.id] = marker;
-					this.allHexagonals[h.cell].ids[marker.id] = marker.id;
+					this.hexagonals[h.cell].markers[marker.id] = marker;
+					this.hexagonals[h.cell].ids[marker.id] = marker.id;
 
 				}
 				marker.cell = h;
@@ -627,9 +636,9 @@
 		_onDraw: function _onDraw() {
 
 			this._preDraw();
-			this.onDraw(this._container, this.allHexagonals, this.highlights, this.links);
+			this.onDraw(this._container, this.hexagonals, this.selectionIds, this.links, this.options);
 		},
-		onDraw: function onDraw(canvas, hexagonals, highlights, links) {
+		onDraw: function onDraw(canvas, hexagonals, selectionIds, links, options) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
@@ -637,17 +646,16 @@
 
 			// layers
 			if(this.markerLayerNeedsUpdate) {
-				console.log("markerLayer - clear", Date.now());
 				this.markerLayer.clearLayers();
 			}
 
 			// draw links
-			if(this.links.length && this.options.linkVisible) {
-				for(var i=0; i<this.links.length; i++) {
-					this.drawLink(ctx, this.links[i]);
+			if(links.length && options.linkVisible) {
+				for(var i=0; i<links.length; i++) {
+					this.drawLink(ctx, links[i]);
 
-					if(this.highlights[this.links[i].id] && this.options.highlightVisible) {
-						this.drawHighlightLink(ctx, this.links[i]);
+					if(selectionIds[links[i].id] && options.selectionVisible) {
+						this.drawLinkSelected(ctx, links[i]);
 					}
 				}
 
@@ -660,25 +668,26 @@
 				for (var h=0; h<hexs.length; h++) {
 
 					// draw point
-					if(this.options.hexagonVisible && hexagonals[hexs[h]].point0) {
+					if(options.hexagonVisible && hexagonals[hexs[h]].point0) {
 						this.drawHexagon(ctx, hexagonals[hexs[h]]);
 
-						if(this.options.highlightVisible) {
+						if(options.selectionVisible) {
 							var hids = Object.keys(hexagonals[hexs[h]].ids);
 							for(var i=0;i<hids.length;i++) {
 								var hid = hexagonals[hexs[h]].ids[hids[i]];
-								if(this.highlights[hid]) {
-									this.drawHighlight(ctx, hexagonals[hexs[h]]);
+								if(selectionIds[hid]) {
+									this.drawHexagonSelected(ctx, hexagonals[hexs[h]]);
 								}
 							}
 						}
+
 					}
 
 
 					// draw marker
 					if(this.markerLayerNeedsUpdate) {
-						if(this.options.markerVisible && hexagonals[hexs[h]].marker0) {
-							this.markHexagon(hexagonals[hexs[h]]);
+						if(options.markerVisible && hexagonals[hexs[h]].marker0) {
+							this.drawHexagonMarker(hexagonals[hexs[h]]);
 						}
 					}
 				}
@@ -693,7 +702,10 @@
 				//this.setInfobox(false);
 			//}
 
+			console.log(this.getSelectionIds());
+
 		},
+
 		drawHexagon: function drawHexagon(ctx, hexagon) {
 			var hPath = new Path2D(hexagon.path);
 
@@ -707,7 +719,7 @@
 				ctx.stroke(hPath);
 			}
 		},
-		markHexagon: function markHexagon(hexagon) {
+		drawHexagonMarker: function drawHexagonMarker(hexagon) {
 			var m0 = hexagon.marker0;
 			var m0m = hexagon.marker0.marker;
 			if(typeof m0m != "object") { return; }
@@ -750,20 +762,20 @@
 			L.marker(hexagon.latlng, {icon: icon}).addTo(this.markerLayer);			
 
 		},
-
-		drawHighlight: function drawHighlight(ctx, hexagon) {
+		drawHexagonSelected: function drawHexagonSelected(ctx, hexagon) {
 			var hPath = new Path2D(hexagon.path);
 
-			if(this.options.highlightFill) {
-				ctx.fillStyle = this.options.highlightFill;
+			if(this.options.selectionFill) {
+				ctx.fillStyle = this.options.selectionFill;
 				ctx.fill(hPath);
 			}
-			if(this.options.highlightLine) {
-				ctx.strokeStyle = this.options.highlightLine;
-				ctx.lineWidth = this.options.highlightLineWidth;
+			if(this.options.selectionLine) {
+				ctx.strokeStyle = this.options.selectionLine;
+				ctx.lineWidth = this.options.selectionLineWidth;
 				ctx.stroke(hPath);
 			}
 		},
+
 		drawLink: function drawLink(ctx, link) {
 			var path = new Path2D(link.path);
 			if(this.options.linkLineBorder) {
@@ -775,14 +787,14 @@
 			ctx.lineWidth = this.options.linkLineWidth;
 			ctx.stroke(path);
 		},
-		drawHighlightLink: function drawHighlightlink(ctx, link) {
+		drawLinkSelected: function drawLinkSelected(ctx, link) {
 			var path = new Path2D(link.path);
-			if(this.options.linkLineBorder && this.options.highlightLine) {
-				ctx.strokeStyle = this.options.highlightLine;
+			if(this.options.linkLineBorder && this.options.selectionLine) {
+				ctx.strokeStyle = this.options.selectionLine;
 				ctx.lineWidth = this.options.linkLineWidth + this.options.linkLineBorder*2;
 				ctx.stroke(path);
 			}
-			ctx.strokeStyle = this.options.highlightFill;
+			ctx.strokeStyle = this.options.selectionFill;
 			ctx.lineWidth = this.options.linkLineWidth;
 			ctx.stroke(path);
 		},
@@ -808,7 +820,7 @@
 			window.clearTimeout(self._onMouseRestDebounced_Hexagonal);
 			self._onMouseRestDebounced_Hexagonal = window.setTimeout(function () {
 				
-				var selection = self.getSelection_for_latlng(e.latlng);
+				var selection = self.getSelection(e.latlng);
 				self.onMouseRest(selection);
 
 			}, 250);
@@ -839,7 +851,7 @@
 				else if(this.options.infoZoomMode=="preserveOnZoom") {}
 				else {
 					this.selection = false;
-					this.setHighlight(false);
+					this.setSelectionIds(false);
 					this.setInfobox(false);
 				}
 */
@@ -850,50 +862,8 @@
 
 
 		// #######################################################
-		// #region selection
-		setSelection: function(latlng) {
+		// #region info
 
-			// if no latlng ==> clear
-			if(!latlng) { 
-				this.selection = false;
-				this.setHighlight(false);
-				this.setInfobox(false);
-				return false; 
-			}
-
-
-			// get selection
-			var selection = this.getSelection_for_latlng(latlng);
-			console.log(selection);
-
-			// if no points got hit
-			if(!selection) {
-				this.selection = false;
-				this.setHighlight(false);
-				this.setInfobox(false);
-				return false;
-			}
-
-
-			// adapt
-			//selection.adapt = selection.points[Object.keys(selection.points)[0]].latlng;
-
-			// set infobox
-			//this.setInfobox(selection);
-
-			// set highlight
-			this.setHighlight(selection.ids);
-
-			this.selection = selection;
-			//this.info = selection;
-			return selection;
-
-			// todo: selection <=> highlights
-			// ausgebaut ist aktuell .this.info/this.infobox
-
-			
-
-		},
 		setInfobox: function setInfobox(info) {
 
 			if(this.infobox) {
@@ -986,27 +956,97 @@
 
 
 		// #######################################################
-		// #region highlight
-		setHighlight: function setHighlight(ids) {
+		// #region selection
+		setSelection: function setSelection(latlng) {
+
+			// if no latlng ==> clear
+			if(!latlng) { 
+				this.selection = false;
+				this.setSelectionIds(false);
+				this.setInfobox(false);
+				return false; 
+			}
+
+
+			// get selection
+			var selection = this.getSelection(latlng);
+			console.log(selection);
+
+			// if no points got hit
+			if(!selection) {
+				this.selection = false;
+				this.setSelectionIds(false);
+				this.setInfobox(false);
+				return false;
+			}
+
+
+			// adapt
+			//selection.adapt = selection.points[Object.keys(selection.points)[0]].latlng;
+
+			// set infobox
+			//this.setInfobox(selection);
+
+			// set selectionIds
+			this.setSelectionIds(selection.ids);
+
+			this.selection = selection;
+			//this.info = selection;
+			return selection;
+
+			// todo: selection <=> selectionIds
+			// ausgebaut ist aktuell .this.info/this.infobox
+
+			
+
+		},
+		getSelection: function getSelection(latlng) {
+
+			if(!latlng) {
+				return this.selection;
+			}
+
+			var wh = this._map.getSize();
+			var zoom = this._map.getZoom();
+			var size = this.calcHexagonSize(zoom);
+			var nw = this._map.getBounds().getNorthWest();
+			var offset = this._map.project(nw, zoom);
+			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, size);
+			var h = this.calcHexagonCell(p.x,p.y,size, offset);
+
+			// hexagonals
+			if(this.hexagonals[h.cell]) {
+				return this.hexagonals[h.cell];
+			}
+
+			// no
+			return false;
+
+		},
+		setSelectionIds: function setSelectionIds(ids) {
 			if(typeof ids == "string") {
-				this.highlights = {};
-				this.highlights[ids] = ids;
+				this.selectionIds = {};
+				this.selectionIds[ids] = ids;
 			}
 			else if(Array.isArray(ids)) {
-				this.highlights = {};
+				this.selectionIds = {};
 				for(var i=0; i< ids.length; i++) {
-					this.highlights[ids[i]] = ids[i];
+					this.selectionIds[ids[i]] = ids[i];
 				}
 			}
 			else if(typeof ids == "object") {
-				this.highlights = ids;
+				this.selectionIds = ids;
 			}
 			else {
-				this.highlights = {};
+				this.selectionIds = {};
 			}
 
 			this.refresh();
 		},
+		getSelectionIds: function getSelectionIds() {
+			return this.selectionIds;
+		},
+
 		// #endregion
 
 
@@ -1111,16 +1151,16 @@
 
 					hs[h.cell] = h;
 
-					if(!this.allHexagonals[h.cell]) {
-						this.allHexagonals[h.cell] = { };
-						this.allHexagonals[h.cell].ids = {};
+					if(!this.hexagonals[h.cell]) {
+						this.hexagonals[h.cell] = { };
+						this.hexagonals[h.cell].ids = {};
 					}
-					if(!this.allHexagonals[h.cell].link0) {
-						this.allHexagonals[h.cell].link0 = point0;
-						this.allHexagonals[h.cell].links = {};
+					if(!this.hexagonals[h.cell].link0) {
+						this.hexagonals[h.cell].link0 = point0;
+						this.hexagonals[h.cell].links = {};
 					}
-					this.allHexagonals[h.cell].links[point0.id] = point0;
-					this.allHexagonals[h.cell].ids[point0.id] = point0.id;
+					this.hexagonals[h.cell].links[point0.id] = point0;
+					this.hexagonals[h.cell].ids[point0.id] = point0.id;
 				}
 
 			}
@@ -1183,7 +1223,6 @@
 		// #endregion
 
 
-
 		// #######################################################
 		// #region helpers
 		getBbox_from_tile15: function getBbox_from_tile15(t15) {
@@ -1235,25 +1274,6 @@
 			var visible = true;
 			if (p.x < -pad || p.y < -pad || p.x > w+pad || p.y > h+pad) { visible = false; }
 			return { x: p.x, y: p.y, visible: true };
-		},
-		getSelection_for_latlng: function getSelection_for_latlng(latlng) {
-			var wh = this._map.getSize();
-			var zoom = this._map.getZoom();
-			var size = this.calcHexagonSize(zoom);
-			var nw = this._map.getBounds().getNorthWest();
-			var offset = this._map.project(nw, zoom);
-			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, size);
-			var h = this.calcHexagonCell(p.x,p.y,size, offset);
-		
-
-			// hexagonals
-			if(this.allHexagonals[h.cell]) {
-				return this.allHexagonals[h.cell];
-			}
-
-			// no
-			return false;
-
 		},
 		getDistance: function (lng1, lat1, lng2, lat2) { // lng1, lat1, lng2, lat2 || {lng1, lat1}, {lng2, lat2}
 			if (typeof lng1 == "object" && typeof lat1 == "object") {
@@ -1318,7 +1338,16 @@
 			return obj;
 		},
 		_genUID: function _genUID() {
-			return Date.now() + "_" + Math.floor(Math.random() * 100000);
+			return (Date.now()&16777215) + "_" + Math.floor(Math.random() * 1000000); // string = uses 4.6 days worth of ms and 10^6 random
+		},
+		_genNr: function _genNr() {
+			this._incNr++;
+			console.log(this._incNr);
+			return this._incNr;
+		},
+		_genId: function _genId() {
+			this._incId++;
+			return this._incId;
 		}
 		// #endregion
 
