@@ -137,15 +137,10 @@
 
 		hexagonals: {},
 		points: [],
-
 		links: [],
-		
 		markers:[],
 		markerLayer: false,
-		markerLayerNeedsUpdate: true,
-		
 		selection: {},
-		selectionIds: [],
 
 		images: { 
 			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
@@ -163,6 +158,10 @@
 				/* Built-in Date */
 				e.stamp(this), this._map = undefined, this._container = undefined, this._bounds = undefined,
 				this._center = undefined, this._zoom = undefined;
+
+				this._instanceUID = Date.now();
+				this._incNr = (Date.now() & 16777215)*1000;
+				this._incId = (Date.now() & 16777215)*1000;
 		},
 		beforeAdd: function beforeAdd() {
 			this._zoomVisible = !0;
@@ -190,12 +189,8 @@
 			this.getPane().appendChild(this._container);
 			this._onZoomVisible();
 			this.fire("layer-mounted");
-
-			this._instanceUID = Date.now();
-			this._incNr = (Date.now() & 16777215)*1000;
-			this._incId = (Date.now() & 16777215)*1000;
-
 			this.markerLayer = L.layerGroup([]).addTo(this._map);
+			this.markerLayer.needsRefresh = true;
 			this.markerLayer.markerLayer = true;
 			this._update();
 		},
@@ -525,7 +520,7 @@
 			var self = this;
 			window.clearTimeout(self._refreshPoints_debounce);
 			self._refreshPoints_debounce = window.setTimeout(function () {
-				self.markerLayerNeedsUpdate = true;
+				self.markerLayer.needsRefresh = true;
 				self._update();
 			}, 50);
 		},
@@ -636,16 +631,19 @@
 		_onDraw: function _onDraw() {
 
 			this._preDraw();
-			this.onDraw(this._container, this.hexagonals, this.selectionIds, this.links, this.options);
+			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options);
 		},
-		onDraw: function onDraw(canvas, hexagonals, selectionIds, links, options) {
+		onDraw: function onDraw(canvas, hexagonals, selection, links, options) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
 
+			var selectionIds = {};
+			if(selection.ids) { selectionIds = selection.ids; }
+
 
 			// layers
-			if(this.markerLayerNeedsUpdate) {
+			if(this.markerLayer.needsRefresh) {
 				this.markerLayer.clearLayers();
 			}
 
@@ -685,7 +683,7 @@
 
 
 					// draw marker
-					if(this.markerLayerNeedsUpdate) {
+					if(this.markerLayer.needsRefresh) {
 						if(options.markerVisible && hexagonals[hexs[h]].marker0) {
 							this.drawHexagonMarker(hexagonals[hexs[h]]);
 						}
@@ -694,15 +692,13 @@
 
 			}
 
-			this.markerLayerNeedsUpdate = false;
+			this.markerLayer.needsRefresh = false;
 
 
 			// info
 			//if(this.info && !this.options.infoVisible) {
 				//this.setInfobox(false);
 			//}
-
-			console.log(this.getSelectionIds());
 
 		},
 
@@ -830,7 +826,7 @@
 		},
 		onZoomEnd: function onZoomEnd() {
 
-			this.markerLayerNeedsUpdate = true;
+			this.markerLayer.needsRefresh = true;
 
 			if(this.selection) { 
 /*
@@ -851,7 +847,6 @@
 				else if(this.options.infoZoomMode=="preserveOnZoom") {}
 				else {
 					this.selection = false;
-					this.setSelectionIds(false);
 					this.setInfobox(false);
 				}
 */
@@ -962,7 +957,6 @@
 			// if no latlng ==> clear
 			if(!latlng) { 
 				this.selection = false;
-				this.setSelectionIds(false);
 				this.setInfobox(false);
 				return false; 
 			}
@@ -970,12 +964,11 @@
 
 			// get selection
 			var selection = this.getSelection(latlng);
-			console.log(selection);
+
 
 			// if no points got hit
 			if(!selection) {
 				this.selection = false;
-				this.setSelectionIds(false);
 				this.setInfobox(false);
 				return false;
 			}
@@ -987,16 +980,12 @@
 			// set infobox
 			//this.setInfobox(selection);
 
-			// set selectionIds
-			this.setSelectionIds(selection.ids);
 
 			this.selection = selection;
-			//this.info = selection;
+			
+			this.refresh();
+
 			return selection;
-
-			// todo: selection <=> selectionIds
-			// ausgebaut ist aktuell .this.info/this.infobox
-
 			
 
 		},
@@ -1023,29 +1012,7 @@
 			return false;
 
 		},
-		setSelectionIds: function setSelectionIds(ids) {
-			if(typeof ids == "string") {
-				this.selectionIds = {};
-				this.selectionIds[ids] = ids;
-			}
-			else if(Array.isArray(ids)) {
-				this.selectionIds = {};
-				for(var i=0; i< ids.length; i++) {
-					this.selectionIds[ids[i]] = ids[i];
-				}
-			}
-			else if(typeof ids == "object") {
-				this.selectionIds = ids;
-			}
-			else {
-				this.selectionIds = {};
-			}
 
-			this.refresh();
-		},
-		getSelectionIds: function getSelectionIds() {
-			return this.selectionIds;
-		},
 
 		// #endregion
 
@@ -1342,7 +1309,6 @@
 		},
 		_genNr: function _genNr() {
 			this._incNr++;
-			console.log(this._incNr);
 			return this._incNr;
 		},
 		_genId: function _genId() {
