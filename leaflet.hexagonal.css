@@ -1,10 +1,10 @@
 .leaflet-hexagonal-marker {
     border:0;
 }
-.leaflet-hexagonal-infobox-container {
+.leaflet-hexagonal-info-container {
     border:0;
 }
-.leaflet-hexagonal-infobox {
+.leaflet-hexagonal-info {
     position: absolute;   
     left: 0px;
     top: 0px; 
@@ -19,7 +19,7 @@
     opacity: 0.75;
     cursor: default;
 }
-.leaflet-hexagonal-infobox:after {
+.leaflet-hexagonal-info:after {
 	content: "";
     display: block;
     border-width: 6px 6px 0;
@@ -28,10 +28,10 @@
     margin-left: -6px;
     position: absolute;
 }
-.leaflet-hexagonal-infobox.leftTop {
+.leaflet-hexagonal-info.leftTop {
     border-top-left-radius: 0;
 }
-.leaflet-hexagonal-infobox.leftTop:after {
+.leaflet-hexagonal-info.leftTop:after {
     border-top-color: rgb(30,32,34);
     border-right-color: rgb(30,32,34);
     top:0;

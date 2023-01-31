@@ -91,7 +91,7 @@
 			linkVisible: true,			
 			// linkMode: "centered" || "straight" || "hexagonal" || false
 			linkMode: "straight",
-			// linkForce: integer (0=only adjacent points with same id get linked, 1,2,3,...= x points (with different id) may be added in the meantime)
+			// linkForce: integer (0=only points (with same id) added directly after each other, get linked, 10=up to 10 points (with different id) may be added in the meantime, ... )
 			linkForce:0,
 			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
 			linkJoin: 1,  
@@ -117,10 +117,12 @@
 
 			// infoVisible: true || false
 			infoVisible: true,
-			// infoMode: "count" || "ids" || "custom" || false
-			infoMode: "count", 
+			// infoDisplayMode: "count" || "ids" || "custom" || false
+			infoDisplayMode: "count", 
+			// infoZoomMode: "clearOnZoom" || "preserveOnZoom" || "adaptOnZoom" || false
+			infoZoomMode: "adaptOnZoom", 
 			// infoClassName: class || ""
-			infoClassName: "leaflet-hexagonal-info-container", 
+			infoClassName: "leaflet-hexagonal-infobox-container", 
 			// infoItemsMax: number (max items shown explicitly in info)
 			infoItemsMax: 5	
 
@@ -135,16 +137,12 @@
 		_incNr: 0,
 		_incId: 0,
 
-		hexagonSize:0,
-
 		hexagonals: {},
 		points: [],
 		links: [],
 		markers:[],
 		markerLayer: false,
 		selection: {},
-		info: false,
-		infoLayer: false,
 
 		images: { 
 			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
@@ -196,9 +194,6 @@
 			this.markerLayer = L.layerGroup([]).addTo(this._map);
 			this.markerLayer.needsRefresh = true;
 			this.markerLayer.markerLayer = true;
-			this.infoLayer = L.layerGroup([]).addTo(this._map);
-			this.infoLayer.needsRefresh = true;
-			this.infoLayer.infoLayer = true;
 			this._update();
 		},
 		onRemove: function onRemove() {
@@ -307,20 +302,20 @@
 
 		// #######################################################
 		// #region points
-		addPoint: function addPoint(latlng, meta) { //  {lng,lat},"id",{count,secs,dist,ts, weight, marker}
+		addPoint: function addPoint(latlng, id, meta) { //  {lng,lat},"id",{count,secs,dist,ts, weight, marker}
 	
 			latlng = this.validateLatLng(latlng);
 
-			meta = meta || {};
+			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
 
-			if (typeof meta.id != "number" && typeof meta.id !="string") { meta.id = this._genId(); }
+			meta = meta || {};
 
 			var _nr = this._genNr();
 
 			var point = {
-				id: meta.id,
+				id: id,
 				_nr: _nr,
-				_link: this.getLinkPos(meta.id),
+				_prev: this.getPreviousPointNr({id:id , _nr:_nr}),
 				cell: false,
 				latlng: latlng,
 
@@ -330,6 +325,7 @@
 				weight: meta.weight || 0,
 				ts: meta.ts || 0,
 				marker: meta.marker || false
+
 			};
 
 			this.points.push(point);
@@ -341,17 +337,12 @@
 			this.refresh();
 
 		},
-		addPoints: function addPoints(points, meta) {  // [ {lng,lat},"id",{count,secs,dist,ts, weight, marker}  ,  {lng,lat},"id",{count,secs,dist,ts, weight, marker}  , ...]
+		addPoints: function addPoints(points, linked=true, latlngPropertyName=false) {  // [ {lng,lat},"id",{count,secs,dist,ts, weight, marker}  ,  {lng,lat},"id",{count,secs,dist,ts, weight, marker}  , ...]
 			if(!Array.isArray(points)) {
 				console.warn("Leaflet.hexagonal.addPoints: parameter must be an array", points);
 				return;
 			}
 			if(!points.length) { return; }
-
-			// meta
-			meta = meta || {};
-			var linked = meta.linked || true;
-			var latlngPropertyName = meta.latlngPropertyName || false;
 
 			// latlng property
 			if(points[0].latlng) {
@@ -362,18 +353,16 @@
 			var id;
 			if(linked) { id = this._genId(); }
 
-
 			// loop array of objects
 			if(typeof latlngPropertyName == "string") {
 				for(var i=0; i<points.length; i++) {
 					if(points[i][latlngPropertyName]) {
 						if(!linked) { id = this._genId(); }
-						this.addPoint(points[i][latlngPropertyName], { id:id });
+						this.addPoint(points[i][latlngPropertyName], id);
 					}
 				}
 				return;
 			} 
-
 
 			// loop array of arrays
 			if(Array.isArray(points[0])) {
@@ -381,7 +370,7 @@
 					var lng = points[i][0] || 0;
 					var lat = points[i][1] || 0;
 					if(!linked) { id = this._genId(); }
-					this.addPoint({lat:lat, lng:lng}, { id:id });
+					this.addPoint({lat:lat, lng:lng}, id);
 				}
 				return;
 			}
@@ -389,30 +378,66 @@
 			console.warn("Leaflet.hexagonal.addPoints: parameter must be an array of latlng-arrays OR an array of objects, each containing a latlng-property", points);
 
 		},
-
-		addGeojson: function addGeojson(g,props) {
-			if(typeof g == "string" && g.indexOf("json")) {
-				props = props || {};
-				var ref = this;
-				fetch(g)
-				.then((resp) => resp.json())
-				.then((json) => {
-					ref.addGeojson(json,props);
-				});
-				return 0;
+		addPoint_tiles15: function addPoint_tiles15(tiles15, id, meta) { //  {"UxWd":{"count":105,"secs":1705,"dist":7694},....}, 
+			if (typeof tiles15 == "string") {
+				tiles15 = JSON.parse(tiles15);
 			}
+			if (typeof tiles15 != "object") {
+				console.warn("Leaflet.hexagonal.addPoint_tiles15: unknown format", tiles15);
+				return;
+			}
+
+			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
+
+			meta = meta || {};
+
+
+			var keys = Object.keys(tiles15);
+			for (var i = 0; i < keys.length; i++) {
+
+				var bbox = this.getBbox_from_tile15(keys[i]);
+				var latlng= { lng: (bbox[0]+bbox[2])/2, lat: (bbox[1]+bbox[3])/2 };
+
+				var _nr = this._genNr();
+
+				var point = {
+					id: id,
+					_nr: _nr,
+					_prev: this.getPreviousPointNr({id:id , _nr:_nr}),
+					cell: false,
+					latlng: latlng,
+					count: meta.count || tiles15[keys[i]].count || 0,
+					secs: meta.secs || tiles15[keys[i]].secs || 0,
+					dist: meta.dist || tiles15[keys[i]].dist || 0,
+					weight: meta.weight || tiles15[keys[i]].weight || 0,
+					ts: meta.ts || tiles15[keys[i]].dist || 0,
+					marker: false // todo??
+				};
+
+				this.points.push(point);
+
+				if(point.marker) { // todo??
+					this.markers.push(point);
+				}
+
+				this.refresh();
+
+			}
+
+		},
+		addGeojson: function addGeojson(g,props) {
 			if(typeof g != "object" || typeof g.type != "string") { return 0; }
 			if(g.type == "Point" && g.coordinates) {
+				var id = this._genId();
 				var ps = props || {};
-				if(!ps.id) { ps.id = this._genId(); }
-				this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]}, ps);
+				this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]},id, ps);
 				return 1;
 			}
 			if(g.type == "MultiPoint") {
 				var c = g.coordinates.length;
 				for(var i=0; i<c; i++) {
 					var id = this._genId();
-					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, {id:id});
+					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, id);
 				}
 				return c;
 			}
@@ -420,7 +445,7 @@
 				var c = g.coordinates.length;
 				var id = this._genId();
 				for(var i=0; i<c; i++) {
-					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, {id:id});
+					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, id);
 				}
 				return c;
 			}
@@ -431,7 +456,7 @@
 					var id = this._genId();
 					for(var j=0; j<ci.length; j++) {
 						// properties
-						this.addPoint({lng:ci[j][0],lat:ci[j][1]}, {id:id});
+						this.addPoint({lng:ci[j][0],lat:ci[j][1]}, id);
 						c++;
 					}
 				}
@@ -462,21 +487,7 @@
 
 			for(var j=0; j<this.points.length; j++) {
 				if(id===this.points[j].id) {
-
-					var link = this.points[j]._link;
-
 					this.points.splice(j, 1);
-
-					// readjust _link
-					for(var i=0; i<this.points.length; i++) {
-						if(this.points[i]._link>j) {
-							this.points[i]._link -= 1;
-						}
-						else if(this.points[i]._link==j) {
-							this.points[i]._link = link;
-						}
-					}
-
 					return true;
 				}
 			}
@@ -491,19 +502,18 @@
 		},
 
 
-		addMarker: function addMarker(latlng, meta) {
+		addMarker: function addMarker(latlng, id, meta) {
 			if(typeof latlng != "object") {
 				console.warn("Leaflet.hexagonal.addMarker: latlng not valid", latlng);
 			}
 			latlng.lat = latlng.lat || 0;
 			latlng.lng = latlng.lng || 0;
 
+			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
 			meta = meta || {};
 
-			if (typeof meta.id != "number" && typeof meta.id !="string") { meta.id = this._genId(); }
-
 			if(meta.marker) {
-				this.addPoint(latlng, meta);
+				this.addPoint(latlng, id, meta);
 			}
 			else {
 				console.warn("Leaflet.hexagonal.addMarker: no sufficient data");
@@ -564,7 +574,6 @@
 
 			// hexagonSize
 			var hexagonSize = this.calcHexagonSize(zoom);
-			this.hexagonSize = hexagonSize;
 
 			// hexagonOffset 
 			var nw = this._map.getBounds().getNorthWest();
@@ -631,18 +640,16 @@
 
 
 			// collect links
-			for(var i=1; i<this.points.length; i++) {
-				var p1 = this.points[i];
-				if(p1._link>=0) {
-					var p0 = this.points[p1._link];
-					//if(p0.id==p1.id) {
-						var path = this.getLinkPath(p0,p1,hexagonSize, hexagonOffset);
-						if(path) {
-							this.links.push({id: p0.id, start:p0, end:p1, path:path});
-						}
-					//}
+			for (var i = 1; i < this.points.length; i++) {
+				var point0 = this.points[i-1];
+				var point1 = this.points[i];
+				if(point0.id==point1.id) {
+					var path = this.getLinkPath(point0,point1,hexagonSize, hexagonOffset);
+					if(path) {
+						this.links.push({id: point1.id, start:point0, end:point1, path:path});
+					}
 				}
-			}
+			} 
 
 
 
@@ -714,6 +721,12 @@
 
 			this.markerLayer.needsRefresh = false;
 
+
+			// info
+			//if(this.info && !this.options.infoVisible) {
+				//this.setInfobox(false);
+			//}
+
 		},
 
 		drawHexagon: function drawHexagon(ctx, hexagon) {
@@ -760,8 +773,6 @@
 
 			var icon;
 
-			console.log(hexagon);
-
 			// image
 			if(m0m.image) {
 				icon = L.divIcon({
@@ -780,7 +791,7 @@
 			else if(m0m.icon) {
 				var svg = "";
 				if(this.icons[m0m.icon]) {
-					svg = `<path opacity="0.75" transform="translate(${w/2-12},${h/2-12})" d="${this.icons[m0m.icon]}" />`; 
+					svg = `<path opacity="0.75" transform="translate(${w/2-12},${h/2-12})" d="${this.icons[m0m.icon]}"  />`; 
 				}
 				icon = L.divIcon({
 					className: 'leaflet-hexagonal-marker',
@@ -796,8 +807,7 @@
 				}); 				
 			}
 
-			L.marker(hexagon.latlng, {icon: icon}).addTo(this.markerLayer); 
-			// todo: maybe add a click-listener to marker (marker can be bigger than hexagonal) 			
+			L.marker(hexagon.latlng, {icon: icon}).addTo(this.markerLayer);			
 
 		},
 		drawHexagonSelected: function drawHexagonSelected(ctx, hexagon) {
@@ -843,14 +853,13 @@
 		// #######################################################
 		// #region events
 		_onClick: function _onClick(e) {
+
 			var selection = this.setSelection(e.latlng);
-			if(selection) {
-				this.setInfo(selection);
-			}
 			this.onClick(e,selection);
+
 		},
 		onClick: function onClick(e,selection) {
-			console.log(this.calcHexagonMeters());
+			
 			return selection;
 
 		},
@@ -872,7 +881,27 @@
 			this.markerLayer.needsRefresh = true;
 
 			if(this.selection) { 
-				this.setInfo(false);
+/*
+				var zoom = this._map.getZoom();
+				if(zoom<this.options.minZoom || zoom> this.options.maxZoom) { 
+					this.hideInfo(); 
+					return;
+				}
+				else {
+					this.showInfo();
+				}	
+				
+
+				if(this.options.infoZoomMode=="adaptOnZoom") {
+					this._preDraw();
+					//this.setSelection(this.info.adapt);
+				}
+				else if(this.options.infoZoomMode=="preserveOnZoom") {}
+				else {
+					this.selection = false;
+					this.setInfobox(false);
+				}
+*/
 			}
 		},
 		// #endregion
@@ -881,13 +910,14 @@
 
 		// #######################################################
 		// #region info
-		setInfo: function setInfo(info) {
 
-			if(this.info) {
-				this.infoLayer.clearLayers();
+		setInfobox: function setInfobox(info) {
+
+			if(this.infobox) {
+				this._map.removeLayer(this.infobox);
 			} 
 
-			if(!info || !this.options.infoVisible) {
+			if(!info) {
 				return;
 			}
 
@@ -899,7 +929,7 @@
 			var html = this.buildInfo(points);
 
 			var iconHtml = document.createElement("DIV");
-			iconHtml.className = "leaflet-hexagonal-info leftTop";
+			iconHtml.className = "leaflet-hexagonal-infobox leftTop";
 			iconHtml.innerHTML = html;
 			var divicon = L.divIcon({
 				iconSize:null,
@@ -907,9 +937,9 @@
 				className: this.options.infoClassName
 			});
 
-			this.info = L.marker(info.latlng, {icon: divicon, zIndexOffset:1000 }).addTo(this.infoLayer);
-			L.DomEvent.on(this.info, 'mousewheel', L.DomEvent.stopPropagation);
-			L.DomEvent.on(this.info, 'click', L.DomEvent.stopPropagation);
+			this.infobox = L.marker(info.latlng, {icon: divicon}).addTo(this._map);
+			L.DomEvent.on(this.infobox, 'mousewheel', L.DomEvent.stopPropagation);
+			L.DomEvent.on(this.infobox, 'click', L.DomEvent.stopPropagation);
 		},
 		buildInfo: function buildInfo(points) {
 
@@ -918,13 +948,13 @@
 			var br = "";
 			var maxPoints = this.options.infoItemsMax;
 
-			// infoMode: count
-			if(this.options.infoMode=="count") {
+			// infoDisplayMode: count
+			if(this.options.infoDisplayMode=="count") {
 				return points.length;
 			}
 
-			// infoMode: ids
-			if(this.options.infoMode=="ids") {
+			// infoDisplayMode: ids
+			if(this.options.infoDisplayMode=="ids") {
 				if(points.length>maxPoints) {
 					more = "<br><span style='float:right'>[" + (points.length - maxPoints) + " more]</span>"; 
 				}
@@ -937,34 +967,34 @@
 				return html + more;
 			}
 
-			// infoMode: custom
-			if(this.infoCustom) {
+			// infoDisplayMode: custom
+			if(this.pointInfo) {
 				if(points.length>maxPoints) {
 					more = "<br><span style='float:right'>[" + (points.length - maxPoints) + " more]</span>"; 
 				}
 				maxPoints = Math.min(points.length, maxPoints);
 
 				for(var i=0;i<maxPoints; i++) {
-					html += br + this.infoCustom(points[i]);
+					html += br + this.pointInfo(points[i]);
 					br = "<br>";
 				}
 				return html + more;
 			}
 
-			// // infoMode: default
+			// // infoDisplayMode: default
 			return points.length;
 
 		},
 
 		showInfo: function showInfo() {
-			if(this.info) {
-				var i = document.querySelector('.leaflet-hexagonal-info-container');
+			if(this.infobox) {
+				var i = document.querySelector('.leaflet-hexagonal-infobox-container');
 				if(i) { i.style.display="block"; }
 			}
 		},
 		hideInfo: function hideInfo() {
-			if(this.info) {
-				var i =document.querySelector('.leaflet-hexagonal-info-container');
+			if(this.infobox) {
+				var i =document.querySelector('.leaflet-hexagonal-infobox-container');
 				if(i) { i.style.display="none"; }
 			}
 		},
@@ -979,7 +1009,7 @@
 			// if no latlng ==> clear
 			if(!latlng) { 
 				this.selection = false;
-				this.setInfo(false);
+				this.setInfobox(false);
 				return false; 
 			}
 
@@ -991,9 +1021,16 @@
 			// if no points got hit
 			if(!selection) {
 				this.selection = false;
-				this.setInfo(false);
+				this.setInfobox(false);
 				return false;
 			}
+
+
+			// adapt
+			//selection.adapt = selection.points[Object.keys(selection.points)[0]].latlng;
+
+			// set infobox
+			//this.setInfobox(selection);
 
 
 			this.selection = selection;
@@ -1202,12 +1239,6 @@
 			return path;
 			
 		},
-		calcHexagonMeters: function calcHexagonMeters() {
-			var size = this.hexagonSize;
-			var ll0 = this._map.containerPointToLatLng([0,0]);
-			var ll1 = this._map.containerPointToLatLng([size,size]);
-			return this.getDistance(ll0.lng,ll0.lat,ll1.lng,ll1.lat);
-		},
 		// #endregion
 
 
@@ -1282,18 +1313,24 @@
 			if (p.x < -pad || p.y < -pad || p.x > w+pad || p.y > h+pad) { visible = false; }
 			return { x: p.x, y: p.y, visible: true };
 		},
-		getLinkPos: function getLinkPos(id) {
+		getPreviousPointNr: function getPreviousPointNr(point, allowGap=false) {
 			var il = this.points.length;
-			if(il<1) { return -1; }
-			var f = Math.max(0,il-this.options.linkForce-1);
-			var i=il-1;
-			while(i>=f) {
-				if(id==this.points[i].id) {
-					return i;
-				}
-				i--;
+			if(!il) { return false; }
+			if(!allowGap) {
+				if(point.id==this.points[il-1].id && point._nr-1==this.points[il-1]._nr) {
+					return this.points[il-1]._nr;
+				}				
 			}
-			return -1;
+			else {
+				var i=il-1;
+				while(i>=0) {
+					if(point.id==this.points[i].id) {
+						return this.points[i]._nr;
+					}
+					i--;
+				}
+			}
+			return false;
 		},
 		getDistance: function (lng1, lat1, lng2, lat2) { // lng1, lat1, lng2, lat2 || {lng1, lat1}, {lng2, lat2}
 			if (typeof lng1 == "object" && typeof lat1 == "object") {
@@ -1367,60 +1404,6 @@
 		_genId: function _genId() {
 			this._incId++;
 			return this._incId;
-		},
-		// #endregion
-
-
-
-
-		// #######################################################
-		// #region custom
-		addPoint_tiles15: function addPoint_tiles15(tiles15, id, meta) { //  {"UxWd":{"count":105,"secs":1705,"dist":7694},....}, 
-			if (typeof tiles15 == "string") {
-				tiles15 = JSON.parse(tiles15);
-			}
-			if (typeof tiles15 != "object") {
-				console.warn("Leaflet.hexagonal.addPoint_tiles15: unknown format", tiles15);
-				return;
-			}
-
-			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
-
-			meta = meta || {};
-
-
-			var keys = Object.keys(tiles15);
-			for (var i = 0; i < keys.length; i++) {
-
-				var bbox = this.getBbox_from_tile15(keys[i]);
-				var latlng= { lng: (bbox[0]+bbox[2])/2, lat: (bbox[1]+bbox[3])/2 };
-
-				var _nr = this._genNr();
-
-				var point = {
-					id: id,
-					_nr: _nr,
-					_link: this.getLinkPos(id),
-					cell: false,
-					latlng: latlng,
-					count: meta.count || tiles15[keys[i]].count || 0,
-					secs: meta.secs || tiles15[keys[i]].secs || 0,
-					dist: meta.dist || tiles15[keys[i]].dist || 0,
-					weight: meta.weight || tiles15[keys[i]].weight || 0,
-					ts: meta.ts || tiles15[keys[i]].dist || 0,
-					marker: false // todo??
-				};
-
-				this.points.push(point);
-
-				if(point.marker) { // todo??
-					this.markers.push(point);
-				}
-
-				this.refresh();
-
-			}
-
 		}
 		// #endregion
 

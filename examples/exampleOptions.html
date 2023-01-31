@@ -58,6 +58,7 @@
 			hexagonLineWidth: 1,	
 
 
+			linkForce: 100000,
 
 			// highlightVisible: true || false
 			highlightVisible: true,
@@ -91,20 +92,28 @@
 
 		var hexagonals = new L.Hexagonal(options).addTo(map);	
 
-		hexagonals.addPoint({lng:-16.1, lat:65.1}, "A2", {marker:{image:"./assets/image0.jpg", size:48 }});
-		//hexagonals.addMarker({lng:-15.9, lat:65.2}, "A3", {marker:{image:"./assets/image1.jpg", size:32 }});
-		hexagonals.addMarker({lng:-16.2, lat:65.3}, "A4", {marker:{image:"./assets/image2.jpg", size:48}});
+		hexagonals.addPoint({lng:-16.1, lat:65.1},  {id:"A2", marker:{image:"./assets/image0.jpg", size:48 }});
 
-		hexagonals.addMarker({lng:-16.4, lat:65.1}, "A6", {marker:{icon:"person", size:32, fill:"#ac0" }});
+		hexagonals.addMarker({lng:-16.2, lat:65.3}, {id:"A4",marker:{image:"./assets/image2.jpg", size:48}});
 
-		hexagonals.addMarker({lng:-16.4, lat:65.5}, "A7", {marker:{icon:"person", size:32, fill:"#b64" }});
+		hexagonals.addMarker({lng:-16.4, lat:65.1}, {id:"A6",marker:{icon:"person", size:32, fill:"#ac0" }});
 
+		hexagonals.addMarker({lng:-16.4, lat:65.5}, {id:"A7",marker:{icon:"person", size:32, fill:"#b64" }});
 
+		//hexagonals.addPoints([[-14,65],[-14.2,65.1],[-14.3,65]]);
+
+		hexagonals.addPoints([{coor: { lng:-18,lat:65 }},{coor:{lon:-18.2,lat:65.1}},{ coor:{ lon:-18.3,lat:65}}], {linked:true, latlngPropertyName: "coor"});
+
+		/*
 		fetch('./assets/test.geojson')
 		.then((response) => response.json())
-		.then((data) => {
-			hexagonals.addGeojson(data);
+		.then((json) => {
+			hexagonals.addGeojson(json);
 		});
+		*/
+
+		hexagonals.addGeojson('./assets/test.geojson');
+
 
 
 
@@ -115,13 +124,14 @@
 		import GUI from './assets/lil-gui.js';
 
 		var gui = new GUI();
+		gui.title("Leaflet.Hexagonal");
 
-		var fVisible = gui.addFolder( 'Visibility' );
+		var fVisible = gui.addFolder( 'Visibility options' );
 		var oVisible = {
 			hexagonVisible:true,
 			markerVisible: true,
 			linkVisible: true,
-			highlightVisible: true,
+			selectionVisible: true,
 			infoVisible:true
 		};
 		fVisible.add( oVisible, 'hexagonVisible').onChange( value => {
@@ -136,8 +146,8 @@
 			hexagonals.options.linkVisible = value;
 			hexagonals.refresh(); 
 		} );
-		fVisible.add( oVisible, 'highlightVisible').onChange( value => {
-			hexagonals.options.highlightVisible = value;
+		fVisible.add( oVisible, 'selectionVisible').onChange( value => {
+			hexagonals.options.selectionVisible = value;
 			hexagonals.refresh(); 
 		} );
 		fVisible.add( oVisible, 'infoVisible').onChange( value => {
