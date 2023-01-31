@@ -136,13 +136,16 @@
 		_incId: 0,
 
 		hexagonSize:0,
-
 		hexagonals: {},
+
 		points: [],
 		links: [],
+
 		markers:[],
 		markerLayer: false,
+
 		selection: {},
+
 		info: false,
 		infoLayer: false,
 
@@ -1213,6 +1216,13 @@
 
 		// #######################################################
 		// #region helpers
+		addIcon: function addIcon(iconName, svgPath) {
+			if(typeof iconName != "string" || typeof svgPath != "string") {
+				console.warn("Leaflet.hexagonal.addIcon: parameter 'iconName' and 'svgPath' have to be strings");
+				return;
+			}
+			this.icons[iconName] = svgPath;
+		},
 		validateLatLng: function validateLatLng(latlng) {
 			if(typeof latlng == "object") {
 				if(typeof latlng.lat == "number") {
