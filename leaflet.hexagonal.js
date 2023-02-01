@@ -72,8 +72,17 @@
 			// hexagonLine: "color" || false
 			hexagonLine: "#666", 	
 			// hexagonLineWidth: pixels
-			hexagonLineWidth: 1,	
+			hexagonLineWidth: 1,
 
+			// hexagonStyle: "count" || "weight" ||  false (style for hexagon-cluster, depending on metadata) 	
+			hexagonStyle: false,
+			// hexagonColorRamp: [ [t,r,g,b,a], [...]]
+			hexagonColorRamp: [[0,100,50,0,1],[1,250,200,50,1]], // colorRamp for hexagonStyle
+			//hexagonWeightPropName: "string" 
+			hexagonWeightPropName: "weight", // propertyName for weight for hexagonStyle
+
+
+			
 
 			// markerVisible: boolean
 			markerVisible: true,
@@ -100,7 +109,7 @@
 			// linkLine: "color" || false
 			linkLine: "#666", 	
 			// linkLineWidth: pixels
-			linkLineWidth: 3,	
+			linkLineWidth: 2,	
 			// linkLineBorder: pixels
 			linkLineBorder: 1,	
 
@@ -139,6 +148,10 @@
 		hexagonals: {},
 
 		points: [],
+		totals:{
+			count:0,
+			weight:0
+		},
 		links: [],
 
 		markers:[],
@@ -310,7 +323,7 @@
 
 		// #######################################################
 		// #region points
-		addPoint: function addPoint(latlng, meta) { //  {lng,lat},"id",{count,secs,dist,ts, weight, marker}
+		addPoint: function addPoint(latlng, meta) { //  {lng,lat},"id",{weight, marker}
 	
 			latlng = this.validateLatLng(latlng);
 
@@ -327,13 +340,16 @@
 				cell: false,
 				latlng: latlng,
 
-				count: meta.count || 0,
-				secs: meta.secs || 0,
-				dist: meta.dist || 0,
-				weight: meta.weight || 0,
-				ts: meta.ts || 0,
+				meta: { 
+					count: 1,
+					weight: meta[this.options.hexagonWeightPropName] || 1
+				},
+
 				marker: meta.marker || false
 			};
+
+			this.totals.count += 1;
+			this.totals.weight += point.meta.weight;
 
 			this.points.push(point);
 
@@ -344,7 +360,7 @@
 			this.refresh();
 
 		},
-		addPoints: function addPoints(points, meta) {  // [ {lng,lat},"id",{count,secs,dist,ts, weight, marker}  ,  {lng,lat},"id",{count,secs,dist,ts, weight, marker}  , ...]
+		addPoints: function addPoints(points, meta) {  // [ {lng,lat},"id",{weight, marker}  ,  {lng,lat},"id",{weight, marker}  , ...]
 			if(!Array.isArray(points)) {
 				console.warn("Leaflet.hexagonal.addPoints: parameter must be an array", points);
 				return;
@@ -467,6 +483,10 @@
 				if(id===this.points[j].id) {
 
 					var link = this.points[j]._link;
+					var weight = this.points[j].weight;
+
+					this.totals.count -= 1;
+					this.totals.weight -= weight;
 
 					this.points.splice(j, 1);
 
@@ -573,7 +593,6 @@
 			var nw = this._map.getBounds().getNorthWest();
 			var hexagonOffset = this._map.project(nw, zoom);
 
-
 			// cluster points
 			for (var i = 0; i < this.points.length; i++) {
 
@@ -587,6 +606,7 @@
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
 						this.hexagonals[h.cell].ids = {};
+						this.hexagonals[h.cell].cluster = { count:0, weight:0 };
 					}
 					if(!this.hexagonals[h.cell].point0) {
 						this.hexagonals[h.cell].point0 = point;
@@ -595,6 +615,10 @@
 					this.hexagonals[h.cell].points[point.id] = point;
 					this.hexagonals[h.cell].ids[point.id] = point.id;
 
+					// cluster data
+					this.hexagonals[h.cell].cluster.count++;
+					this.hexagonals[h.cell].cluster.weight += point.meta.weight;
+					
 				}
 				point.cell = h;
 			}
@@ -613,6 +637,7 @@
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
 						this.hexagonals[h.cell].ids = {};
+						this.hexagonals[h.cell].cluster = { count:0, weight:0 };
 					}
 					if(!this.hexagonals[h.cell].marker0) {
 						this.hexagonals[h.cell].marker0 = marker;
@@ -627,27 +652,27 @@
 			}
 
 
-			// no links
-			this.links = [];
-			if(!this.options.linkMode) { return; }
-			if(this.points.length<2) { return; }
-
-
 			// collect links
-			for(var i=1; i<this.points.length; i++) {
-				var p1 = this.points[i];
-				if(p1._link>=0) {
-					var p0 = this.points[p1._link];
-					//if(p0.id==p1.id) {
+			this.links = [];
+			if(this.options.linkMode && this.points.length>1) {
+				for(var i=1; i<this.points.length; i++) {
+					var p1 = this.points[i];
+					if(p1._link>=0) {
+						var p0 = this.points[p1._link];
+						//if(p0.id==p1.id) {
 						var path = this.getLinkPath(p0,p1,hexagonSize, hexagonOffset);
 						if(path) {
 							this.links.push({id: p0.id, start:p0, end:p1, path:path});
 						}
-					//}
+						//}
+					}
 				}
 			}
 
-
+			this.totals.cells = Object.keys(this.hexagonals).length;
+			this.totals.markers = this.markers.length;
+			this.totals.count = this.points.length;
+			this.totals.links = this.links.length;
 
 
 		},
@@ -670,13 +695,36 @@
 				this.markerLayer.clearLayers();
 			}
 
+			// style
+			var style = { 
+				hexagonFill: this.options.hexagonFill, 
+				hexagonLine: this.options.hexagonLine,
+				hexagonLineWidth: this.options.hexagonLineWidth,
+				linkFill: this.options.linkFill,
+				linkLine: this.options.linkLine
+			};
+
 			// draw links
 			if(links.length && options.linkVisible) {
 				for(var i=0; i<links.length; i++) {
-					this.drawLink(ctx, links[i]);
+	
+					// if start/end-point is visivbly clustered (?!)
+					if(links[i].end.cell.cluster) {
 
-					if(selectionIds[links[i].id] && options.selectionVisible) {
-						this.drawLinkSelected(ctx, links[i]);
+						if(this.options.hexagonStyle=="count") {
+							style.linkFill = this.getRampColor(links[i].end.cell.cluster.count, this.totals.count);
+						}
+						else if(this.options.hexagonStyle=="weight") {
+							style.linkFill = this.getRampColor(links[i].end.cell.cluster.weight, this.totals.weight);
+						}
+						else {
+							style.linkFill = this.options.linkFill;
+						}
+		
+						this.drawLink(ctx, links[i], style);
+						if(selectionIds[links[i].id] && options.selectionVisible) {
+							this.drawLinkSelected(ctx, links[i]);
+						}
 					}
 				}
 
@@ -688,9 +736,20 @@
 			if(hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
 
-					// draw point
+					// draw hexagon
 					if(options.hexagonVisible && hexagonals[hexs[h]].point0) {
-						this.drawHexagon(ctx, hexagonals[hexs[h]]);
+
+						if(this.options.hexagonStyle=="count") {
+							style.hexagonFill = this.getRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
+						}
+						else if(this.options.hexagonStyle=="weight") {
+							style.hexagonFill = this.getRampColor(hexagonals[hexs[h]].cluster.weight, this.totals.weight);
+						}
+						else {
+							style.hexagonFill = this.options.hexagonFill;
+						}
+
+						this.drawHexagon(ctx, hexagonals[hexs[h]], style);
 
 						if(options.selectionVisible) {
 							var hids = Object.keys(hexagonals[hexs[h]].ids);
@@ -719,16 +778,15 @@
 
 		},
 
-		drawHexagon: function drawHexagon(ctx, hexagon) {
+		drawHexagon: function drawHexagon(ctx, hexagon, style) {
 			var hPath = new Path2D(hexagon.path);
-
-			if(this.options.hexagonFill) {
-				ctx.fillStyle = this.options.hexagonFill;
+			if(style.hexagonFill) {
+				ctx.fillStyle = style.hexagonFill;
 				ctx.fill(hPath);
 			}
-			if(this.options.hexagonLine) {
-				ctx.strokeStyle = this.options.hexagonLine;
-				ctx.lineWidth = this.options.hexagonLineWidth;
+			if(style.hexagonLine) {
+				ctx.strokeStyle = style.hexagonLine;
+				ctx.lineWidth = style.hexagonLineWidth;
 				ctx.stroke(hPath);
 			}
 		},
@@ -761,17 +819,15 @@
 				poly = `0 ${size*0.289},${size*0.5} 0,${size*1} ${size*0.289},${size*1} ${size*0.866},${size*0.5} ${size*1.155},0 ${size*0.866}`;
 			}
 
+			
+			// image-icon
 			var icon;
-
-			console.log(hexagon);
-
-			// image
 			if(m0m.image) {
 				icon = L.divIcon({
 					className: 'leaflet-hexagonal-marker',
 					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
 						<symbol id="hexa${m0._nr}"><polygon points="${poly}"></polygon></symbol>
-						<mask id="mask${m0._nr}"><use href="#hexa${m0._nr}" fill="#fff" stroke="#000" stroke-width="${this.options.markerLineWidth}" /></mask>
+						<mask id="mask${m0._nr}"><use href="#hexa${m0._nr}" fill="#fff" stroke="#000" stroke-width="${this.options.markerLineWidth+1.5}" /></mask>
 						<use href="#hexa${m0._nr}" fill="${this.options.markerLine}" shape-rendering="geometricPrecision" />
 						<image preserveAspectRatio="xMidYMid slice" href="${img}" mask="url(#mask${m0._nr})" width="${w}" height="${h}" ></image>
 						</svg>`,
@@ -780,6 +836,7 @@
 					iconAnchor: [w/2,h/2],
 				}); 
 			}
+			// svg-icon
 			else if(m0m.icon) {
 				var svg = "";
 				if(this.icons[m0m.icon]) {
@@ -817,20 +874,22 @@
 			}
 		},
 
-		drawLink: function drawLink(ctx, link) {
+		drawLink: function drawLink(ctx, link, style) {
 			var path = new Path2D(link.path);
 			if(this.options.linkLineBorder) {
+				ctx.lineJoin = "round";
 				ctx.strokeStyle = this.options.linkLine;
 				ctx.lineWidth = this.options.linkLineWidth + this.options.linkLineBorder*2;
 				ctx.stroke(path);
 			}
-			ctx.strokeStyle = this.options.linkFill;
+			ctx.strokeStyle = style.linkFill;
 			ctx.lineWidth = this.options.linkLineWidth;
 			ctx.stroke(path);
 		},
 		drawLinkSelected: function drawLinkSelected(ctx, link) {
 			var path = new Path2D(link.path);
 			if(this.options.linkLineBorder && this.options.selectionLine) {
+				ctx.lineJoin = "round";
 				ctx.strokeStyle = this.options.selectionLine;
 				ctx.lineWidth = this.options.linkLineWidth + this.options.linkLineBorder*2;
 				ctx.stroke(path);
@@ -838,6 +897,32 @@
 			ctx.strokeStyle = this.options.selectionFill;
 			ctx.lineWidth = this.options.linkLineWidth;
 			ctx.stroke(path);
+		},
+		getHexagonStyle: function getHexagonStyle(style, hexagon, totals) {
+		
+			var res = { 
+				hexagonFill: "#a00", //this.options.hexagonFill, 
+				hexagonLine: "#333", //this.options.hexagonLine,
+				hexagonLineWidth: 1, //this.options.hexagonLineWidth
+			}
+
+			if(style=="count") {
+				var t = Math.log(hexagon.cluster.count)/Math.log(totals.points);
+			}
+			var ramp = this.options.hexagonColorRamp;
+			res.hexagonFill = "rgba(" + (ramp[0][1]*(1-t)+ramp[1][1]*t) + "," + (ramp[0][2]*(1-t)+ramp[1][2]*t) + "," + (ramp[0][3]*(1-t)+ramp[1][3]*t) + ","  + (ramp[0][4]*(1-t)+ramp[1][4]*t) + ")";
+
+			return res;
+
+		},
+		getRampColor: function getRampColor(value, total, logarithmic=true) {
+			var ramp = this.options.hexagonColorRamp;
+			var t;
+			if(value>=total || !total) { t=1; }
+			else if(logarithmic) { t = Math.log(value)/Math.log(total); }
+			else { t = value/total;	}
+			
+			return "rgba(" + (ramp[0][1]*(1-t)+ramp[1][1]*t) + "," + (ramp[0][2]*(1-t)+ramp[1][2]*t) + "," + (ramp[0][3]*(1-t)+ramp[1][3]*t) + ","  + (ramp[0][4]*(1-t)+ramp[1][4]*t) + ")";
 		},
 		// #endregion
 
@@ -1205,10 +1290,10 @@
 			return path;
 			
 		},
-		calcHexagonMeters: function calcHexagonMeters() {
+		calcHexagonDiameter: function calcHexagonDiameter() {
 			var size = this.hexagonSize;
 			var ll0 = this._map.containerPointToLatLng([0,0]);
-			var ll1 = this._map.containerPointToLatLng([size,size]);
+			var ll1 = this._map.containerPointToLatLng([size*1.077,0]); // avg between shortest(1) and longest(2/sqrt(3)) hexagon-crosssection
 			return this.getDistance(ll0.lng,ll0.lat,ll1.lng,ll1.lat);
 		},
 		// #endregion
