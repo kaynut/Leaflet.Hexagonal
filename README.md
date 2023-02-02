@@ -7,7 +7,7 @@
 
 
 
-## What it is
+## What is Leaflet.Hexagonal
 Leaflet.Hexagonal is a Leaflet-canvas-layer, that takes 
 - single points, 
 - lines,
@@ -26,7 +26,7 @@ and
 
 
 
-## How to use
+## How to use Leaflet.Hexagonal
 
 ```html
 <link rel="stylesheet" href="./leaflet.hexagonal.css" />
