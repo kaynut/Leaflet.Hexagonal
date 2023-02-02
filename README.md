@@ -1,15 +1,32 @@
 # Leaflet.Hexagonal
 
-Leaflet.Hexagonal is a Leaflet-canvas-layer, that...
-- takes single points, lines or geojson
-- clusters data based on hexagonal grid (if zoomed out)
-- lines up connected data (if zoomed in)
-- draws customizable, clickable hexagons
-- highlights specific hexagons
-- ...  
+![image](/examples/assets/demo.jpg)
 
 
-## Usage
+[Click here for a quick demo and to play with some of its options](https://kaynut.github.io/Leaflet.Hexagonal/)
+
+
+
+## What it is
+Leaflet.Hexagonal is a Leaflet-canvas-layer, that takes 
+- single points, 
+- lines,
+- geojson,
+- icons (svg)
+- markers (images) 
+
+and 
+
+- clusters them (based on a hexagonal grid) 
+- links them up (based on supplied identifiers)
+- styles them (by supplied data)
+- make them interactive (highlight, select)
+
+
+
+
+
+## How to use
 
 ```html
 <link rel="stylesheet" href="./leaflet.hexagonal.css" />
