@@ -6,28 +6,7 @@
  * 
  * https://github.com/kaynut/Leaflet.Hexagonal
  * 
- * 
- * 
- * Leaflet plugin (version >=1.0)
- * - draws/clusters points in a hexagonal manner on a canvas-layer
- * - for a well-made overview to hexagons see: https://www.redblobgames.com/grids/hexagons/
- * - as a base for this layer I took Derek Li's CustomLayer
- * 
- * 
- * 
- * 
 */
-
-/*!
- * Leaflet.CustomLayer.js v2.1.0
- * 
- * Copyright (c) 2019-present Derek Li
- * Released under the MIT License - https://choosealicense.com/licenses/mit/
- * 
- * https://github.com/iDerekLi/Leaflet.CustomLayer
- */
-
- 
 
 
 !function (t, e) {
@@ -178,10 +157,18 @@
 		// #endregion
 
 
+/*!
+* Leaflet.CustomLayer.js v2.1.0
+* 
+* Copyright (c) 2019-present Derek Li
+* Released under the MIT License - https://choosealicense.com/licenses/mit/
+* 
+* https://github.com/iDerekLi/Leaflet.CustomLayer
+*/
+
 
 		// #######################################################
-		// #region base
-		// lifecycle
+		// #region base: modified, based on Leaflet.CustomLayer.js
 		initialize: function initialize(t) {
 			e.setOptions(this, t),
 				e.stamp(this);
@@ -328,6 +315,16 @@
 
 		// #endregion
 
+
+/*!
+* Leaflet.Hexagonal.js v0.8.0
+* 
+* Copyright (c) 2023-present Knut Wanzenberg
+* Released under the MIT License - https://choosealicense.com/licenses/mit/
+* 
+* https://github.com/kaynut/Leaflet.Hexagonal
+* 
+*/
 
 
 		// #######################################################
