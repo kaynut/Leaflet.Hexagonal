@@ -70,16 +70,20 @@
 			// hexagonFill: "color" || false
 			hexagonFill: "#fd1",
 			// hexagonLine: "color" || false
-			hexagonLine: "#666", 	
+			hexagonLine: "#303234", 	
 			// hexagonLineWidth: pixels
 			hexagonLineWidth: 1,
 
-			// hexagonStyle: "count" || "weight" ||  false (style for hexagon-cluster, depending on metadata) 	
-			hexagonStyle: false,
-			// hexagonColorRamp: [ [t,r,g,b,a], [...]]
-			hexagonColorRamp: [[0,100,50,0,1],[1,250,200,50,1]], // colorRamp for hexagonStyle
-			//hexagonWeightPropName: "string" 
-			hexagonWeightPropName: "weight", // propertyName for weight for hexagonStyle
+
+
+			// colorStyle: "count" || "weight" ||  false (style for hexagon-cluster, depending on metadata) 	
+			colorStyle: "weight",
+			// colorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
+			colorRamp: ["#ffdd11","#eeeeee","bb4400"],
+			// colorRampFallback: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
+			colorRampFallback: ["#ffdd11","#eeeeee","bb4400"],
+			//colorWeightProp: "meta.propertyName" 
+			colorWeightProp: "weight", // propertyName for weight-based coloring (included in meta)
 
 
 			
@@ -89,7 +93,7 @@
 			//markerFill: "color" || false
 			markerFill: "#fd1",
 			//markerLine: "color" || false
-			markerLine: "#333",
+			markerLine: "#303234",
 			//markerLine: pixels
 			markerLineWidth: 1,
 			//markerOpacity: number (0-1)
@@ -107,7 +111,7 @@
 			// linkFill: "color" || false
 			linkFill: "#fd1",
 			// linkLine: "color" || false
-			linkLine: "#666", 	
+			linkLine: "#303234", 	
 			// linkLineWidth: pixels
 			linkLineWidth: 2,	
 			// linkLineBorder: pixels
@@ -117,11 +121,11 @@
 			// selectionVisible: true || false
 			selectionVisible: true,
 			// selectionFill: "color" || false
-			selectionFill: "rgba(0,0,0,0.5)", 	
+			selectionFill: "rgba(255,255,255,0.2)", 	
 			// selectionLine: "color" || false
-			selectionLine: "rgba(0,0,0,0.5)", 	 	
+			selectionLine: "rgba(255,255,255,0.2)", 	 	
 			// selectionLineWidth: pixels
-			selectionLineWidth: 1,	
+			selectionLineWidth: 2,	
 			
 
 			// infoVisible: true || false
@@ -162,6 +166,8 @@
 		info: false,
 		infoLayer: false,
 
+		colorRamp: [[0,0,0,1],[255,255,255,1]],
+
 		images: { 
 			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
 		},
@@ -188,6 +194,9 @@
 				this._instanceUID = Date.now();
 				this._incNr = (Date.now() & 16777215)*1000;
 				this._incId = (Date.now() & 16777215)*1000;
+
+				this.setColorRamp(this.options.colorRamp);
+
 		},
 		beforeAdd: function beforeAdd() {
 			this._zoomVisible = !0;
@@ -342,7 +351,7 @@
 
 				meta: { 
 					count: 1,
-					weight: meta[this.options.hexagonWeightPropName] || 1
+					weight: meta[this.options.colorWeightProp] || 1
 				},
 
 				marker: meta.marker || false
@@ -677,9 +686,11 @@
 
 		},
 		_onDraw: function _onDraw() {
-
+			var _drawPerformance = performance.now();
 			this._preDraw();
 			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options);
+			this.totals._drawPerformance = performance.now() - _drawPerformance; 
+			console.log(this.totals._drawPerformance);	
 		},
 		onDraw: function onDraw(canvas, hexagonals, selection, links, options) {
 
@@ -711,11 +722,11 @@
 					// if start/end-point is visivbly clustered (?!)
 					if(links[i].end.cell.cluster) {
 
-						if(this.options.hexagonStyle=="count") {
-							style.linkFill = this.getRampColor(links[i].end.cell.cluster.count, this.totals.count);
+						if(this.options.colorStyle=="count") {
+							style.linkFill = this.getColorRampColor(links[i].end.cell.cluster.count, this.totals.count);
 						}
-						else if(this.options.hexagonStyle=="weight") {
-							style.linkFill = this.getRampColor(links[i].end.cell.cluster.weight, this.totals.weight);
+						else if(this.options.colorStyle=="weight") {
+							style.linkFill = this.getColorRampColor(links[i].end.cell.cluster.weight, this.totals.weight);
 						}
 						else {
 							style.linkFill = this.options.linkFill;
@@ -739,11 +750,11 @@
 					// draw hexagon
 					if(options.hexagonVisible && hexagonals[hexs[h]].point0) {
 
-						if(this.options.hexagonStyle=="count") {
-							style.hexagonFill = this.getRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
+						if(this.options.colorStyle=="count") {
+							style.hexagonFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
 						}
-						else if(this.options.hexagonStyle=="weight") {
-							style.hexagonFill = this.getRampColor(hexagonals[hexs[h]].cluster.weight, this.totals.weight);
+						else if(this.options.colorStyle=="weight") {
+							style.hexagonFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.weight, this.totals.weight);
 						}
 						else {
 							style.hexagonFill = this.options.hexagonFill;
@@ -898,31 +909,85 @@
 			ctx.lineWidth = this.options.linkLineWidth;
 			ctx.stroke(path);
 		},
-		getHexagonStyle: function getHexagonStyle(style, hexagon, totals) {
-		
-			var res = { 
-				hexagonFill: "#a00", //this.options.hexagonFill, 
-				hexagonLine: "#333", //this.options.hexagonLine,
-				hexagonLineWidth: 1, //this.options.hexagonLineWidth
-			}
 
-			if(style=="count") {
-				var t = Math.log(hexagon.cluster.count)/Math.log(totals.points);
-			}
-			var ramp = this.options.hexagonColorRamp;
-			res.hexagonFill = "rgba(" + (ramp[0][1]*(1-t)+ramp[1][1]*t) + "," + (ramp[0][2]*(1-t)+ramp[1][2]*t) + "," + (ramp[0][3]*(1-t)+ramp[1][3]*t) + ","  + (ramp[0][4]*(1-t)+ramp[1][4]*t) + ")";
+		getColorRampColor: function getColorRampColor(value, total, logarithmic=true) {
+			var ramp = this.colorRamp;
+			var l = ramp.length - 1;
 
-			return res;
-
-		},
-		getRampColor: function getRampColor(value, total, logarithmic=true) {
-			var ramp = this.options.hexagonColorRamp;
 			var t;
 			if(value>=total || !total) { t=1; }
 			else if(logarithmic) { t = Math.log(value)/Math.log(total); }
 			else { t = value/total;	}
+
+			if(t==0) {
+				return "rgba(" + ramp[0][0] + "," + ramp[0][1] + "," + ramp[0][2] + "," + ramp[0][3] + ")";
+			}
+			else if(t==1) {
+				return "rgba(" + ramp[l][0] + "," + ramp[l][1] + "," + ramp[l][2] + "," + ramp[l][3] + ")";
+			}
+
+			t = t * l;
+			var f = Math.floor(t);
+			t = t - f;
 			
-			return "rgba(" + (ramp[0][1]*(1-t)+ramp[1][1]*t) + "," + (ramp[0][2]*(1-t)+ramp[1][2]*t) + "," + (ramp[0][3]*(1-t)+ramp[1][3]*t) + ","  + (ramp[0][4]*(1-t)+ramp[1][4]*t) + ")";
+			return "rgba(" + (ramp[f][0]*(1-t)+ramp[f+1][0]*t) + "," + (ramp[f][1]*(1-t)+ramp[f+1][1]*t) + "," + (ramp[f][2]*(1-t)+ramp[f+1][2]*t) + ","  + (ramp[f][3]*(1-t)+ramp[f+1][3]*t) + ")";
+		},
+		setColorRamp: function setColorRamp(colorArray) {
+			if(!colorArray) {
+				this.colorRamp = this.colorRampFallback;
+				return;
+			}
+
+			if(!Array.isArray(colorArray) || !colorArray.length) {
+				console.warn("Leaflet.hexagonal.setColorRamp: Parameter colorArray is invalid", colorArray);
+				this.colorRamp = this.colorRampFallback;
+				return;
+			}
+			this.colorRamp = [];
+			for(var i=0; i<colorArray.length; i++) {
+				if(typeof colorArray[i] == "string") {
+					colorArray[i] = this.getRgbaFromColor(colorArray[i]);
+				}
+				else if(Array.isArray(colorArray[i])) {}
+				else {
+					colorArray[i] = [0,0,0,1];
+				}
+				colorArray[i][0] = colorArray[i][0] || 0;
+				colorArray[i][1] = colorArray[i][1] || 0;
+				colorArray[i][2] = colorArray[i][2] || 0;
+				colorArray[i][3] = colorArray[i][3] || 1;
+
+				this.colorRamp[i] = colorArray[i];
+			}
+
+			if(colorArray.length<2) {
+				this.colorRamp[1] = colorArray[0];
+			}
+
+		},
+		getRgbaFromColor: function getRgbaFromColor(color) {
+			var r,g,b,a;
+			if(!color.indexOf("#")) {
+				color = color.toUpperCase() + "FF";
+				  if(color.length>8) { 
+					[r,g,b,a] = color.match(/[0-9A-F]{2}/g).map(x => parseInt(x, 16));
+					return [r,g,b,a];
+				  }
+				   color += "F";
+				   [r,g,b,a] = color.match(/[0-9A-F]{1}/g).map(x => parseInt(x, 16)*17);
+				return [r,g,b,a];
+			}
+			if(!color.indexOf("rgb")) {
+				color += ",1";
+				[r,g,b,a] = color.match(/[.0-9]{1,3}/g);
+				return [r,g,b,a];
+			}
+			if(Array.isArray(color)) {
+				if(color.length==4) {
+					return color;
+				}
+			}
+			return [0,0,0,1];
 		},
 		// #endregion
 
@@ -938,7 +1003,7 @@
 			this.onClick(e,selection);
 		},
 		onClick: function onClick(e,selection) {
-			console.log(this.calcHexagonMeters());
+			console.log(this.calcHexagonDiameter());
 			return selection;
 
 		},
@@ -1068,6 +1133,7 @@
 			if(!latlng) { 
 				this.selection = false;
 				this.setInfo(false);
+				this.refresh();
 				return false; 
 			}
 
@@ -1080,16 +1146,14 @@
 			if(!selection) {
 				this.selection = false;
 				this.setInfo(false);
+				this.refresh();
 				return false;
 			}
 
 
 			this.selection = selection;
-			
 			this.refresh();
-
 			return selection;
-			
 
 		},
 		getSelection: function getSelection(latlng) {
