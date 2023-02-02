@@ -3,7 +3,7 @@
 ![image](/examples/assets/demo.jpg)
 
 
-[Click here for a quick demo and to play with some of its options](https://kaynut.github.io/Leaflet.Hexagonal/)
+[Click here for a quick demo... and the possiblity to play with some of its options](https://kaynut.github.io/Leaflet.Hexagonal/)
 
 
 

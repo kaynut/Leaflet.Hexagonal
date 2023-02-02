@@ -551,7 +551,7 @@
 			}
 			return false;
 		},	
-		clearMarker: function clearMarker() {
+		clearMarkers: function clearMarkers() {
 			var c = this.markers.length;
 			this.markers = [];
 			this.refresh();
@@ -631,46 +631,49 @@
 
 
 			// cluster markers 
-			for (var i = 0; i < this.markers.length; i++) {
-				
-				var marker = this.markers[i];
+			if(this.options.markerVisible) {
+				for (var i = 0; i < this.markers.length; i++) {
+					
+					var marker = this.markers[i];
 
-				var p = this.getPixels_from_latlng(marker.latlng, w, h, hexagonSize);
-				if (p.visible) {
+					var p = this.getPixels_from_latlng(marker.latlng, w, h, hexagonSize);
+					if (p.visible) {
 
-					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset)
+						var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset)
 
-					if(!this.hexagonals[h.cell]) {
-						this.hexagonals[h.cell] = h;
-						this.hexagonals[h.cell].ids = {};
-						this.hexagonals[h.cell].cluster = { count:0, weight:0 };
+						if(!this.hexagonals[h.cell]) {
+							this.hexagonals[h.cell] = h;
+							this.hexagonals[h.cell].ids = {};
+							this.hexagonals[h.cell].cluster = { count:0, weight:0 };
+						}
+						if(!this.hexagonals[h.cell].marker0) {
+							this.hexagonals[h.cell].marker0 = marker;
+							this.hexagonals[h.cell].markers = {};
+						}
+						this.hexagonals[h.cell].markers[marker.id] = marker;
+						this.hexagonals[h.cell].ids[marker.id] = marker.id;
+
 					}
-					if(!this.hexagonals[h.cell].marker0) {
-						this.hexagonals[h.cell].marker0 = marker;
-						this.hexagonals[h.cell].markers = {};
-					}
-					this.hexagonals[h.cell].markers[marker.id] = marker;
-					this.hexagonals[h.cell].ids[marker.id] = marker.id;
-
+					marker.cell = h;
+					
 				}
-				marker.cell = h;
-				
 			}
-
 
 			// collect links
 			this.links = [];
-			if(this.options.linkMode && this.points.length>1) {
-				for(var i=1; i<this.points.length; i++) {
-					var p1 = this.points[i];
-					if(p1._link>=0) {
-						var p0 = this.points[p1._link];
-						//if(p0.id==p1.id) {
-						var path = this.getLinkPath(p0,p1,hexagonSize, hexagonOffset);
-						if(path) {
-							this.links.push({id: p0.id, start:p0, end:p1, path:path});
+			if(this.options.linkVisible) {
+				if(this.options.linkMode && this.points.length>1) {
+					for(var i=1; i<this.points.length; i++) {
+						var p1 = this.points[i];
+						if(p1._link>=0) {
+							var p0 = this.points[p1._link];
+							//if(p0.id==p1.id) {
+							var path = this.getLinkPath(p0,p1,hexagonSize, hexagonOffset);
+							if(path) {
+								this.links.push({id: p0.id, start:p0, end:p1, path:path});
+							}
+							//}
 						}
-						//}
 					}
 				}
 			}
@@ -683,11 +686,11 @@
 
 		},
 		_onDraw: function _onDraw() {
-			var _drawPerformance = performance.now();
+			var drawTime = performance.now();
 			this._preDraw();
 			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options);
-			this.totals._drawPerformance = performance.now() - _drawPerformance; 
-			console.log(this.totals._drawPerformance);	
+			this.totals.drawTime = performance.now() - drawTime; 
+			console.log(this.totals.drawTime);	
 		},
 		onDraw: function onDraw(canvas, hexagonals, selection, links, options) {
 
@@ -783,6 +786,11 @@
 			}
 
 			this.markerLayer.needsRefresh = false;
+
+			this.afterDraw();
+
+		},
+		afterDraw: function afterDraw() {
 
 		},
 
