@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Leaflet.Hexagonal - testBasic</title>
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+
+   <link rel="stylesheet" href="./leaflet.hexagonal.css" />
+   <script src="./leaflet.hexagonal.js"></script>
+
+   <style type="text/css">
+      html, body { position:absolute; left:0; top:0; right:0; bottom:0; margin: 0; }
+      .leaflet-container { height: 100%; width: 100%; opacity:0.9; }
+   </style>
+
+</head>
+
+<body>
+
+   <div id="map"></div>
+
+   <script type="text/javascript">
+
+      	var map = L.map('map').setView([65, -18], 6);
+	   	var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+		
+
+      	var options = {
+
+			// container, layer
+			container: document.createElement("CANVAS"),
+			zIndex: undefined,
+			opacity: 0.5,
+			visible: !0,
+			minZoom: 0,
+			maxZoom: 18,
+
+
+
+			// hexagonSize: number || function(zoom) { return size; }
+			hexagonSize: function(zoom) { return Math.max(32,Math.pow(2, zoom-5)); }, 
+
+			// hexagonGap: pixels (difference between display- and clustering-size of hexagon) 
+			hexagonGap: 0, 	
+
+			// hexagonMode: "topFlat" || "topPointy",
+			hexagonMode: "topFlat",
+
+			// hexagonFill: "color" || false
+			hexagonFill: "#fd1",
+
+			// hexagonLine: "color" || false
+			hexagonLine: "#303234", 	
+
+			// hexagonLineWidth: pixels
+			hexagonLineWidth: 1,	
+
+
+			linkForce: 100000,
+
+			// highlightVisible: true || false
+			highlightVisible: true,
+
+			// highlightFill: "color" || false
+			highlightFill: "rgba(230,232,234,0.1)", 
+
+			// highlightLine: "color" || false
+			highlightLine: false, 	
+
+			// highlightLineWidth: pixels
+			highlightLineWidth: 1,	
+			
+
+
+			// infoVisible: true || false
+			infoVisible: true,
+
+			// infoMode: "count" || "ids" || "custom" || false
+			infoMode: "count", 
+
+			// infoClassName: class || ""
+			infoClassName: "leaflet-hexagonal-marker-container", 
+
+			// infoPointsMax: number (max items shown explicitly in info)
+			infoItemsMax: 5	
+      }
+
+		var hexagonals = new L.Hexagonal(options).addTo(map);	
+
+		hexagonals.addIcon("token","m12 22-9-5V7l9-5 9 5v10ZM9.1 9.25q.575-.6 1.325-.925Q11.175 8 12 8t1.575.325q.75.325 1.325.925l3-1.675L12 4.3 6.1 7.575Zm1.9 9.9v-3.275q-1.35-.35-2.175-1.425Q8 13.375 8 12q0-.275.025-.512.025-.238.1-.488L5 9.25v6.575ZM12 14q.825 0 1.413-.588Q14 12.825 14 12t-.587-1.413Q12.825 10 12 10q-.825 0-1.412.587Q10 11.175 10 12q0 .825.588 1.412Q11.175 14 12 14Zm1 5.15 6-3.325V9.25L15.875 11q.075.25.1.488.025.237.025.512 0 1.375-.825 2.45-.825 1.075-2.175 1.425Z");
+
+		hexagonals.addPoint({lng:-16.1, lat:65.1},  {id:"A2", marker:{image:"./assets/image0.jpg", size:48}, weight:4000 });
+
+		hexagonals.addMarker({lng:-16.2, lat:65.3}, {id:"A4",marker:{image:"./assets/image2.jpg", size:48}, weight:4000});
+
+		hexagonals.addPoints([[-14,65],[-14.2,65.1],[-14.3,65]]);
+
+		hexagonals.addGeojson('./assets/test.geojson');
+
+
+
+
+   	</script>
+
+	<script type="module">
+
+		import GUI from './examples/assets/lil-gui.js';
+
+		var gui = new GUI();
+		gui.title("Leaflet.Hexagonal");
+
+		var fVisible = gui.addFolder( 'Visibility options' );
+		var oVisible = {
+			hexagonVisible:true,
+			markerVisible: true,
+			linkVisible: true,
+			selectionVisible: true,
+			infoVisible:true
+		};
+		fVisible.add( oVisible, 'hexagonVisible').onChange( value => {
+			hexagonals.options.hexagonVisible = value;
+			hexagonals.refresh(); 
+		} );
+		fVisible.add( oVisible, 'markerVisible').onChange( value => {
+			hexagonals.options.markerVisible = value;
+			hexagonals.refresh(); 
+		} );
+		fVisible.add( oVisible, 'linkVisible').onChange( value => {
+			hexagonals.options.linkVisible = value;
+			hexagonals.refresh(); 
+		} );
+		fVisible.add( oVisible, 'selectionVisible').onChange( value => {
+			hexagonals.options.selectionVisible = value;
+			hexagonals.refresh(); 
+		} );
+		fVisible.add( oVisible, 'infoVisible').onChange( value => {
+			hexagonals.options.infoVisible = value;
+			hexagonals.refresh(); 
+		} );
+
+
+		var fHexagons = gui.addFolder( 'Hexagons' );
+		var oHexagons = { 
+			orientation:"topFlat",
+			size:16
+		}
+		fHexagons.add( oHexagons, 'orientation', [ 'topFlat', 'topPointy' ] ).onChange( value => {
+			hexagonals.options.hexagonMode = value;
+			hexagonals.refresh(); 
+		} );
+		fHexagons.add( oHexagons, 'size', 0, 64, 4 ).onChange( value => {
+			hexagonals.options.hexagonSize = value; 
+			hexagonals.refresh(); 
+		} );
+
+
+		/*
+
+		folder.add( folderParams, 'hexagons', 0, 1 );
+		folder.add( folderParams, 'boolean' );
+		folder.addColor( folderParams, 'color' );
+		folder.add( folderParams, 'function' );
+
+		var params = {
+			options: 10,
+			boolean: true,
+			string: 'lil-gui',
+			number: 0,
+			color: '#aa00ff',
+			function() { console.log( 'hi' ) }
+		};
+
+		gui.add( params, 'options', { Small: 1, Medium: 10, Large: 100 } );
+		gui.add( params, 'boolean' );
+		gui.add( params, 'string' );
+		gui.add( params, 'number' );
+		gui.addColor( params, 'color' );
+		gui.add( params, 'function' ).name( 'Custom Name' );
+		*/
+
+	</script>
+
+</body>
+</html>
