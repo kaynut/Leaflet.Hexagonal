@@ -630,7 +630,7 @@
 					if(!this.hexagonals[h.cell].point0) {
 						this.hexagonals[h.cell].point0 = point;
 						this.hexagonals[h.cell].points = {};
-						this.hexagonals[h.cell].style = { fill:point.meta.fill || false };
+						this.hexagonals[h.cell].style = { fill: (point.meta.fill || false) };
 					}
 					this.hexagonals[h.cell].points[point.id] = point;
 					this.hexagonals[h.cell].ids[point.id] = point.id;
@@ -746,7 +746,7 @@
 							style.linkFill = this.getColorRampColor(links[i].end.cell.cluster.weight, this.totals.weight);
 						}
 						else if(this.options.colorStyle=="point0") {
-							style.hexagonFill = hexagonals[hexs[h]].style.fill || this.options.hexagonFill;
+							style.linkFill = links[i].end.meta.fill || this.options.linkFill;
 						}
 						else {
 							style.linkFill = this.options.linkFill;
