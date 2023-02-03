@@ -1,52 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<title>Leaflet.Hexagonal - testBasic</title>
-   <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Leaflet.Hexagonal - exampleBasic</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
-   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+   <!-- Leaflet -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+		integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+		integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
 
-   <link rel="stylesheet" href="../leaflet.hexagonal.css" />
-   <script src="../leaflet.hexagonal.js"></script>
 
-   <style type="text/css">
-      html, body { position:absolute; left:0; top:0; right:0; bottom:0; margin: 0; }
-      .leaflet-container { height: 100%; width: 100%; opacity:0.9; }
-   </style>
+   <!-- Leaflet.Hexagonal -->  
+	<link rel="stylesheet" href="../leaflet.hexagonal.css" />
+	<script src="../leaflet.hexagonal.js"></script>
+
+
+   <!-- styles -->
+	<style type="text/css">
+		html,
+		body {
+			position: absolute;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			margin: 0;
+		}
+
+		.leaflet-container {
+			height: 100%;
+			width: 100%;
+			opacity: 0.9;
+		}
+	</style>
 
 </head>
 
 <body>
 
-   <div id="map"></div>
+	<div id="map"></div>
 
-   <script type="text/javascript">
-
-      const map = L.map('map').setView([65, -18], 6);
-
-	  const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
-		
-      const hexagonals = new L.Hexagonal().addTo(map);	
-
-	  hexagonals.addPoint({lng:-16.0, lat:65.0});
-	  hexagonals.addPoint({lng:-16.1, lat:65.0}, "A");
-	  hexagonals.addPoint({lng:-16.2, lat:65.0}, "B");
-	  hexagonals.addPoint({lng:-16.3, lat:65.0}, "C");
-
-	  hexagonals.addPoint({lng:-16.5, lat:65.0}, "D");
-	  hexagonals.addPoint({lng:-16.6, lat:65.0}, "D");
-	  hexagonals.addPoint({lng:-16.7, lat:65.1}, "D");
-	  hexagonals.addPoint({lng:-16.7, lat:65.2}, "D");
-	  hexagonals.addPoint({lng:-16.6, lat:65.3}, "D");
-	  hexagonals.addPoint({lng:-16.5, lat:65.3}, "D");
-     hexagonals.addPoint({lng:-16.5, lat:65.2}, "D");
-     hexagonals.addPoint({lng:-16.4, lat:65.2}, "D");
-
-     console.log(hexagonals.points);
+	<script>
 
 
-   </script>
+		// map
+		var center = { lat: 47.5, lng: 10.5 };
+		var map = L.map('map').setView(center, 6);
+		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+
+
+		// hexagonals
+		var hexagonals = new L.Hexagonal().addTo(map);
+
+
+      // add single point
+      hexagonals.addPoint({ lat: 47, lng: 10 });
+
+      // add single point with style
+      hexagonals.addPoint({ lat: 47, lng: 11 }, {fill:"#f00"} );
+
+      // add two points with same id 
+      hexagonals.addPoint({ lat: 47, lng: 12.5 }, {id:"A", fill:"#08d"} );
+      hexagonals.addPoint({ lat: 48, lng: 12.5 }, {id:"A", fill:"#08d"} );
+
+
+      // add three points as a line
+      hexagonals.addPoints([{ lat: 47, lng: 13.5 },{ lat: 48, lng: 13.5 },{ lat: 49, lng: 13.5 }], {id:"B", fill:"#8d0"} );
+
+      // add three points as single points
+      hexagonals.addPoints([{ lat: 47, lng: 15 },{ lat: 48, lng: 15 },{ lat: 49, lng: 15 }], {fill:"#fd1", linked:false} );
+
+      // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
+      var gj = {
+         "type": "FeatureCollection",
+         "features": [
+            {
+               "type": "Feature",
+               "properties": {},
+               "geometry": {
+                  "coordinates": [ 16, 47 ],
+                  "type": "Point"
+               }
+            },
+            {
+               "type": "Feature",
+               "properties": {},
+               "geometry": {
+                  "coordinates": [ 16, 48 ],
+                  "type": "Point"
+               }
+            },
+            {
+               "type": "Feature",
+               "properties": {},
+               "geometry": {
+                  "coordinates": [ 16, 49 ],
+                  "type": "Point"
+               }
+            },
+            {
+               "type": "Feature",
+               "properties": {},
+               "geometry": {
+                  "coordinates": [ 16, 50 ],
+                  "type": "Point"
+               }
+            }
+         ]
+      }
+      hexagonals.addGeojson(gj, {id:"D", fill:"#d22"});
+
+
+      // add a marker with an image 
+      hexagonals.addMarker({ lat: 47, lng: 17 }, {id:"E", marker: { image:"./assets/image0.jpg", size:48} });
+
+      // add a marker with an svg-icon
+      hexagonals.addMarker({ lat: 47, lng: 18.5 }, {id:"E", marker: { icon:"person"}, fill:"#999" });
+
+	</script>
+
+
 
 </body>
+
 </html>

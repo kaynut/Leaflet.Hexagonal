@@ -384,11 +384,13 @@
 
 			// meta
 			meta = meta || {};
-			var linked = meta.linked || true;
+			var linked = true;
+			if(meta.linked===false) { linked = false;}
 			var latlngPropertyName = meta.latlngPropertyName || false;
+			var fill = meta.fill || false;
 
 			// latlng property
-			if(points[0].latlng) {
+			if(points[0].latlng || points[0].lat) {
 				latlngPropertyName = "latlng";
 			}
 
@@ -400,17 +402,25 @@
 			// loop array of objects
 			if(typeof latlngPropertyName == "string") {
 				for(var i=0; i<points.length; i++) {
-					if(points[i][latlngPropertyName]) {
+					// [{lat:...,lng:...}, {...}]
+					if(typeof points[i].lng=="number" && typeof points[i].lat=="number") {
 						if(!linked) { id = this._genId(); }
-						this.addPoint(points[i][latlngPropertyName], { id:id });
+						this.addPoint(points[i], { id:id, fill:fill });
+					}
+					// [{latlngPropertyName:{lat:...,lng:...}, {...}]
+					else if(points[i][latlngPropertyName]) {
+						if(!linked) { id = this._genId(); }
+						this.addPoint(points[i][latlngPropertyName], { id:id, fill:fill });
 					}
 				}
+				// no valid
 				return;
 			} 
 
 
 			// loop array of arrays
 			if(Array.isArray(points[0])) {
+				// [[90,-180],[...]]
 				for(var i=0; i<points.length; i++) {
 					var lng = points[i][0] || 0;
 					var lat = points[i][1] || 0;
@@ -425,17 +435,34 @@
 		},
 
 		addGeojson: function addGeojson(g,props) {
-			if(typeof g == "string" && g.indexOf("json")) {
-				props = props || {};
-				var ref = this;
-				fetch(g)
-				.then((resp) => resp.json())
-				.then((json) => {
-					ref.addGeojson(json,props);
-				});
-				return 0;
+
+			// g = string
+			if(typeof g == "string") {
+
+				// g = json url
+				if(g.indexOf(".json") || g.indexOf(".geojson")) {
+					props = props || {};
+					var ref = this;
+					fetch(g)
+					.then((resp) => resp.json())
+					.then((json) => {
+						ref.addGeojson(json,props);
+					});
+					return 0;
+				}
+
+				// g = jsonString
+				if(g.indexOf("{")==0) {
+					g = JSON.parse(g);
+				}
 			}
+
+			
+			// g = invalid (no geojson-object)
 			if(typeof g != "object" || typeof g.type != "string") { return 0; }
+			
+
+			// g = geojson-object
 			if(g.type == "Point" && g.coordinates) {
 				var ps = props || {};
 				if(!ps.id) { ps.id = this._genId(); }
@@ -445,16 +472,18 @@
 			if(g.type == "MultiPoint") {
 				var c = g.coordinates.length;
 				for(var i=0; i<c; i++) {
-					var id = this._genId();
-					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, {id:id});
+					var ps = props || {};
+					if(!ps.id) { ps.id = this._genId(); }
+					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, ps);
 				}
 				return c;
 			}
 			if(g.type == "LineString") {
 				var c = g.coordinates.length;
-				var id = this._genId();
+				var ps = props || {};
+				if(!ps.id) { ps.id = this._genId(); }
 				for(var i=0; i<c; i++) {
-					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, {id:id});
+					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, ps);
 				}
 				return c;
 			}
@@ -462,23 +491,24 @@
 				var c = 0;
 				for(var i=0; i<g.coordinates.length; i++) {
 					var ci = g.coordinates[i];
-					var id = this._genId();
+					var ps = props || {};
+					if(!ps.id) { ps.id = this._genId(); }
 					for(var j=0; j<ci.length; j++) {
 						// properties
-						this.addPoint({lng:ci[j][0],lat:ci[j][1]}, {id:id});
+						this.addPoint({lng:ci[j][0],lat:ci[j][1]}, ps);
 						c++;
 					}
 				}
 				return c;
 			}
 			if(g.type == "Feature") {
-				var ps = g.properties || {};
+				var ps = Object.assign({},g?.properties,props);
 				return this.addGeojson(g.geometry, ps);
 			}
 			if(g.type == "FeatureCollection") {
 				var c = 0;
 				for(var i=0; i<g.features.length; i++) {
-					var ps = g.features[i]?.properties || {};
+					var ps = Object.assign({},g.features[i]?.properties,props);
 					c+= this.addGeojson(g.features[i].geometry, ps);
 				}
 				return c;
@@ -607,7 +637,7 @@
 			// hexagonOffset, hexagonOverhang 
 			var nw = this._map.getBounds().getNorthWest();
 			var hexagonOffset = this._map.project(nw, zoom);
-			var hexagonOverhang = (1 + (this.options.linkReach / this.calcHexagonDiameter()))*hexagonSize * 1.1;
+			var hexagonOverhang = (1 + (this.options.linkReach / this.calcHexagonDiameter()))*hexagonSize;
 
 			// cluster points
 			for (var i = 0; i < this.points.length; i++) {
@@ -841,7 +871,7 @@
 			}
 
 			var size = m0m.size || hexagon.size;
-			var fill = m0m.fill || this.options.markerFill || "#303234";
+			var fill = m0.meta.fill || this.options.markerFill || "#303234";
 
 			// calc path
 			var w,h;
@@ -1191,7 +1221,7 @@
 			var wh = this._map.getSize();
 			var zoom = this._map.getZoom();
 			var size = this.calcHexagonSize(zoom);
-			var overhang = (1 + (this.options.linkReach / this.calcHexagonDiameter()))*size * 1.1;
+			var overhang = (1 + (this.options.linkReach / this.calcHexagonDiameter()))*size;
 			var nw = this._map.getBounds().getNorthWest();
 			var offset = this._map.project(nw, zoom);
 			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, overhang);

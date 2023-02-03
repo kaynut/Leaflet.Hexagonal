@@ -1,38 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<title>Leaflet.Hexagonal - testBasic</title>
-   <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Leaflet.Hexagonal - examplePerformance</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
-   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+		integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+		integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
 
-   <link rel="stylesheet" href="../leaflet.hexagonal.css" />
-   <script src="../leaflet.hexagonal.js"></script>
+	<link rel="stylesheet" href="../leaflet.hexagonal.css" />
+	<script src="../leaflet.hexagonal.js"></script>
 
-   <style type="text/css">
-      html, body { position:absolute; left:0; top:0; right:0; bottom:0; margin: 0; }
-      .leaflet-container { height: 100%; width: 100%; opacity:0.9; }
-   </style>
+	<style type="text/css">
+		html,
+		body {
+			position: absolute;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			margin: 0;
+		}
+
+		.leaflet-container {
+			height: 100%;
+			width: 100%;
+			opacity: 0.9;
+		}
+	</style>
 
 </head>
 
 <body>
 
-   	<div id="map"></div>
-	
+	<div id="map"></div>
+
 	<script type="module">
 
 
 		// map
-		var center = {lat:47.5, lng:10.5};
-      	var map = L.map('map').setView(center, 6);
-	   	var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+		var center = { lat: 47.5, lng: 10.5 };
+		var map = L.map('map').setView(center, 6);
+		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 
 
 		// hexagonals
-		var hexagonals = new L.Hexagonal().addTo(map);	
-		hexagonals.afterDraw = function() {
+		var hexagonals = new L.Hexagonal().addTo(map);
+		hexagonals.afterDraw = function () {
 			oPerf.hexagons = this.totals.cells;
 			oPerf.points = this.totals.count;
 			oPerf.markers = this.totals.markers;
@@ -42,30 +58,30 @@
 
 
 
-	  	addPoints(10000, true);
+		addPoints(10000, true);
 
-	  	function addPoints(count) {
+		function addPoints(count) {
 
 			hexagonals.clearPoints();
 			hexagonals.clearMarkers();
 
-			var r = Math.floor(Math.random()*200)+50;
-			var g = Math.floor(Math.random()*200)+50;
-			var b = Math.floor(Math.random()*200)+50;
-			var randomColor = `rgb(${r},${g},${b})`; 
+			var r = Math.floor(Math.random() * 200) + 50;
+			var g = Math.floor(Math.random() * 200) + 50;
+			var b = Math.floor(Math.random() * 200) + 50;
+			var randomColor = `rgb(${r},${g},${b})`;
 
 
 			var incr = 0.03;
-			for(var i=0; i<count;i++) {
+			for (var i = 0; i < count; i++) {
 
-				var lat = center.lat + Math.sin(i*incr) * i/1500;
-				var lng = center.lng + Math.cos(i*incr) * i/1000;
+				var lat = center.lat + Math.sin(i * incr) * i / 1500;
+				var lng = center.lng + Math.cos(i * incr) * i / 1000;
 
-				if(i%100==0) {
-					hexagonals.addMarker({lat:lat, lng:lng}, {id:"i",marker:{icon:"person", fill:"#ca0" }});
+				if (i % 100 == 0) {
+					hexagonals.addMarker({ lat: lat, lng: lng }, { id: "i", marker: { icon: "person", fill: "#ca0" } });
 				}
 				else {
-					hexagonals.addPoint({lat:lat, lng:lng}, {id:"p", fill:randomColor});
+					hexagonals.addPoint({ lat: lat, lng: lng }, { id: "p", fill: randomColor });
 				}
 
 			}
@@ -73,65 +89,66 @@
 
 
 
-		
+
 		// gui
 		import GUI from './assets/lil-gui.js';
 		var gui = new GUI();
 
 		gui.title("Leaflet.Hexagonal");
 
-		var fOptions = gui.addFolder( 'Options' );
+		var fOptions = gui.addFolder('Options');
 		window.oOptions = {
 			points: 10000,
-			hexagonSize:32,
+			hexagonSize: 32,
 			drawLinks: true,
 			drawMarkers: true,
-			linkReach:50000
+			linkReach: 50000
 		};
-		fOptions.add( oOptions, 'points',1000,50000,1000).onFinishChange( value => {
+		fOptions.add(oOptions, 'points', 1000, 50000, 1000).onFinishChange(value => {
 			addPoints(value);
-			hexagonals.refresh(); 
+			hexagonals.refresh();
 		});
-		fOptions.add( oOptions, 'hexagonSize',2,128,2).onFinishChange( value => {
+		fOptions.add(oOptions, 'hexagonSize', 2, 128, 2).onFinishChange(value => {
 			hexagonals.options.hexagonSize = value;
-			hexagonals.refresh(); 
+			hexagonals.refresh();
 		});
-		fOptions.add( oOptions, 'drawLinks').onChange( value => {
+		fOptions.add(oOptions, 'drawLinks').onChange(value => {
 			hexagonals.options.linkVisible = value;
-			hexagonals.refresh(); 
+			hexagonals.refresh();
 		});
-		fOptions.add( oOptions, 'drawMarkers').onChange( value => {
+		fOptions.add(oOptions, 'drawMarkers').onChange(value => {
 			hexagonals.options.markerVisible = value;
-			hexagonals.refresh(); 
+			hexagonals.refresh();
 		});
-		fOptions.add( oOptions, 'linkReach',0,100000,10000).onFinishChange( value => {
+		fOptions.add(oOptions, 'linkReach', 0, 100000, 10000).onFinishChange(value => {
 			hexagonals.options.linkReach = value;
-			hexagonals.refresh(); 
+			hexagonals.refresh();
 		});
 
 
-		var fPerf = gui.addFolder( 'Performance' );
+		var fPerf = gui.addFolder('Performance');
 		window.oPerf = {
-			hexagons:0,
-			points:0,
-			markers:0,
-			links:0,
-			draw_milliSeconds:0
+			hexagons: 0,
+			points: 0,
+			markers: 0,
+			links: 0,
+			draw_milliSeconds: 0
 		};
-		fPerf.add(oPerf,'hexagons').listen().disable();
-		fPerf.add(oPerf,'points').listen().disable();
-		fPerf.add(oPerf,'markers').listen().disable();
-		fPerf.add(oPerf,'links').listen().disable();
-		fPerf.add(oPerf,'draw_milliSeconds').listen().disable();
+		fPerf.add(oPerf, 'hexagons').listen().disable();
+		fPerf.add(oPerf, 'points').listen().disable();
+		fPerf.add(oPerf, 'markers').listen().disable();
+		fPerf.add(oPerf, 'links').listen().disable();
+		fPerf.add(oPerf, 'draw_milliSeconds').listen().disable();
 
 
 
 
 
 
-   	</script>
+	</script>
 
 
 
 </body>
+
 </html>
