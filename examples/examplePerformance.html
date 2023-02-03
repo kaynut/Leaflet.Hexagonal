@@ -19,6 +19,64 @@
 
 <body>
 
+
+	<script type="module">
+
+		import GUI from './assets/lil-gui.js';
+		
+		
+		var gui = new GUI();
+		gui.title("Leaflet.Hexagonal");
+
+		var fOptions = gui.addFolder( 'Options' );
+		window.oOptions = {
+			points: 10000,
+			hexagonSize:32,
+			drawLinks: true,
+			drawMarkers: true,
+			linkReach:50000
+		};
+		fOptions.add( oOptions, 'points',1000,50000,1000).onFinishChange( value => {
+			addPoints(value);
+			hexagonals.refresh(); 
+		});
+		fOptions.add( oOptions, 'hexagonSize',2,128,2).onFinishChange( value => {
+			hexagonals.options.hexagonSize = value;
+			hexagonals.refresh(); 
+		});
+		fOptions.add( oOptions, 'drawLinks').onChange( value => {
+			hexagonals.options.linkVisible = value;
+			hexagonals.refresh(); 
+		});
+		fOptions.add( oOptions, 'drawMarkers').onChange( value => {
+			hexagonals.options.markerVisible = value;
+			hexagonals.refresh(); 
+		});
+		fOptions.add( oOptions, 'linkReach',0,100000,10000).onFinishChange( value => {
+			hexagonals.options.linkReach = value;
+			hexagonals.refresh(); 
+		});
+
+
+		var fPerf = gui.addFolder( 'Performance' );
+		window.oPerf = {
+			hexagons:0,
+			points:0,
+			markers:0,
+			links:0,
+			draw_milliSeconds:0
+		};
+		fPerf.add(oPerf,'hexagons').listen().disable();
+		fPerf.add(oPerf,'points').listen().disable();
+		fPerf.add(oPerf,'markers').listen().disable();
+		fPerf.add(oPerf,'links').listen().disable();
+		fPerf.add(oPerf,'draw_milliSeconds').listen().disable();
+
+		
+
+	</script>
+
+
    <div id="map"></div>
 
    <script type="text/javascript">
@@ -31,7 +89,11 @@
 		var hexagonals = new L.Hexagonal().addTo(map);	
 
 		hexagonals.afterDraw = function() {
-			oPerf.drawTime = this.totals.drawTime;
+			oPerf.hexagons = this.totals.cells;
+			oPerf.points = this.totals.count;
+			oPerf.markers = this.totals.markers;
+			oPerf.links = this.totals.links;
+			oPerf.draw_milliSeconds = Math.round(this.totals.drawTime);
 		}
 
 	  	addPoints(10000, true);
@@ -40,6 +102,12 @@
 
 			hexagonals.clearPoints();
 			hexagonals.clearMarkers();
+
+			var r = Math.floor(Math.random()*200)+50;
+			var g = Math.floor(Math.random()*200)+50;
+			var b = Math.floor(Math.random()*200)+50;
+			var randomColor = `rgb(${r},${g},${b})`; 
+
 
 			var incr = 0.03;
 			for(var i=0; i<count;i++) {
@@ -51,7 +119,7 @@
 					hexagonals.addMarker({lat:lat, lng:lng}, {id:"i",marker:{icon:"person", fill:"#ca0" }});
 				}
 				else {
-					hexagonals.addPoint({lat:lat, lng:lng}, {id:"p"});
+					hexagonals.addPoint({lat:lat, lng:lng}, {id:"p", fill:randomColor});
 				}
 
 			}
@@ -63,39 +131,6 @@
 
    	</script>
 
-
-	<script type="module">
-
-		import GUI from './assets/lil-gui.js';
-		
-		
-		var gui = new GUI();
-		gui.title("Leaflet.Hexagonal");
-
-		var fPerf = gui.addFolder( 'Performance' );
-		window.oPerf = {
-			points: 10000,
-			drawLinks: true,
-			drawMarkers: true,
-			drawTime:0
-		}
-		fPerf.add( oPerf, 'points',1000,50000,1000).onFinishChange( value => {
-			addPoints(value);
-			hexagonals.refresh(); 
-		});
-		fPerf.add( oPerf, 'drawLinks').onChange( value => {
-			hexagonals.options.linkVisible = value;
-			hexagonals.refresh(); 
-		});
-		fPerf.add( oPerf, 'drawMarkers').onChange( value => {
-			hexagonals.options.markerVisible = value;
-			hexagonals.refresh(); 
-		});
-		fPerf.add(oPerf,'drawTime',0,1000).listen().disable();
-
-		
-
-	</script>
 
 
 </body>
