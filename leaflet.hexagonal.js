@@ -155,7 +155,8 @@
 			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
 		},
 		icons: {
-			person: "M9 22V8.775q-2.275-.6-3.637-2.513Q4 4.35 4 2h2q0 2.075 1.338 3.537Q8.675 7 10.75 7h2.5q.75 0 1.4.275.65.275 1.175.8L20.35 12.6l-1.4 1.4L15 10.05V22h-2v-6h-2v6Zm3-16q-.825 0-1.412-.588Q10 4.825 10 4t.588-1.413Q11.175 2 12 2t1.413.587Q14 3.175 14 4q0 .825-.587 1.412Q12.825 6 12 6Z"
+			close48: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="48" width="48"><path d="m12.45 37.65-2.1-2.1L21.9 24 10.35 12.45l2.1-2.1L24 21.9l11.55-11.55 2.1 2.1L26.1 24l11.55 11.55-2.1 2.1L24 26.1Z"/></svg>', size: { width:48, height:48} },
+			close24: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>', size: { width:24, height:24} }
 		},
 		
 		// #endregion
@@ -908,9 +909,23 @@
 			// svg-icon
 			else if(m0m.icon) {
 				var svg = "";
-				if(this.icons[m0m.icon]) {
-					svg = `<path opacity="0.75" transform="translate(${w/2-12},${h/2-12})" d="${this.icons[m0m.icon]}" />`; 
+				if(!this.icons[m0m.icon]) { }
+				else {
+					var micon = this.icons[m0m.icon];
+					var mw = micon.size.width || 1;
+					var ms = w/(mw*2);
+					var ox = w * 0.25;
+					var oy = h * 0.2165;
+					if(h>w) { 
+						ox = w * 0.2165; 
+						oy = h * 0.25;
+					}
+
+					svg = `<g transform=" matrix(${ms},0,0,${ms},${ox},${oy}) " opacity="0.75">${micon.svg}</g>`;
 				}
+					//svg = `<path opacity="0.75" transform="translate(${w/2-12},${h/2-12})" d="${this.icons[m0m.icon]}" />`; 
+			
+
 				icon = L.divIcon({
 					className: 'leaflet-hexagonal-marker',
 					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
@@ -1422,17 +1437,51 @@
 
 		// #######################################################
 		// #region helpers
-		addIcon: function addIcon(iconName, svg) {
+		addIconSvg: function addIconSvg(iconName, svg, size) {
 			if(typeof iconName != "string" || typeof svg != "string") {
 				console.warn("Leaflet.hexagonal.addIcon: parameter 'iconName' and 'svg' have to be strings");
 				return;
 			}
-			if(svg.indexOf("svg")) {
-				console.warn('Leaflet.hexagonal.addIcon: Right now parameter <svg> does only except the d-attribute of a path: <svg><path d="XXX...XXX"/></svg>');
+
+			// svg is url
+			if(svg.substring(svg.length - 4)==".svg") {
+				var ref = this;
+				fetch(svg)
+				.then((resp) => resp.text())
+				.then((svg_string) => {
+					ref.addIconSvg(iconName, svg_string, size);
+				});
 				return;
 			}
-			this.icons[iconName] = svg;
+			
+			// svg is not a string
+			if(svg.indexOf("<svg")!==0) {
+				console.warn('Leaflet.hexagonal.addSvg: parameter <svg> must be a svg-string');
+				return;
+			}
+
+			//size
+			if(!size) {
+				size = {width:24, height:24};
+				var p = new DOMParser();
+				var d = p.parseFromString(svg,"text/xml");
+				console.log(d.getElementsByTagName("svg"));
+				size.width = d.getElementsByTagName("svg")[0].getAttribute('width') || 24;
+				size.height = d.getElementsByTagName("svg")[0].getAttribute('height') || 24;
+			}
+			else if(typeof size == "number") {
+				size = {width:size, height:size };
+			}
+			else if(Array.isArray(size) && size.length>1) {
+				size = {width:size[0], height:size[1]};
+			}
+			else if(size.width && size.height) {}
+			else {
+				size = { width:24, height:24 };
+			}
+			this.icons[iconName] = {svg:svg, size:size};
 		},
+
 		validateLatLng: function validateLatLng(latlng) {
 			if(typeof latlng == "object") {
 				if(typeof latlng.lat == "number") {
