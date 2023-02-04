@@ -1,0 +1,44 @@
+.leaflet-hexagonal-marker {
+    border:0;
+}
+.leaflet-hexagonal-info-container {
+    border:0;
+}
+.leaflet-hexagonal-info {
+    position: absolute;   
+    left: 0px;
+    top: 0px; 
+	display: block;
+    float: left;
+    margin: -1px 6px;
+    padding: 10px 10px;    
+    line-height:15px;
+    background-color: rgb(30,32,34);
+    color:#eee;
+    border-radius: 2px; 
+    opacity: 0.75;
+    cursor: default;
+}
+.leaflet-hexagonal-info:after {
+	content: "";
+    display: block;
+    border-width: 6px 6px 0;
+    border-style: solid;
+    border-color: rgb(30,32,34) transparent transparent;
+    margin-left: -6px;
+    position: absolute;
+}
+.leaflet-hexagonal-info.leftTop {
+    border-top-left-radius: 0;
+}
+.leaflet-hexagonal-info.leftTop:after {
+    border-top-color: rgb(30,32,34);
+    border-right-color: rgb(30,32,34);
+    top:0;
+    border-width: 3px;
+    margin: 0;
+    border-left-color: transparent;
+    left: -6px;
+    right: auto;
+    bottom:auto; 
+} 

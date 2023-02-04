@@ -21,12 +21,15 @@
 
    <div id="map"></div>
 
-   <script type="text/javascript">
+   <script type="module">
 
+
+		// map
       	var map = L.map('map').setView([65, -18], 6);
 	   	var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 		
 
+		// hexagonal options
       	var options = {
 
 			// container, layer
@@ -36,8 +39,6 @@
 			visible: !0,
 			minZoom: 0,
 			maxZoom: 18,
-
-
 
 			// hexagonSize: number || function(zoom) { return size; }
 			hexagonSize: function(zoom) { return Math.max(32,Math.pow(2, zoom-5)); }, 
@@ -85,8 +86,10 @@
 
 			// infoPointsMax: number (max items shown explicitly in info)
 			infoItemsMax: 5	
-      }
+        }
 
+
+		// hexagonal
 		var hexagonals = new L.Hexagonal(options).addTo(map);	
 
 		hexagonals.addIconSvg("token",'./assets/token.svg', 1);
@@ -103,10 +106,7 @@
 
 
 
-   	</script>
-
-	<script type="module">
-
+		// gui
 		import GUI from './examples/assets/lil-gui.js';
 
 		var gui = new GUI();
@@ -157,29 +157,6 @@
 		} );
 
 
-		/*
-
-		folder.add( folderParams, 'hexagons', 0, 1 );
-		folder.add( folderParams, 'boolean' );
-		folder.addColor( folderParams, 'color' );
-		folder.add( folderParams, 'function' );
-
-		var params = {
-			options: 10,
-			boolean: true,
-			string: 'lil-gui',
-			number: 0,
-			color: '#aa00ff',
-			function() { console.log( 'hi' ) }
-		};
-
-		gui.add( params, 'options', { Small: 1, Medium: 10, Large: 100 } );
-		gui.add( params, 'boolean' );
-		gui.add( params, 'string' );
-		gui.add( params, 'number' );
-		gui.addColor( params, 'color' );
-		gui.add( params, 'function' ).name( 'Custom Name' );
-		*/
 
 	</script>
 
