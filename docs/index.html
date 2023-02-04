@@ -7,8 +7,8 @@
    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
 
-   <link rel="stylesheet" href="./leaflet.hexagonal.css" />
-   <script src="./leaflet.hexagonal.js"></script>
+   <link rel="stylesheet" href="../leaflet.hexagonal.css" />
+   <script src="../leaflet.hexagonal.js"></script>
 
    <style type="text/css">
       html, body { position:absolute; left:0; top:0; right:0; bottom:0; margin: 0; }
@@ -89,15 +89,16 @@
 
 		var hexagonals = new L.Hexagonal(options).addTo(map);	
 
-		hexagonals.addIcon("token","m12 22-9-5V7l9-5 9 5v10ZM9.1 9.25q.575-.6 1.325-.925Q11.175 8 12 8t1.575.325q.75.325 1.325.925l3-1.675L12 4.3 6.1 7.575Zm1.9 9.9v-3.275q-1.35-.35-2.175-1.425Q8 13.375 8 12q0-.275.025-.512.025-.238.1-.488L5 9.25v6.575ZM12 14q.825 0 1.413-.588Q14 12.825 14 12t-.587-1.413Q12.825 10 12 10q-.825 0-1.412.587Q10 11.175 10 12q0 .825.588 1.412Q11.175 14 12 14Zm1 5.15 6-3.325V9.25L15.875 11q.075.25.1.488.025.237.025.512 0 1.375-.825 2.45-.825 1.075-2.175 1.425Z");
+		hexagonals.addIconSvg("token",'./assets/token.svg', 1);
+		hexagonals.addMarker({ lat: -18, lng: 65 }, {id:"E", marker: { icon:"token", size:32}, fill:"#999" });
 
-		hexagonals.addPoint({lng:-16.1, lat:65.1},  {id:"A2", marker:{image:"./examples/assets/image0.jpg", size:48}, weight:4000 });
+		hexagonals.addPoint({lng:-16.1, lat:65.1},  {id:"A2", marker:{image:"./assets/image0.jpg", size:48}, weight:4000 });
 
 		hexagonals.addPoints([[-14,65],[-14.2,65.1],[-14.3,65]]);
 
-		hexagonals.addMarker({lng:-16.2, lat:65.3}, {id:"A4",marker:{image:"./examples/assets/image2.jpg", size:48}, weight:4000});
+		hexagonals.addMarker({lng:-16.2, lat:65.3}, {id:"A4",marker:{image:"./assets/image2.jpg", size:48}, weight:4000});
 
-		hexagonals.addGeojson('./examples/assets/test.geojson');
+		hexagonals.addGeojson('./assets/test.geojson');
 
 
 
