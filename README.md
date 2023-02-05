@@ -4,9 +4,9 @@
 
 
 [Click here for a quick example](https://kaynut.github.io/Leaflet.Hexagonal/)
-- [basic example](./exampleBasic.html)
-- [manipulate options](./exampleOptions.html)
-- [performance.html](./examplePerformance.html) 
+- [Example: adding data](./exampleBasic.html)
+- [Example: manipulating options](./exampleOptions.html)
+- [Test: performance](./examplePerformance.html) 
 
 ## What is Leaflet.Hexagonal
 Leaflet.Hexagonal is a Leaflet-canvas-layer, that takes 

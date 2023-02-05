@@ -887,8 +887,6 @@
 				poly = `0 ${size*0.289},${size*0.5} 0,${size*1} ${size*0.289},${size*1} ${size*0.866},${size*0.5} ${size*1.155},0 ${size*0.866}`;
 			}
 
-			w += this.options.markerLineWidth;
-			h += this.options.markerLineWidth;
 			
 			// image-icon
 			var icon;

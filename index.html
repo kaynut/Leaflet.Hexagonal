@@ -85,10 +85,10 @@
 
 		var fHexagons = gui.addFolder( 'Hexagons' );
 		var oHexagons = { 
-			orientation:"topFlat",
+			mode:"topFlat",
 			size:16
 		}
-		fHexagons.add( oHexagons, 'orientation', [ 'topFlat', 'topPointy' ] ).onChange( value => {
+		fHexagons.add( oHexagons, 'mode', [ 'topFlat', 'topPointy' ] ).onChange( value => {
 			hexagonals.options.hexagonMode = value;
 			hexagonals.refresh(); 
 		} );
