@@ -77,7 +77,7 @@ This layer was designed to be
 
 
 ## Options
-Below, you find a list of options, that you can pass on initialisation - and most can be altered afterwards. Take a look at the exampleOptions.html
+Below, you find a list of all options, that you can pass on initialisation - and most of them can be altered afterwards. Take a look at the [exampleOptions.html](./exampleOptions.html) to play around with them
 ```html
 
 hexagonVisible: true || false
