@@ -13,8 +13,8 @@
 
 
    <!-- Leaflet.Hexagonal -->  
-	<link rel="stylesheet" href="../leaflet.hexagonal.css" />
-	<script src="../leaflet.hexagonal.js"></script>
+	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
+	<script src="./leaflet.hexagonal.js"></script>
 
 
    <!-- styles -->
@@ -117,7 +117,6 @@
       hexagonals.addMarker({ lat: 47, lng: 17 }, {id:"E", marker: { image:"./assets/image0.jpg", size:48} });
 
       // add a marker with an svg-icon 
-      hexagonals.addIconSvg("x",'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>');
       hexagonals.addIconSvg("token",'./assets/token.svg', 1);
 
       console.log(hexagonals.icons)

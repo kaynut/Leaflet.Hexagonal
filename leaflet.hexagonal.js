@@ -44,8 +44,6 @@
 			hexagonSize: function(zoom) { return Math.max(32,Math.pow(2, zoom-5)); }, 
 			// hexagonGap: pixels (difference between display- and clustering-size of hexagon) 
 			hexagonGap: 0, 	
-			// hexagonOverhang: integer (number of hexagons beyond the viewport should be calculated: more is (1) better for links, (2) a bit slower)
-			hexagonOverhang: 20,
 			// hexagonMode: "topFlat" || "topPointy",
 			hexagonMode: "topFlat",
 			// hexagonFill: "color" || false
@@ -889,6 +887,8 @@
 				poly = `0 ${size*0.289},${size*0.5} 0,${size*1} ${size*0.289},${size*1} ${size*0.866},${size*0.5} ${size*1.155},0 ${size*0.866}`;
 			}
 
+			w += this.options.markerLineWidth;
+			h += this.options.markerLineWidth;
 			
 			// image-icon
 			var icon;
