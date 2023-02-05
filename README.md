@@ -13,7 +13,6 @@ Leaflet.Hexagonal is a Leaflet-canvas-layer, that takes
 - geojson (Point, LineString, Feature, FeatureCollection),
 - marker (images,svg)
 
-
 and 
 
 - clusters them (based on a hexagonal grid) 
