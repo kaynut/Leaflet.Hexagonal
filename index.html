@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>Leaflet.Hexagonal - testBasic</title>
+	<title>Leaflet.Hexagonal</title>
    <meta name="viewport" content="width=device-width, initial-scale=1">
 
    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
@@ -28,72 +28,13 @@
       	var map = L.map('map').setView([65, -18], 6);
 	   	var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 		
-
-		// hexagonal options
-      	var options = {
-
-			// container, layer
-			container: document.createElement("CANVAS"),
-			zIndex: undefined,
-			opacity: 0.5,
-			visible: !0,
-			minZoom: 0,
-			maxZoom: 18,
-
-			// hexagonSize: number || function(zoom) { return size; }
-			hexagonSize: function(zoom) { return Math.max(32,Math.pow(2, zoom-5)); }, 
-
-			// hexagonGap: pixels (difference between display- and clustering-size of hexagon) 
-			hexagonGap: 0, 	
-
-			// hexagonMode: "topFlat" || "topPointy",
-			hexagonMode: "topFlat",
-
-			// hexagonFill: "color" || false
-			hexagonFill: "#fd1",
-
-			// hexagonLine: "color" || false
-			hexagonLine: "#303234", 	
-
-			// hexagonLineWidth: pixels
-			hexagonLineWidth: 1,	
-
-
-			linkForce: 100000,
-
-			// highlightVisible: true || false
-			highlightVisible: true,
-
-			// highlightFill: "color" || false
-			highlightFill: "rgba(230,232,234,0.1)", 
-
-			// highlightLine: "color" || false
-			highlightLine: false, 	
-
-			// highlightLineWidth: pixels
-			highlightLineWidth: 1,	
-			
-
-
-			// infoVisible: true || false
-			infoVisible: true,
-
-			// infoMode: "count" || "ids" || "custom" || false
-			infoMode: "count", 
-
-			// infoClassName: class || ""
-			infoClassName: "leaflet-hexagonal-marker-container", 
-
-			// infoPointsMax: number (max items shown explicitly in info)
-			infoItemsMax: 5	
-        }
-
-
 		// hexagonal
-		var hexagonals = new L.Hexagonal(options).addTo(map);	
+		var hexagonals = new L.Hexagonal().addTo(map);	
 
-		hexagonals.addIconSvg("token",'./assets/token.svg', 1);
-		hexagonals.addMarker({ lat: -18, lng: 65 }, {id:"E", marker: { icon:"token", size:32}, fill:"#999" });
+		hexagonals.addPoint({lng:-17.1, lat:65.1});
+
+		hexagonals.addIconSvg("token",'./assets/token.svg');
+		hexagonals.addMarker({ lng: -17, lat: 65.5 }, {id:"A1", marker: { icon:"token", size:32}, fill:"#999" });
 
 		hexagonals.addPoint({lng:-16.1, lat:65.1},  {id:"A2", marker:{image:"./assets/image0.jpg", size:48}, weight:4000 });
 
@@ -151,7 +92,7 @@
 			hexagonals.options.hexagonMode = value;
 			hexagonals.refresh(); 
 		} );
-		fHexagons.add( oHexagons, 'size', 0, 64, 4 ).onChange( value => {
+		fHexagons.add( oHexagons, 'size', 4, 64, 4 ).onChange( value => {
 			hexagonals.options.hexagonSize = value; 
 			hexagonals.refresh(); 
 		} );
