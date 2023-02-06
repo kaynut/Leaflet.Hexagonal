@@ -1,3 +1,12 @@
+// todo:
+// done : id => group... id => entity , maybe set entity to name?
+// addLine, addPoints
+// imagesizeMax
+// done: namengebung straight => default, line, hexagonal
+// done: pointyTop => pointyTop flatTop
+// done: bug: Rundungsproblem bei hexagonen > exampleOptions.html (zoomlevel: 10) > offset-value needed rounding  
+
+
 /*!
  * Leaflet.Hexagonal.js v0.8.0
  * 
@@ -44,8 +53,8 @@
 			hexagonSize: function(zoom) { return Math.max(32,Math.pow(2, zoom-5)); }, 
 			// hexagonGap: pixels (difference between display- and clustering-size of hexagon) 
 			hexagonGap: 0, 	
-			// hexagonMode: "topFlat" || "topPointy",
-			hexagonMode: "topFlat",
+			// hexagonMode: "flatTop" || "pointyTop",
+			hexagonMode: "flatTop",
 			// hexagonFill: "color" || false
 			hexagonFill: "#fd1",
 			// hexagonLine: "color" || false
@@ -81,10 +90,8 @@
 
 			// linkVisible: boolean
 			linkVisible: true,			
-			// linkMode: "centered" || "straight" || "hexagonal" || false
-			linkMode: "straight",
-			// linkForce: integer (0=only adjacent points with same id get linked, 1,2,3,...= x points (with different id) may be added in the meantime)
-			linkForce:0,
+			// linkMode: "default" || "line" ||"hexagonal" || false
+			linkMode: "default",
 			// linkReach: meters (longest distance to be linked. controls how large of an area will be evaluated - for performance issues)
 			linkReach: 50000,
 			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
@@ -336,20 +343,20 @@
 
 		// #######################################################
 		// #region points
-		addPoint: function addPoint(latlng, meta) { //  {lng,lat},"id",{weight, marker}
+		addPoint: function addPoint(latlng, meta) { //  {lng,lat},{entity, weight, marker}
 	
 			latlng = this.validateLatLng(latlng);
 
 			meta = meta || {};
 
-			if (typeof meta.id != "number" && typeof meta.id !="string") { meta.id = this._genId(); }
+			if (typeof meta.entity != "number" && typeof meta.entity !="string") { meta.entity = this._genId(); }
 
 			var _nr = this._genNr();
 
 			var point = {
-				id: meta.id,
+				entity: meta.entity,
 				_nr: _nr,
-				_link: this.getLinkPos(meta.id),
+				_link: this.getLinkEntity(meta.entity),
 				cell: false,
 				latlng: latlng,
 
@@ -374,7 +381,7 @@
 			this.refresh();
 
 		},
-		addPoints: function addPoints(points, meta) {  // [ {lng,lat},"id",{weight, marker}  ,  {lng,lat},"id",{weight, marker}  , ...]
+		addPoints: function addPoints(points, meta) {  // [ {lng,lat},{entity,weight, marker}  ,  {lng,lat},{ entity, weight, marker}  , ...]
 			if(!Array.isArray(points)) {
 				console.warn("Leaflet.hexagonal.addPoints: parameter must be an array", points);
 				return;
@@ -393,9 +400,8 @@
 				latlngPropertyName = "latlng";
 			}
 
-			// linked/id
-			var id;
-			if(linked) { id = this._genId(); }
+			// linked/entity
+			var entity = this._genId();
 
 
 			// loop array of objects
@@ -403,13 +409,13 @@
 				for(var i=0; i<points.length; i++) {
 					// [{lat:...,lng:...}, {...}]
 					if(typeof points[i].lng=="number" && typeof points[i].lat=="number") {
-						if(!linked) { id = this._genId(); }
-						this.addPoint(points[i], { id:id, fill:fill });
+						if(!linked) { entity = this._genId(); }
+						this.addPoint(points[i], { entity:entity, fill:fill });
 					}
 					// [{latlngPropertyName:{lat:...,lng:...}, {...}]
 					else if(points[i][latlngPropertyName]) {
-						if(!linked) { id = this._genId(); }
-						this.addPoint(points[i][latlngPropertyName], { id:id, fill:fill });
+						if(!linked) { entity = this._genId(); }
+						this.addPoint(points[i][latlngPropertyName], { entity:entity, fill:fill });
 					}
 				}
 				// no valid
@@ -423,8 +429,8 @@
 				for(var i=0; i<points.length; i++) {
 					var lng = points[i][0] || 0;
 					var lat = points[i][1] || 0;
-					if(!linked) { id = this._genId(); }
-					this.addPoint({lat:lat, lng:lng}, { id:id });
+					if(!linked) { entity = this._genId(); }
+					this.addPoint({lat:lat, lng:lng}, { entity:entity });
 				}
 				return;
 			}
@@ -464,7 +470,7 @@
 			// g = geojson-object
 			if(g.type == "Point" && g.coordinates) {
 				var ps = props || {};
-				if(!ps.id) { ps.id = this._genId(); }
+				if(!ps.entity) { ps.entity = this._genId(); }
 				this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]}, ps);
 				return 1;
 			}
@@ -472,7 +478,7 @@
 				var c = g.coordinates.length;
 				for(var i=0; i<c; i++) {
 					var ps = props || {};
-					if(!ps.id) { ps.id = this._genId(); }
+					if(!ps.entity) { ps.entity = this._genId(); }
 					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, ps);
 				}
 				return c;
@@ -480,7 +486,7 @@
 			if(g.type == "LineString") {
 				var c = g.coordinates.length;
 				var ps = props || {};
-				if(!ps.id) { ps.id = this._genId(); }
+				if(!ps.entity) { ps.entity = this._genId(); }
 				for(var i=0; i<c; i++) {
 					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, ps);
 				}
@@ -491,7 +497,7 @@
 				for(var i=0; i<g.coordinates.length; i++) {
 					var ci = g.coordinates[i];
 					var ps = props || {};
-					if(!ps.id) { ps.id = this._genId(); }
+					if(!ps.entity) { ps.entity = this._genId(); }
 					for(var j=0; j<ci.length; j++) {
 						// properties
 						this.addPoint({lng:ci[j][0],lat:ci[j][1]}, ps);
@@ -517,14 +523,14 @@
 			return 0;
 
 		},
-		removePoint: function removePoint(id) {
+		removePoint: function removePoint(entity) {
 			if(this.points.length<1) { return false; }
-			if(typeof id != "number" && typeof id != "string") {
+			if(typeof entity != "number" && typeof entity != "string") {
 				return false;
 			}
 
 			for(var j=0; j<this.points.length; j++) {
-				if(id===this.points[j].id) {
+				if(entity===this.points[j].entity) {
 
 					var link = this.points[j]._link;
 					var weight = this.points[j].weight;
@@ -567,7 +573,7 @@
 
 			meta = meta || {};
 
-			if (typeof meta.id != "number" && typeof meta.id !="string") { meta.id = this._genId(); }
+			if (typeof meta.entity != "number" && typeof meta.entity !="string") { meta.entity = this._genId(); }
 
 			if(meta.marker) {
 				this.addPoint(latlng, meta);
@@ -576,13 +582,13 @@
 				console.warn("Leaflet.hexagonal.addMarker: no sufficient data");
 			}
 		},
-		removeMarker: function removeMarker(id) {
+		removeMarker: function removeMarker(entity) {
 			if(this.markers.length<1) { return false; }
-			if(typeof id != "number" && typeof id != "string") {
+			if(typeof entity != "number" && typeof entity != "string") {
 				return false;
 			}
 			for(var j=0; j<this.markers.length; j++) {
-				if(id===this.markers[j].id) {
+				if(entity===this.markers[j].entity) {
 					this.markers.splice(j, 1);
 					return true;
 				}
@@ -636,6 +642,7 @@
 			// hexagonOffset, hexagonOverhang 
 			var nw = this._map.getBounds().getNorthWest();
 			var hexagonOffset = this._map.project(nw, zoom);
+			hexagonOffset= {x:Math.round(hexagonOffset.x), y: Math.round(hexagonOffset.y) };
 			var hexagonOverhang = (1 + (this.options.linkReach / this.calcHexagonDiameter()))*hexagonSize;
 
 			// cluster points
@@ -661,8 +668,8 @@
 						this.hexagonals[h.cell].points = {};
 						this.hexagonals[h.cell].style = { fill: (point.meta.fill || false) };
 					}
-					this.hexagonals[h.cell].points[point.id] = point;
-					this.hexagonals[h.cell].ids[point.id] = point.id;
+					this.hexagonals[h.cell].points[point.entity] = point;
+					this.hexagonals[h.cell].ids[point.entity] = point.entity;
 
 					// cluster data
 					this.hexagonals[h.cell].cluster.count++;
@@ -697,8 +704,8 @@
 							this.hexagonals[h.cell].marker0 = marker;
 							this.hexagonals[h.cell].markers = {};
 						}
-						this.hexagonals[h.cell].markers[marker.id] = marker;
-						this.hexagonals[h.cell].ids[marker.id] = marker.id;
+						this.hexagonals[h.cell].markers[marker.entity] = marker;
+						this.hexagonals[h.cell].ids[marker.entity] = marker.entity;
 
 					//}
 					marker.cell = h;
@@ -717,7 +724,7 @@
 							if(p0.visible && p1.visible) {
 								var path = this.getLinkPath(p0,p1,hexagonSize, hexagonOffset);
 								if(path) {
-									this.links.push({id: p0.id, start:p0, end:p1, path:path});
+									this.links.push({entity: p0.entity, start:p0, end:p1, path:path});
 								}
 							}
 						}
@@ -782,7 +789,7 @@
 						}
 		
 						this.drawLink(ctx, links[i], style);
-						if(selectionIds[links[i].id] && options.selectionVisible) {
+						if(selectionIds[links[i].entity] && options.selectionVisible) {
 							this.drawLinkSelected(ctx, links[i]);
 						}
 					}
@@ -875,7 +882,7 @@
 			// calc path
 			var w,h;
 			var poly = false;
-			if(!hexagon.topPointy) {
+			if(!hexagon.pointyTop) {
 				w = size*1.155;
 				h = size;
 				poly = `0 ${size*0.5},${size*0.289} 0,${size*0.866} 0,${size*1.155} ${size*0.5},${size*0.866} ${size},${size*0.289} ${size}`;
@@ -1153,7 +1160,7 @@
 				maxPoints = Math.min(points.length, maxPoints);
 
 				for(var i=0;i<maxPoints; i++) {
-					html += br + points[i].id;
+					html += br + points[i].entity;
 					br = "<br>";
 				}
 				return html + more;
@@ -1177,7 +1184,6 @@
 			return points.length;
 
 		},
-
 		showInfo: function showInfo() {
 			if(this.info) {
 				var i = document.querySelector('.leaflet-hexagonal-info-container');
@@ -1237,6 +1243,7 @@
 			var overhang = (1 + (this.options.linkReach / this.calcHexagonDiameter()))*size;
 			var nw = this._map.getBounds().getNorthWest();
 			var offset = this._map.project(nw, zoom);
+			offset = {x:Math.round(offset.x), y: Math.round(offset.y) };
 			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, overhang);
 			var h = this.calcHexagonCell(p.x,p.y,size, offset);
 
@@ -1269,20 +1276,20 @@
 			return 16;
 		},	
 		calcHexagonCell: function calcHexagonCell(x,y, size, offset) { // hexagon top-flat
-			if(this.options.hexagonMode == "topPointy") {
-				return this.calcHexagonCell_topPointy(x,y, size, offset);
+			if(this.options.hexagonMode == "pointyTop") {
+				return this.calcHexagonCell_pointyTop(x,y, size, offset);
 			}
 
 			offset = offset || {x:0,y:0};
 			var gap = this.options.hexagonGap || 0;
 			var xs = (x+offset.x)/size;
 			var ys = (y+offset.y)/size;
-			var sqrt3 = 1.73205081; 
+			var sqrt3 = 1.7320508075688772;  
 			var s0 = size - gap;
 			var s2 = s0/sqrt3;
 			var s4 = s2/2;
 			var h = s0/2;  
-
+			
 			var t = Math.floor(ys + sqrt3 * xs + 1);
 			var idy = Math.floor((Math.floor(2 * ys + 1) + t) / 3);
 			var idx = Math.floor((t + Math.floor(-ys + sqrt3 * xs + 1)) / 3);
@@ -1293,19 +1300,18 @@
 			idy -= Math.floor(idx/2); // flat - offset even-q
 			var cell = (idx + "_" + idy); 
 
-			var topPointy=false;
+			var pointyTop=false;
 
 			var path = "M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z";
 
-			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, topPointy:topPointy };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:pointyTop };
 		},
-		calcHexagonCell_topPointy: function calcHexagonCell_topPointy(x,y, size, offset) { // hexagon top-pointy
-
+		calcHexagonCell_pointyTop: function calcHexagonCell_pointyTop(x,y, size, offset) { // hexagon top-pointy
 			offset = offset || {x:0,y:0};
 			var gap = this.options.hexagonGap || 0;
 			var xs = (x+offset.x)/size;
 			var ys = (y+offset.y)/size;
-			var sqrt3 = 1.73205081; 
+			var sqrt3 = 1.7320508075688772; 
 			var s0 = size - gap;
 			var s2 = s0/sqrt3;
 			var s4 = s2/2;
@@ -1321,15 +1327,15 @@
 			idx -= Math.floor(idy/2); // pointy - offset even-r
 			var cell = (idx + "_" + idy); 
 
-			var topPointy = true;
+			var pointyTop = true;
 
 			var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
 
-			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, topPointy:topPointy };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:pointyTop };
 		},
-		getLinkPath: function getLinkPath(point0, point1, size,offset) {
+		getLinkPath: function getLinkPath(point0, point1, size, offset) {
 
-			var id = point0.id;
+			var entity = point0.entity;
 			var h0 = point0.cell;
 			var h1 = point1.cell;
 
@@ -1363,16 +1369,16 @@
 						this.hexagonals[h.cell].link0 = point0;
 						this.hexagonals[h.cell].links = {};
 					}
-					this.hexagonals[h.cell].links[point0.id] = point0;
-					this.hexagonals[h.cell].ids[point0.id] = point0.id;
+					this.hexagonals[h.cell].links[point0.entity] = point0;
+					this.hexagonals[h.cell].ids[point0.entity] = point0.entity;
 				}
 
 			}
 
 
 
-			// linkMode = centered
-			if(this.options.linkMode=="centered") {			
+			// linkMode = line
+			if(this.options.linkMode=="line") {			
 				var join = 1 - this.options.linkJoin; 
 		
 				var mx = (h0.cx+h1.cx)/2;
@@ -1389,8 +1395,8 @@
 			}
 
 
-			// linkMode = straight
-			if(this.options.linkMode=="straight") {			
+			// linkMode = default
+			if(this.options.linkMode=="default") {			
 				var join = 1 - this.options.linkJoin;
 				var ks = Object.keys(hs);
 		
@@ -1543,13 +1549,12 @@
 			if (p.x < -overhang || p.y < -overhang || p.x > w+overhang || p.y > h+overhang) { return { x: p.x, y: p.y, visible: false }; }
 			return { x: p.x, y: p.y, visible: true };
 		},
-		getLinkPos: function getLinkPos(id) {
+		getLinkEntity: function getLinkEntity(entity) {
 			var il = this.points.length;
 			if(il<1) { return -1; }
-			var f = Math.max(0,il-this.options.linkForce-1);
 			var i=il-1;
-			while(i>=f) {
-				if(id==this.points[i].id) {
+			while(i>=0) {
+				if(entity==this.points[i].entity) {
 					return i;
 				}
 				i--;
@@ -1594,30 +1599,6 @@
 			}
 			return arr;
 		},
-		_toObject: function _toObject(arr, id) {
-			var obj = {};
-			if(!Array.isArray(arr)) { return obj; }
-			if(!arr.length) { return obj; }
-			
-			// if no id
-			if(typeof id != "string") { 
-				// if flat alphanumeric array
-				if(typeof arr[0] == "string" || typeof arr[0] == "number") {
-					for(var i=0;i<arr.length; i++) {
-						obj[arr[i]] = arr[i];
-					}
-				}
-				return obj; 
-			}
-
-			// if id
-			for(var i=0;i<arr.length; i++) {
-				if(arr[i][id]) {
-					obj[arr[i][id]] = arr[i];
-				}
-			}
-			return obj;
-		},
 		_genUID: function _genUID() {
 			return (Date.now()&16777215) + "_" + Math.floor(Math.random() * 1000000); // string = uses 4.6 days worth of ms and 10^6 random
 		},
@@ -1631,59 +1612,6 @@
 		},
 		// #endregion
 
-
-
-
-		// #######################################################
-		// #region custom
-		addPoint_tiles15: function addPoint_tiles15(tiles15, id, meta) { //  {"UxWd":{"count":105,"secs":1705,"dist":7694},....}, 
-			if (typeof tiles15 == "string") {
-				tiles15 = JSON.parse(tiles15);
-			}
-			if (typeof tiles15 != "object") {
-				console.warn("Leaflet.hexagonal.addPoint_tiles15: unknown format", tiles15);
-				return;
-			}
-
-			if (typeof id != "number" && typeof id !="string") { id = this._genId(); }
-
-			meta = meta || {};
-
-
-			var keys = Object.keys(tiles15);
-			for (var i = 0; i < keys.length; i++) {
-
-				var bbox = this.getBbox_from_tile15(keys[i]);
-				var latlng= { lng: (bbox[0]+bbox[2])/2, lat: (bbox[1]+bbox[3])/2 };
-
-				var _nr = this._genNr();
-
-				var point = {
-					id: id,
-					_nr: _nr,
-					_link: this.getLinkPos(id),
-					cell: false,
-					latlng: latlng,
-					count: meta.count || tiles15[keys[i]].count || 0,
-					secs: meta.secs || tiles15[keys[i]].secs || 0,
-					dist: meta.dist || tiles15[keys[i]].dist || 0,
-					weight: meta.weight || tiles15[keys[i]].weight || 0,
-					ts: meta.ts || tiles15[keys[i]].dist || 0,
-					marker: false // todo??
-				};
-
-				this.points.push(point);
-
-				if(point.marker) { // todo??
-					this.markers.push(point);
-				}
-
-				this.refresh();
-
-			}
-
-		}
-		// #endregion
 
 	});
 
