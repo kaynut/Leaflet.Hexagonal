@@ -1,10 +1,14 @@
 // todo:
 // done : id => group... id => entity , entity => group
-// addLine, addPoints
+// done: addLine, addPoints
 // imagesizeMax
 // done: namengebung straight => default, line, hexagonal
 // done: pointyTop => pointyTop flatTop
 // done: bug: Rundungsproblem bei hexagonen > exampleOptions.html (zoomlevel: 10) > offset-value needed rounding  
+// check all addFunctions (with parameters)
+// check removeFunctions
+// delete/sum up some options for style
+
 
 
 /*!
@@ -151,6 +155,8 @@
 		markerLayer: false,
 
 		selection: {},
+
+		groupInfo: {},
 
 		info: false,
 		infoLayer: false,
@@ -1279,6 +1285,13 @@
 
 		// #######################################################
 		// #region info
+		setGroupInfo: function setGroupInfo(group, info) {
+			if(typeof group != "string" && typeof group != "number") {
+				console.warn("Leaflet.hexagonal.setGroupInfo: name of group invalid", group);
+				return;
+			}
+			this.groupInfo[group] = info;
+		},
 		setInfo: function setInfo(info) {
 
 			if(this.info) {
