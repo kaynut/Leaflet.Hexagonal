@@ -56,18 +56,24 @@
 
 
       // add single point
-      hexagonals.addPoint({ lat: 47, lng: 10 });
+      hexagonals.addPoint({ lat: 47, lng: 7.5 });
 
       // add single point with style
-      hexagonals.addPoint({ lat: 47, lng: 11 }, {fill:"#f00"} );
+      hexagonals.addPoint({ lat: 47, lng: 9 }, {fill:"#f00"} );
 
-      // add two points with same id 
-      hexagonals.addPoint({ lat: 47, lng: 12.5 }, {id:"A", fill:"#08d"} );
-      hexagonals.addPoint({ lat: 48, lng: 12.5 }, {id:"A", fill:"#08d"} );
+      // add line
+      hexagonals.addLine([[10,47],[10,48]] );
+
+      // add line with style
+      hexagonals.addLine([{lat:47,lng:11},{lat:48,lng:11},{lat:49,lng:11}], {fill:"#f00"} );
+
+      // add two points to the same group 
+      hexagonals.addPoint({ lat: 47, lng: 12.5 }, {group:"A", fill:"#08d"} );
+      hexagonals.addPoint({ lat: 48, lng: 12.5 }, {group:"A", fill:"#08d", linked:true} );
 
 
       // add three points as a line
-      hexagonals.addPoints([{ lat: 47, lng: 13.5 },{ lat: 48, lng: 13.5 },{ lat: 49, lng: 13.5 }], {id:"B", fill:"#8d0"} );
+      hexagonals.addPoints([{ lat: 47, lng: 13.5 },{ lat: 48, lng: 13.5 },{ lat: 49, lng: 13.5 }], {group:"B", fill:"#8d0"} );
 
       // add three points as single points
       hexagonals.addPoints([{ lat: 47, lng: 15 },{ lat: 48, lng: 15 },{ lat: 49, lng: 15 }], {fill:"#fd1", linked:false} );
@@ -110,17 +116,17 @@
             }
          ]
       }
-      hexagonals.addGeojson(gj, {id:"D", fill:"#d22"});
+      hexagonals.addGeojson(gj, {group:"D", fill:"#d22"});
 
 
       // add a marker with an image 
-      hexagonals.addMarker({ lat: 47, lng: 17 }, {id:"E", marker: { image:"./assets/image0.jpg", size:48} });
+      hexagonals.addMarker({ lat: 47, lng: 17 }, {group:"E", marker: true, image:"./assets/image0.jpg", size:48 });
 
       // add a marker with an svg-icon 
       hexagonals.addIconSvg("token",'./assets/token.svg', 1);
 
       console.log(hexagonals.icons)
-      hexagonals.addMarker({ lat: 47, lng: 18.5 }, {id:"E", marker: { icon:"token", size:32}, fill:"#999" });
+      hexagonals.addMarker({ lat: 47, lng: 18.5 }, {group:"E", marker:true, icon:"token", size:32, fill:"#999" });
 
 
 
