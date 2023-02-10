@@ -60,36 +60,30 @@
 			hexagonGap: 0, 	
 			// hexagonMode: "flatTop" || "pointyTop",
 			hexagonMode: "flatTop",
-			// hexagonFill: "color" || false
-			hexagonFill: "#fd1",
-			// hexagonLine: "color" || false
-			hexagonLine: "#303234", 	
-			// hexagonLineWidth: pixels
-			hexagonLineWidth: 1,
+
+
+			// defaultFill: "color" || false
+			defaultFill: "#fd1",
+			// defaultLine: "color" || false
+			defaultLine: "#303234", 	
+			// defaultLineWidth: pixels
+			defaultLineWidth: 1,
 
 
 
-			// colorStyle: "count" || "weight" || "static" || "point0" || false (style for hexagon-cluster: depending on pointCount, sum of pointWeights or first point metadata) 	
-			colorStyle: "point0",
+			// colorStyle: "count" || "sum" || "avg" || "min" || "max" || "unique" || "first" || false (style for hexagon-cluster: depending on point data) 	
+			colorStyle: "first",
 			// colorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
 			colorRamp: ["#ffdd11","#eeeeee","bb4400"],
 			// colorRampFallback: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
 			colorRampFallback: ["#ffdd11","#eeeeee","bb4400"],
-			//colorWeightProp: "meta.propertyName" 
-			colorWeightProp: "weight", // propertyName for weight-based coloring (included in meta)
-			//colorStaticProp: "meta.propertyName" 
-			colorStaticProp: "static", // propertyName for static-based coloring (included in meta)
+			//colorProp: "meta.propertyName" 
+			colorProp: "data", // propertyName for data-based coloring (included in meta)
 
 			
 
 			// markerVisible: boolean
 			markerVisible: true,
-			//markerFill: "color" || false
-			markerFill: "#fd1",
-			//markerLine: "color" || false
-			markerLine: "#303234",
-			//markerLine: pixels
-			markerLineWidth: 1,
 			//markerOpacity: number (0-1)
 			markerOpacity: 1,
 
@@ -102,14 +96,9 @@
 			linkReach: 50000,
 			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
 			linkJoin: 1,  
-			// linkFill: "color" || false
-			linkFill: "#fd1",
-			// linkLine: "color" || false
-			linkLine: "#303234", 	
-			// linkLineWidth: pixels
-			linkLineWidth: 2,	
-			// linkLineBorder: pixels
-			linkLineBorder: 1,	
+			// linkWidth: pixels
+			linkWidth: 2,	
+
 
 
 			// selectionVisible: true || false
@@ -148,7 +137,7 @@
 		points: [],
 		totals:{
 			count:0,
-			weight:0
+			data:0
 		},
 		links: [],
 
@@ -351,7 +340,7 @@
 		// #######################################################
 		// #region points
 		// addPoint:  add single point with metadata
-		addPoint: function addPoint(latlng, meta) { //  {lng,lat} , {id, group, linked, weight,marker}
+		addPoint: function addPoint(latlng, meta) { //  {lng,lat} , {id, group, linked, data, marker}
 			latlng = this.validateLatLng(latlng);
 			meta = meta || {};
 
@@ -379,8 +368,7 @@
 
 				meta: { 
 					count: 1,
-					weight: meta[this.options.colorWeightProp] || 1,
-					static: meta[this.options.colorStaticProp] || false
+					data: meta[this.options.colorProp] || 1
 				},
 
 				style: {
@@ -398,7 +386,7 @@
 
 			// totals
 			this.totals.count += 1;
-			this.totals.weight += point.meta.weight;
+			this.totals.sum += point.meta.data;
 
 			// add to points
 			this.points.push(point);
@@ -417,7 +405,7 @@
 		},
 
 		// addLine: add array of points (all with same metadata), all in the same group and all linked by default
-		addLine: function addLine(points, meta) {  // [ latlng0, latlng1, ... ] , {group,weight, marker} 
+		addLine: function addLine(points, meta) {  // [ latlng0, latlng1, ... ] , {group,data, marker} 
 			if(!Array.isArray(points)) {
 				console.warn("Leaflet.hexagonal.addLine: parameter must be an array", points);
 				return 0;
@@ -701,10 +689,10 @@
 				if(id===this.points[j].id) {
 
 					var link = this.points[j].link;
-					var weight = this.points[j].weight;
+					var data = this.points[j].data;
 
 					this.totals.count -= 1;
-					this.totals.weight -= weight;
+					this.totals.sum -= data;
 
 					this.points.splice(j, 1);
 
@@ -763,10 +751,10 @@
 				if(group===this.points[j].group) {
 
 					var link = this.points[j].link;
-					var weight = this.points[j].weight;
+					var data = this.points[j].data;
 
 					this.totals.count -= 1;
-					this.totals.weight -= weight;
+					this.totals.sum -= data;
 
 					this.points.splice(j, 1);
 
@@ -809,7 +797,7 @@
 			this.markers = [];
 			this.totals = {
 				count:0,
-				weight:0
+				sum:0
 			};
 			this.markerLayer.clearLayers();
 
@@ -877,11 +865,14 @@
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
 						this.hexagonals[h.cell].ids = {};
-						this.hexagonals[h.cell].cluster = { count:0, weight:0 };
+						this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, unique:{}, first:false }; //// colorStyle = "count" || "sum" || "avg" || "min" || "max" || "unique" || "first" || false
 						this.hexagonals[h.cell].style = { fill:false };
 					}
 					if(!this.hexagonals[h.cell].point0) {
 						this.hexagonals[h.cell].point0 = point;
+						this.hexagonals[h.cell].cluster.first = point.meta.data;
+						this.hexagonals[h.cell].cluster.min = point.meta.data;
+						this.hexagonals[h.cell].cluster.max = point.meta.data;
 						this.hexagonals[h.cell].points = {};
 						this.hexagonals[h.cell].style = { fill: (point.style.fill || false) };
 					}
@@ -890,8 +881,12 @@
 
 					// cluster data
 					this.hexagonals[h.cell].cluster.count++;
-					this.hexagonals[h.cell].cluster.weight += point.meta.weight;
-					
+					this.hexagonals[h.cell].cluster.sum += point.meta.data;
+					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.count;
+					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, point.meta.data);
+					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, point.meta.data);
+					this.hexagonals[h.cell].cluster.unique[point.meta.data] = point.meta.data; 
+
 				}
 
 				point.cell = h;
@@ -914,7 +909,7 @@
 						if(!this.hexagonals[h.cell]) {
 							this.hexagonals[h.cell] = h;
 							this.hexagonals[h.cell].ids = {};
-							this.hexagonals[h.cell].cluster = { count:0, weight:0 };
+							this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, unique:{}, first:false };
 							this.hexagonals[h.cell].style = { fill:false };
 						}
 						if(!this.hexagonals[h.cell].marker0) {
@@ -978,11 +973,9 @@
 
 			// style
 			var style = { 
-				hexagonFill: this.options.hexagonFill, 
-				hexagonLine: this.options.hexagonLine,
-				hexagonLineWidth: this.options.hexagonLineWidth,
-				linkFill: this.options.linkFill,
-				linkLine: this.options.linkLine
+				defaultFill: this.options.defaultFill || "#f00", 
+				defaultLine: this.options.defaultLine || "#f00", 
+				defaultLineWidth: this.options.defaultLineWidth || 1
 			};
 
 			// draw links
@@ -992,17 +985,19 @@
 					// if start/end-point is visivbly clustered (?!)
 					if(links[i].end.cell.cluster) {
 
+
+						// todo::: // colorStyle = "count" || "sum" || "avg" || "min" || "max" || "unique" || "first" || false
 						if(this.options.colorStyle=="count") {
-							style.linkFill = this.getColorRampColor(links[i].end.cell.cluster.count, this.totals.count);
+							style.defaultFill = this.getColorRampColor(links[i].end.cell.cluster.count, this.totals.count);
 						}
-						else if(this.options.colorStyle=="weight") {
-							style.linkFill = this.getColorRampColor(links[i].end.cell.cluster.weight, this.totals.weight);
+						else if(this.options.colorStyle=="sum") {
+							style.defaultFill = this.getColorRampColor(links[i].end.cell.cluster.sum, this.totals.sum);
 						}
 						else if(this.options.colorStyle=="point0") {
-							style.linkFill = links[i].end.style.fill || this.options.linkFill;
+							style.defaultFill = links[i].end.style.fill || this.options.defaultFill;
 						}
 						else {
-							style.linkFill = this.options.linkFill;
+							style.defaultFill = this.options.defaultFill;
 						}
 		
 						this.drawLink(ctx, links[i], style);
@@ -1023,17 +1018,18 @@
 					// draw hexagon
 					if(options.hexagonVisible && hexagonals[hexs[h]].point0) {
 
+						// colorStyle = "count" || "sum" || "avg" || "min" || "max" || "unique" || "first" || false
 						if(this.options.colorStyle=="count") {
-							style.hexagonFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
+							style.defaultFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
 						}
-						else if(this.options.colorStyle=="weight") {
-							style.hexagonFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.weight, this.totals.weight);
+						else if(this.options.colorStyle=="sum") {
+							style.defaultFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.sum, this.totals.sum);
 						}
 						else if(this.options.colorStyle=="point0") {
-							style.hexagonFill = hexagonals[hexs[h]].style.fill || this.options.hexagonFill;
+							style.defaultFill = hexagonals[hexs[h]].style.fill || this.options.defaultFill;
 						}
 						else {
-							style.hexagonFill = this.options.hexagonFill;
+							style.defaultFill = this.options.defaultFill;
 						}
 
 						this.drawHexagon(ctx, hexagonals[hexs[h]], style);
@@ -1072,13 +1068,13 @@
 
 		drawHexagon: function drawHexagon(ctx, hexagon, style) {
 			var hPath = new Path2D(hexagon.path);
-			if(style.hexagonFill) {
-				ctx.fillStyle = style.hexagonFill;
+			if(style.defaultFill) {
+				ctx.fillStyle = style.defaultFill;
 				ctx.fill(hPath);
 			}
-			if(style.hexagonLine) {
-				ctx.strokeStyle = style.hexagonLine;
-				ctx.lineWidth = style.hexagonLineWidth;
+			if(style.defaultLine) {
+				ctx.strokeStyle = style.defaultLine;
+				ctx.lineWidth = style.defaultLineWidth;
 				ctx.stroke(hPath);
 			}
 		},
@@ -1090,7 +1086,7 @@
 
 			// style
 			var size = style0.size || hexagon.size;
-			var fill = style0.fill || this.options.markerFill || "#ff0000";
+			var fill = style0.fill || this.options.defaultFill || "#ff0000";
 
 
 			// calc path
@@ -1120,8 +1116,8 @@
 						className: 'leaflet-hexagonal-marker',
 						html: `<svg width="${w}" height="${h}" opacity="${ref.options.markerOpacity}" >
 							<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
-							<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${ref.options.markerLineWidth+1}" /></mask>
-							<use href="#hexa${m0.id}" fill="${ref.options.markerLine}" shape-rendering="geometricPrecision" />
+							<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${ref.options.defaultLineWidth+1}" /></mask>
+							<use href="#hexa${m0.id}" fill="${ref.options.defaultLine}" shape-rendering="geometricPrecision" />
 							<image preserveAspectRatio="xMidYMid slice" href="${style0.image}" mask="url(#mask${m0.id})" width="${w}" height="${h}" ></image>
 							</svg>`,
 						className: "",
@@ -1160,8 +1156,8 @@
 					className: 'leaflet-hexagonal-marker',
 					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
 						<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
-						<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${this.options.markerLineWidth}" /></mask>
-						<use href="#hexa${m0.id}" fill="${fill}" stroke="${this.options.markerLine}" stroke-width="${this.options.markerLineWidth}" shape-rendering="geometricPrecision" />
+						<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${this.options.defaultLineWidth}" /></mask>
+						<use href="#hexa${m0.id}" fill="${fill}" stroke="${this.options.defaultLine}" stroke-width="${this.options.defaultLineWidth}" shape-rendering="geometricPrecision" />
 						${svg}
 						</svg>`,
 					className: "",
@@ -1205,8 +1201,8 @@
 				className: 'leaflet-hexagonal-marker',
 				html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
 					<symbol id="hexa${marker.id}"><polygon points="${poly}"></polygon></symbol>
-					<mask id="mask${marker.id}"><use href="#hexa${marker.id}" fill="#fff" stroke="#000" stroke-width="${this.options.markerLineWidth}" /></mask>
-					<use href="#hexa${marker.id}" fill="${this.options.markerFill}" stroke="${this.options.markerLine}" stroke-width="${this.options.markerLineWidth}" shape-rendering="geometricPrecision" />
+					<mask id="mask${marker.id}"><use href="#hexa${marker.id}" fill="#fff" stroke="#000" stroke-width="${this.options.defaultLineWidth}" /></mask>
+					<use href="#hexa${marker.id}" fill="${this.options.defaultFill}" stroke="${this.options.defaultLine}" stroke-width="${this.options.defaultLineWidth}" shape-rendering="geometricPrecision" />
 					${svg}
 					</svg>`,
 				className: "",
@@ -1232,26 +1228,26 @@
 
 		drawLink: function drawLink(ctx, link, style) {
 			var path = new Path2D(link.path);
-			if(this.options.linkLineBorder) {
+			if(this.options.defaultLine) {
 				ctx.lineJoin = "round";
-				ctx.strokeStyle = this.options.linkLine;
-				ctx.lineWidth = this.options.linkLineWidth + this.options.linkLineBorder*2;
+				ctx.strokeStyle = this.options.defaultLine;
+				ctx.lineWidth = this.options.linkWidth + this.options.defaultLine*2;
 				ctx.stroke(path);
 			}
-			ctx.strokeStyle = style.linkFill;
-			ctx.lineWidth = this.options.linkLineWidth;
+			ctx.strokeStyle = style.defaultFill;
+			ctx.lineWidth = this.options.linkWidth;
 			ctx.stroke(path);
 		},
 		drawLinkSelected: function drawLinkSelected(ctx, link) {
 			var path = new Path2D(link.path);
-			if(this.options.linkLineBorder && this.options.selectionLine) {
+			if(this.options.defaultLine && this.options.selectionLine) {
 				ctx.lineJoin = "round";
 				ctx.strokeStyle = this.options.selectionLine;
-				ctx.lineWidth = this.options.linkLineWidth + this.options.linkLineBorder*2;
+				ctx.lineWidth = this.options.linkWidth + this.options.defaultLine*2;
 				ctx.stroke(path);
 			}
 			ctx.strokeStyle = this.options.selectionFill;
-			ctx.lineWidth = this.options.linkLineWidth;
+			ctx.lineWidth = this.options.linkWidth;
 			ctx.stroke(path);
 		},
 
