@@ -71,9 +71,44 @@
 
 
 		// add single point
-		hexagonals.addPoint({ lat: 47, lng: 7.5 }, {group:"A"});
-		hexagonals.setGroupInfo("A","single point");
+		hexagonals.addPoint({ lat: 47, lng: 0 }, {group:"A"});
+		
+		hexagonals.addPoint({ lat: 47, lng: 1.2 }, {group:"B"});
+		hexagonals.addPoint({ lat: 48, lng: 1.2 }, {group:"B"});
+		//hexagonals.removeGroup("B");
 
+		hexagonals.addPoint({ lat: 47, lng: 2.4 }, {group:"C", id:30});
+		hexagonals.addPoint({ lat: 48, lng: 2.4 }, {group:"C", id:31});
+		//hexagonals.removePoint(30);
+
+		hexagonals.addPoint({ lat: 47, lng: 3.6 }, {group:"D", id:40});
+		hexagonals.addPoint({ lat: 48, lng: 3.6 }, {group:"D", id:41});
+		hexagonals.addPoint({ lat: 49, lng: 3.6 }, {group:"D", id:42});
+		//hexagonals.removePoint(41);
+
+		hexagonals.addPoint({ lat: 47, lng: 4.8 }, {group:"E", id:50, linked:true});
+		hexagonals.addPoint({ lat: 48, lng: 4.8 }, {group:"E", id:51, linked:true});
+		hexagonals.addPoint({ lat: 49, lng: 4.8 }, {group:"E", id:52, linked:true});
+		hexagonals.removePoint(51);
+
+		hexagonals.addLine([[6,47],[6,48],[6,49],[6,50]], {group:"F"});
+
+		hexagonals.addLine([[7.2,47],[7.2,48],[7.2,49],[7.2,50]], {group:"G"});
+		//hexagonals.removeGroup("G");
+
+		
+		hexagonals.addMarker({ lat: 47, lng: 8.5 }, {group:"H", icon:'fallback' });
+		hexagonals.addMarker({ lat: 48, lng: 8.5 }, {group:"H", icon:'./assets/person.svg' });
+		hexagonals.addMarker({ lat: 49, lng: 8.5 }, {group:"H", icon:'unknown.svg' });
+		hexagonals.cacheIcon("token","./assets/token.svg");
+		hexagonals.addMarker({ lat: 50, lng: 8.5 }, {group:"H", icon:'token' });
+	
+
+		hexagonals.addMarker({ lat: 47, lng: 9.7 }, {group:"I", image:'./assets/image0.jpg' });
+		hexagonals.addMarker({ lat: 48, lng: 9.7 }, {group:"I", image: 'unknown.jpg' });
+
+
+		//console.log(hexagonals);
 
 	  /*
       // add single point with style
@@ -155,9 +190,9 @@
 				return;
 			}
 
-			var group = selection.point0.group;
+			var group = selection?.point0?.group;
 
-			if(!this.groupInfo[group]) {
+			if(!group || !this.groupInfo[group]) {
 				tt.style.display = "none";
 				return;
 			}
