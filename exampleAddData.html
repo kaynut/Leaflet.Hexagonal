@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-	<title>Leaflet.Hexagonal - exampleBasic</title>
+	<title>Leaflet.Hexagonal - exampleAddData.html</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
    <!-- Leaflet -->
@@ -57,7 +57,7 @@
 	<div id="map"></div>
 	<div id="tooltip" class="tooltip"></div>
 
-	<script>
+	<script type="module">
 
 
 		// map
@@ -108,79 +108,48 @@
 		//hexagonals.addMarker({ lat: 48, lng: 9.7 }, {group:"I", image: 'unknown.jpg' });
 
 
-		//console.log(hexagonals);
-
-	  /*
-      // add single point with style
-      hexagonals.addPoint({ lat: 47, lng: 9 }, {fill:"#f00"} );
-
-      // add line
-      hexagonals.addLine([[10,47],[10,48]] );
-
-      // add line with style
-      hexagonals.addLine([{lat:47,lng:11},{lat:48,lng:11},{lat:49,lng:11}], {fill:"#f00"} );
-
-      // add two points to the same group 
-      hexagonals.addPoint({ lat: 47, lng: 12.5 }, {group:"A", fill:"#08d"} );
-      hexagonals.addPoint({ lat: 48, lng: 12.5 }, {group:"A", fill:"#08d", linked:true} );
-
-
-      // add three points as a line
-      hexagonals.addPoints([{ lat: 47, lng: 13.5 },{ lat: 48, lng: 13.5 },{ lat: 49, lng: 13.5 }], {group:"B", fill:"#8d0"} );
-
-      // add three points as single points
-      hexagonals.addPoints([{ lat: 47, lng: 15 },{ lat: 48, lng: 15 },{ lat: 49, lng: 15 }], {fill:"#fd1", linked:false} );
 
       // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
-      var gj = {
-         "type": "FeatureCollection",
-         "features": [
-            {
-               "type": "Feature",
-               "properties": {},
-               "geometry": {
-                  "coordinates": [ 16, 47 ],
-                  "type": "Point"
-               }
-            },
-            {
-               "type": "Feature",
-               "properties": {},
-               "geometry": {
-                  "coordinates": [ 16, 48 ],
-                  "type": "Point"
-               }
-            },
-            {
-               "type": "Feature",
-               "properties": {},
-               "geometry": {
-                  "coordinates": [ 16, 49 ],
-                  "type": "Point"
-               }
-            },
-            {
-               "type": "Feature",
-               "properties": {},
-               "geometry": {
-                  "coordinates": [ 16, 50 ],
-                  "type": "Point"
-               }
-            }
-         ]
-      }
-      hexagonals.addGeojson(gj, {group:"D", fill:"#d22"});
+      	var gj = {
+			"type": "FeatureCollection",
+			"features": [
+				{
+					"type": "Feature",
+					"properties": { icon:"token" },
+					"geometry": {
+						"coordinates": [ 11, 47 ],
+						"type": "Point"
+					}
+				},
+				{
+				"type": "Feature",
+				"properties": {},
+				"geometry": {
+					"coordinates": [ 11, 48 ],
+					"type": "Point"
+				}
+				},
+				{
+				"type": "Feature",
+				"properties": {},
+				"geometry": {
+					"coordinates": [ 11, 49 ],
+					"type": "Point"
+				}
+				},
+				{
+				"type": "Feature",
+				"properties": {},
+				"geometry": {
+					"coordinates": [ 11, 50 ],
+					"type": "Point"
+				}
+				}
+			]
+		}
+      	hexagonals.addGeojson(gj, {group:"J"});
 
 
-      // add a marker with an image 
-      hexagonals.addMarker({ lat: 47, lng: 17 }, {group:"E", marker: true, image:"./assets/image0.jpg", size:48 });
-
-      // add a marker with an svg-icon 
-      hexagonals.addIconSvg("token",'./assets/token.svg', 1);
-
-      console.log(hexagonals.icons)
-      hexagonals.addMarker({ lat: 47, lng: 18.5 }, {group:"E", marker:true, icon:"token", size:32, fill:"#999" });
-	  */
 
 	  	// hexagonal: for example qick-and-dirty tooltips
 	  	hexagonals.onMouseRest = function(selection) {
@@ -203,6 +172,26 @@
 			tt.innerHTML = this.groupInfo[group];
 
 		};
+
+
+
+		// gui
+		import GUI from './assets/lil-gui.js';
+
+		var gui = new GUI();
+		gui.title("Leaflet.Hexagonal");
+
+
+		var fHexagons = gui.addFolder( 'Hexagons' );
+		var oHexagons = { 
+			hexagonVisible:true,
+			hexagonSize:16,
+			hexagonGap:0,
+			hexagonMode:"flatTop",
+			hexagonFill:"#fd1",
+			hexagonLine:"#333",
+			hexagonLineWidth:1
+		};	
 
 	</script>
 

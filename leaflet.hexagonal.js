@@ -71,7 +71,7 @@
 			// styleLinkWidth: pixels
 			styleLinkWidth: 2,	
 			// styleMode: "count" || "sum" || "avg" || "min" || "max" || "first" || false (style for hexagon-cluster: depending on point data) 	
-			styleMode: "first",
+			styleMode: false,
 			//styleProperty: "meta.propertyName" 
 			styleProperty: "data", // propertyName for data-based coloring (included in meta)
 
@@ -142,7 +142,8 @@
 			count:0,
 			data:0,
 			min: false,
-			max: false
+			max: false,
+			delta: 0
 		},
 		links: [],
 
@@ -229,7 +230,6 @@
 			this._destroyContainer();
 			this.fire("layer-destroyed");
 		},
-		// events
 		_onLayerViewReset: function _onLayerViewReset() {
 			this._reset();
 		},
@@ -248,7 +248,6 @@
 		_onZoomVisible: function _onZoomVisible() {
 			this._isZoomVisible() ? this._zoomShow() : this._zoomHide();
 		},
-		// methods
 		_initContainer: function _initContainer() {
 			var t = this._container = this.options.container;
 			e.DomUtil.addClass(t, "leaflet-layer");
@@ -383,9 +382,9 @@
 
 				style: {
 					fill: meta.fill || false,
-					line: meta.line || false,
+					stroke: meta.stroke || false,
 					lineWidth: meta.lineWidth || false,
-					lineBorder: meta.lineBorder || false,
+					linkWidth: meta.linkWidth || false,
 					image: meta.image || false,
 					icon: meta.icon || false,
 					size: meta.size || false
@@ -402,6 +401,7 @@
 				else { this.totals.min = Math.min(this.totals.min, data); }
 				if(this.totals.max === false) { this.totals.max = data; }
 				else { this.totals.max = Math.max(this.totals.max, data); }
+				this.totals.delta = this.totals.max - this.totals.min;
 			}
 
 			// add to points
@@ -522,81 +522,57 @@
 
 			// g = geojson-object
 			if(g.type == "Point" && g.coordinates) {
-				if(g.properties) {
-					meta = Object.assign({},g.properties, meta);
+				g.properties = g.properties || {};
+				var m = Object.assign({},g.properties, meta);
+console.log("Point", m);
+				if(m.image || m.icon) {
+					m.marker=true;
+					this.addMarker({lng:g.coordinates[0],lat:g.coordinates[1]}, m);
 				}
-				this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]}, meta);
+				else {
+					this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]}, m);
+				}
 				return 1;
-			}
-			if(g.type == "MultiPoint") {
-				var c = g.coordinates.length;
-				if(!c) { return 0; }
-
-				if(g.properties) {
-					meta = Object.assign({},g.properties, meta);
-				}
-
-				for(var i=0; i<c; i++) {
-					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, meta);
-				}
-				return c;
 			}
 			if(g.type == "LineString") {
 				var c = g.coordinates.length;
 				if(!c) { return 0; }
 
-				if(g.properties) {
-					meta = Object.assign({},g.properties, meta);
-				}
-				if(!meta.group) { meta.group = this._genGroup(); }
-				if(meta.linked!==false) { meta.linked = true; }
+				g.properties = g.properties || {};
+				var m = Object.assign({},g.properties, meta);
+
+				if(!m.group) { m.group = this._genGroup(); }
+				if(m.linked!==false) { m.linked = true; }
 				for(var i=0; i<c; i++) {
-					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, meta);
-				}
-				return c;
-			}
-			if(g.type == "MultiLineString") {
-				var c = 0;
-
-				if(g.properties) {
-					meta = Object.assign({},g.properties, meta);
-				}
-
-				var group = false;
-				if(typeof meta.group == "string" || typeof meta.group == "number") { group = meta.group; }
-				var linked = false;
-				if(meta.linked===true) { linked = true; }
-
-				for(var i=0; i<g.coordinates.length; i++) {
-					var ci = g.coordinates[i];
-					if(!group) { meta.group = this._genGroup(); }
-					if(!linked) { meta.linked = false; }
-					for(var j=0; j<ci.length; j++) {
-						// properties
-						this.addPoint({lng:ci[j][0],lat:ci[j][1]}, meta);
-						meta.linked = true;
-						c++;
-					}
+					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, m);
 				}
 				return c;
 			}
 			if(g.type == "Feature") {
+				g.properties = g.properties || {};
+				var m = Object.assign({},g.properties, meta);
 
-				if(g.properties) {
-					meta = Object.assign({},g.properties, meta);
+				if(m.image || m.icon) {
+					m.marker = true;
 				}
-
-				return this.addGeojson(g.geometry, meta);
+				return this.addGeojson(g.geometry, m);
 			}
 			if(g.type == "FeatureCollection") {
 				var c = 0;
-
-				if(g.properties) {
-					meta = Object.assign({},g.properties, meta);
-				}
-
 				for(var i=0; i<g.features.length; i++) {
-					c+= this.addGeojson(g.features[i].geometry, meta);
+
+					var f = g.features[i];
+					f.properties = f.properties || {};
+					var m = Object.assign({},f.properties, meta);
+
+					if(m.image || m.icon) {
+						m.marker = true;
+					}
+					else {
+						m.marker = false;
+					}
+console.log(m);
+					c+= this.addGeojson(f.geometry, m);
 				}
 				return c;
 			}
@@ -810,7 +786,8 @@
 				count:0,
 				sum:0,
 				min:false,
-				max:false
+				max:false,
+				delta:0
 			};
 			this.markerLayer.clearLayers();
 
@@ -877,8 +854,8 @@
 
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
-						this.hexagonals[h.cell].ids = {};
-						this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false }; //// styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
+						this.hexagonals[h.cell].groups = {};
+						this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false }; 
 						this.hexagonals[h.cell].style = { fill:false };
 					}
 					if(!this.hexagonals[h.cell].point0) {
@@ -890,7 +867,7 @@
 						this.hexagonals[h.cell].style = { fill: (point.style.fill || false) };
 					}
 					this.hexagonals[h.cell].points[point.group] = point;
-					this.hexagonals[h.cell].ids[point.group] = point.group;
+					this.hexagonals[h.cell].groups[point.group] = point.group;
 
 					// cluster data
 					this.hexagonals[h.cell].cluster.count++;
@@ -920,7 +897,7 @@
 
 						if(!this.hexagonals[h.cell]) {
 							this.hexagonals[h.cell] = h;
-							this.hexagonals[h.cell].ids = {};
+							this.hexagonals[h.cell].groups = {};
 							this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false };
 							this.hexagonals[h.cell].style = { fill:false };
 						}
@@ -929,7 +906,7 @@
 							this.hexagonals[h.cell].markers = {};
 						}
 						this.hexagonals[h.cell].markers[marker.group] = marker;
-						this.hexagonals[h.cell].ids[marker.group] = marker.group;
+						this.hexagonals[h.cell].groups[marker.group] = marker.group;
 
 					//}
 					marker.cell = h;
@@ -974,8 +951,8 @@
 			// canvasContext
 			var ctx = canvas.getContext("2d");
 
-			var selectionIds = {};
-			if(selection.ids) { selectionIds = selection.ids; }
+			var selectionGroups = {};
+			if(selection.groups) { selectionGroups = selection.groups; }
 
 
 			// layers
@@ -985,9 +962,10 @@
 
 			// style
 			var style = { 
-				styleFill: this.options.styleFill || "#f00", 
-				styleStroke: this.options.styleStroke || "#f00", 
-				styleLineWidth: this.options.styleLineWidth || 1
+				fill: this.options.styleFill || "#f00", 
+				stroke: this.options.styleStroke || "#f00", 
+				lineWidth: this.options.styleLineWidth || 1,
+				linkWidth: this.options.styleLinkWidth || 1
 			};
 
 			// draw links
@@ -997,23 +975,37 @@
 					// if start/end-point is visivbly clustered (?!)
 					if(links[i].end.cell.cluster) {
 
-
-						// todo::: // styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
-						if(this.options.styleMode=="count") {
-							style.styleFill = this.getColorRampColor(links[i].end.cell.cluster.count, this.totals.count);
+						//styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
+						if(!this.options.styleMode) {
+							// if only one point in cluster, take point-style
+							if(links[i].end.cell.cluster.count==1) {
+								style.fill = links[i].end.style.fill || this.options.styleFill;
+							}	
+							else {
+								style.fill = this.options.styleFill;
+							}
+						}
+						else if(this.options.styleMode=="count") {
+							style.fill = this.getColorRampColor(links[i].end.cell.cluster.count, this.totals.count);
 						}
 						else if(this.options.styleMode=="sum") {
-							style.styleFill = this.getColorRampColor(links[i].end.cell.cluster.sum, this.totals.sum);
+							style.fill = this.getColorRampColor(links[i].end.cell.cluster.sum, this.totals.sum);
 						}
-						else if(this.options.styleMode=="point0") {
-							style.styleFill = links[i].end.style.fill || this.options.styleFill;
+						else if(this.options.styleMode=="avg") {
+							style.fill = this.getColorRampColor(links[i].end.cell.cluster.avg - this.totals.min, this.totals.delta);
 						}
-						else {
-							style.styleFill = this.options.styleFill;
+						else if(this.options.styleMode=="min") {
+							style.fill = this.getColorRampColor(links[i].end.cell.cluster.min - this.totals.min, this.totals.delta);
 						}
-		
+						else if(this.options.styleMode=="max") {
+							style.fill = this.getColorRampColor(links[i].end.cell.cluster.max - this.totals.min, this.totals.delta);
+						}
+						else if(this.options.styleMode=="first") {
+							style.fill = links[i].end.style.fill || this.options.styleFill;
+						}
+
 						this.drawLink(ctx, links[i], style);
-						if(selectionIds[links[i].group] && options.selectionVisible) {
+						if(selectionGroups[links[i].group] && options.selectionVisible) {
 							this.drawLinkSelected(ctx, links[i]);
 						}
 					}
@@ -1030,27 +1022,42 @@
 					// draw hexagon
 					if(options.hexagonVisible && hexagonals[hexs[h]].point0) {
 
-						// styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
-						if(this.options.styleMode=="count") {
-							style.styleFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
+						//styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
+						if(!this.options.styleMode) {
+							// if only one point in cluster, take point-style
+							if(hexagonals[hexs[h]].cluster.count===1) {
+								style.fill = hexagonals[hexs[h]].style.fill || this.options.styleFill;
+							}
+							else {
+								style.fill = this.options.styleFill;
+							}
+						}
+						else if(this.options.styleMode=="count") {
+							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
 						}
 						else if(this.options.styleMode=="sum") {
-							style.styleFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.sum, this.totals.sum);
+							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.sum, this.totals.sum);
 						}
-						else if(this.options.styleMode=="point0") {
-							style.styleFill = hexagonals[hexs[h]].style.fill || this.options.styleFill;
+						else if(this.options.styleMode=="avg") {
+							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.avg - this.totals.min, this.totals.delta);
 						}
-						else {
-							style.styleFill = this.options.styleFill;
+						else if(this.options.styleMode=="min") {
+							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.min - this.totals.min, this.totals.delta);
+						}
+						else if(this.options.styleMode=="max") {
+							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.max - this.totals.min, this.totals.delta);
+						}
+						else if(this.options.styleMode=="first") {
+							style.fill = hexagonals[hexs[h]].style.fill || this.options.styleFill;
 						}
 
 						this.drawHexagon(ctx, hexagonals[hexs[h]], style);
 
 						if(options.selectionVisible) {
-							var hids = Object.keys(hexagonals[hexs[h]].ids);
-							for(var i=0;i<hids.length;i++) {
-								var hid = hexagonals[hexs[h]].ids[hids[i]];
-								if(selectionIds[hid]) {
+							var hgroups = Object.keys(hexagonals[hexs[h]].groups);
+							for(var i=0;i<hgroups.length;i++) {
+								var hid = hexagonals[hexs[h]].groups[hgroups[i]];
+								if(selectionGroups[hid]) {
 									this.drawHexagonSelected(ctx, hexagonals[hexs[h]]);
 								}
 							}
@@ -1080,13 +1087,13 @@
 
 		drawHexagon: function drawHexagon(ctx, hexagon, style) {
 			var hPath = new Path2D(hexagon.path);
-			if(style.styleFill) {
-				ctx.fillStyle = style.styleFill;
+			if(style.fill) {
+				ctx.fillStyle = style.fill;
 				ctx.fill(hPath);
 			}
-			if(style.styleStroke) {
-				ctx.strokeStyle = style.styleStroke;
-				ctx.lineWidth = style.styleLineWidth;
+			if(style.stroke) {
+				ctx.strokeStyle = style.stroke;
+				ctx.lineWidth = style.lineWidth;
 				ctx.stroke(hPath);
 			}
 		},
@@ -1242,12 +1249,12 @@
 			var path = new Path2D(link.path);
 			if(this.options.styleStroke) {
 				ctx.lineJoin = "round";
-				ctx.strokeStyle = this.options.styleStroke;
-				ctx.lineWidth = this.options.styleLinkWidth + this.options.styleLineWidth*2;
+				ctx.strokeStyle = style.stroke;
+				ctx.lineWidth = style.linkWidth + style.lineWidth*2;
 				ctx.stroke(path);
 			}
-			ctx.strokeStyle = style.styleFill;
-			ctx.lineWidth = this.options.styleLinkWidth;
+			ctx.strokeStyle = style.fill;
+			ctx.lineWidth = style.linkWidth;
 			ctx.stroke(path);
 		},
 		drawLinkSelected: function drawLinkSelected(ctx, link) {
@@ -1645,14 +1652,14 @@
 
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = { };
-						this.hexagonals[h.cell].ids = {};
+						this.hexagonals[h.cell].groups = {};
 					}
 					if(!this.hexagonals[h.cell].link0) {
 						this.hexagonals[h.cell].link0 = point0;
 						this.hexagonals[h.cell].links = {};
 					}
 					this.hexagonals[h.cell].links[point0.group] = point0;
-					this.hexagonals[h.cell].ids[point0.group] = point0.group;
+					this.hexagonals[h.cell].groups[point0.group] = point0.group;
 				}
 
 			}
