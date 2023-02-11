@@ -62,30 +62,32 @@
 			hexagonMode: "flatTop",
 
 
-			// defaultFill: "color" || false
-			defaultFill: "#fd1",
-			// defaultLine: "color" || false
-			defaultLine: "#303234", 	
-			// defaultLineWidth: pixels
-			defaultLineWidth: 1,
+			// styleFill: "color" || false
+			styleFill: "#fd1",
+			// styleStroke: "color" || false
+			styleStroke: "#303234", 	
+			// styleLineWidth: pixels
+			styleLineWidth: 1,
+			// styleLinkWidth: pixels
+			styleLinkWidth: 2,	
+			// styleMode: "count" || "sum" || "avg" || "min" || "max" || "first" || false (style for hexagon-cluster: depending on point data) 	
+			styleMode: "first",
+			//styleProperty: "meta.propertyName" 
+			styleProperty: "data", // propertyName for data-based coloring (included in meta)
 
 
-
-			// colorStyle: "count" || "sum" || "avg" || "min" || "max" || "unique" || "first" || false (style for hexagon-cluster: depending on point data) 	
-			colorStyle: "first",
 			// colorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
 			colorRamp: ["#ffdd11","#eeeeee","bb4400"],
 			// colorRampFallback: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
 			colorRampFallback: ["#ffdd11","#eeeeee","bb4400"],
-			//colorProp: "meta.propertyName" 
-			colorProp: "data", // propertyName for data-based coloring (included in meta)
+
 
 			
 
 			// markerVisible: boolean
 			markerVisible: true,
 			//markerOpacity: number (0-1)
-			markerOpacity: 1,
+			markerOpacity: 0.9,
 
 
 			// linkVisible: boolean
@@ -96,8 +98,7 @@
 			linkReach: 50000,
 			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
 			linkJoin: 1,  
-			// linkWidth: pixels
-			linkWidth: 2,	
+
 
 
 
@@ -105,14 +106,16 @@
 			selectionVisible: true,
 			// selectionFill: "color" || false
 			selectionFill: "rgba(255,255,255,0.2)", 	
-			// selectionLine: "color" || false
-			selectionLine: "rgba(255,255,255,0.2)", 	 	
+			// selectionStroke: "color" || false
+			selectionStroke: "rgba(255,255,255,0.2)", 	 	
 			// selectionLineWidth: pixels
 			selectionLineWidth: 2,	
 			
 
 			// infoVisible: true || false
 			infoVisible: true,
+			// infoOpacity: true || false
+			infoOpacity: 0.9,
 			// infoMode: "count" || "ids" || "custom" || false
 			infoMode: "count", 
 			// infoClassName: class || ""
@@ -137,7 +140,9 @@
 		points: [],
 		totals:{
 			count:0,
-			data:0
+			data:0,
+			min: false,
+			max: false
 		},
 		links: [],
 
@@ -358,6 +363,11 @@
 			var link = -1;
 			if(meta.linked) { link = this.getLinkPos(meta.group); } 
 
+
+			// data
+			var data = meta[this.options.styleProperty];
+			if(typeof data != "number") { data = 0; }
+
 			// point
 			var point = {
 				group: meta.group,
@@ -368,7 +378,7 @@
 
 				meta: { 
 					count: 1,
-					data: meta[this.options.colorProp] || 1
+					data: data
 				},
 
 				style: {
@@ -386,7 +396,13 @@
 
 			// totals
 			this.totals.count += 1;
-			this.totals.sum += point.meta.data;
+			if(data) {
+				this.totals.sum += point.meta.data;
+				if(this.totals.min === false) { this.totals.min = data; }
+				else { this.totals.min = Math.min(this.totals.min, data); }
+				if(this.totals.max === false) { this.totals.max = data; }
+				else { this.totals.max = Math.max(this.totals.max, data); }
+			}
 
 			// add to points
 			this.points.push(point);
@@ -624,7 +640,6 @@
 					// points to cache directly
 					if(this.icons[meta.icon]) {
 						this.addPoint(latlng, meta);
-						console.log(">> cached icon", meta.icon);
 						return 1;
 					}
 
@@ -633,7 +648,6 @@
 					if(this.icons[hash]) {
 						meta.icon = hash;
 						this.addPoint(latlng, meta);
-						console.log("cached icon from hash", hash);
 						return 1;						
 					}
 					// new icon
@@ -642,11 +656,9 @@
 					this.cacheIcon(hash, meta.icon, meta.scale).then(function(res) {
 						if(!res) { 
 							meta.icon = "fallback"; 
-							console.log("new icon > error > fallback icon", hash, meta.icon);
 						}
 						else { 
 							meta.icon = res; 
-							console.log("new icon > success", hash, res); 
 						}
 						ref.addPoint(latlng, meta);
 						return 1;
@@ -654,7 +666,6 @@
 				}
 
 				else {
-					console.log(meta);
 					console.warn("Leaflet.hexagonal.addMarker: a marker has to have a image- or an icon-property");
 				}
 	
@@ -797,7 +808,9 @@
 			this.markers = [];
 			this.totals = {
 				count:0,
-				sum:0
+				sum:0,
+				min:false,
+				max:false
 			};
 			this.markerLayer.clearLayers();
 
@@ -865,7 +878,7 @@
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
 						this.hexagonals[h.cell].ids = {};
-						this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, unique:{}, first:false }; //// colorStyle = "count" || "sum" || "avg" || "min" || "max" || "unique" || "first" || false
+						this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false }; //// styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
 						this.hexagonals[h.cell].style = { fill:false };
 					}
 					if(!this.hexagonals[h.cell].point0) {
@@ -885,7 +898,6 @@
 					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.count;
 					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, point.meta.data);
 					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, point.meta.data);
-					this.hexagonals[h.cell].cluster.unique[point.meta.data] = point.meta.data; 
 
 				}
 
@@ -909,7 +921,7 @@
 						if(!this.hexagonals[h.cell]) {
 							this.hexagonals[h.cell] = h;
 							this.hexagonals[h.cell].ids = {};
-							this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, unique:{}, first:false };
+							this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false };
 							this.hexagonals[h.cell].style = { fill:false };
 						}
 						if(!this.hexagonals[h.cell].marker0) {
@@ -973,9 +985,9 @@
 
 			// style
 			var style = { 
-				defaultFill: this.options.defaultFill || "#f00", 
-				defaultLine: this.options.defaultLine || "#f00", 
-				defaultLineWidth: this.options.defaultLineWidth || 1
+				styleFill: this.options.styleFill || "#f00", 
+				styleStroke: this.options.styleStroke || "#f00", 
+				styleLineWidth: this.options.styleLineWidth || 1
 			};
 
 			// draw links
@@ -986,18 +998,18 @@
 					if(links[i].end.cell.cluster) {
 
 
-						// todo::: // colorStyle = "count" || "sum" || "avg" || "min" || "max" || "unique" || "first" || false
-						if(this.options.colorStyle=="count") {
-							style.defaultFill = this.getColorRampColor(links[i].end.cell.cluster.count, this.totals.count);
+						// todo::: // styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
+						if(this.options.styleMode=="count") {
+							style.styleFill = this.getColorRampColor(links[i].end.cell.cluster.count, this.totals.count);
 						}
-						else if(this.options.colorStyle=="sum") {
-							style.defaultFill = this.getColorRampColor(links[i].end.cell.cluster.sum, this.totals.sum);
+						else if(this.options.styleMode=="sum") {
+							style.styleFill = this.getColorRampColor(links[i].end.cell.cluster.sum, this.totals.sum);
 						}
-						else if(this.options.colorStyle=="point0") {
-							style.defaultFill = links[i].end.style.fill || this.options.defaultFill;
+						else if(this.options.styleMode=="point0") {
+							style.styleFill = links[i].end.style.fill || this.options.styleFill;
 						}
 						else {
-							style.defaultFill = this.options.defaultFill;
+							style.styleFill = this.options.styleFill;
 						}
 		
 						this.drawLink(ctx, links[i], style);
@@ -1018,18 +1030,18 @@
 					// draw hexagon
 					if(options.hexagonVisible && hexagonals[hexs[h]].point0) {
 
-						// colorStyle = "count" || "sum" || "avg" || "min" || "max" || "unique" || "first" || false
-						if(this.options.colorStyle=="count") {
-							style.defaultFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
+						// styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
+						if(this.options.styleMode=="count") {
+							style.styleFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
 						}
-						else if(this.options.colorStyle=="sum") {
-							style.defaultFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.sum, this.totals.sum);
+						else if(this.options.styleMode=="sum") {
+							style.styleFill = this.getColorRampColor(hexagonals[hexs[h]].cluster.sum, this.totals.sum);
 						}
-						else if(this.options.colorStyle=="point0") {
-							style.defaultFill = hexagonals[hexs[h]].style.fill || this.options.defaultFill;
+						else if(this.options.styleMode=="point0") {
+							style.styleFill = hexagonals[hexs[h]].style.fill || this.options.styleFill;
 						}
 						else {
-							style.defaultFill = this.options.defaultFill;
+							style.styleFill = this.options.styleFill;
 						}
 
 						this.drawHexagon(ctx, hexagonals[hexs[h]], style);
@@ -1068,13 +1080,13 @@
 
 		drawHexagon: function drawHexagon(ctx, hexagon, style) {
 			var hPath = new Path2D(hexagon.path);
-			if(style.defaultFill) {
-				ctx.fillStyle = style.defaultFill;
+			if(style.styleFill) {
+				ctx.fillStyle = style.styleFill;
 				ctx.fill(hPath);
 			}
-			if(style.defaultLine) {
-				ctx.strokeStyle = style.defaultLine;
-				ctx.lineWidth = style.defaultLineWidth;
+			if(style.styleStroke) {
+				ctx.strokeStyle = style.styleStroke;
+				ctx.lineWidth = style.styleLineWidth;
 				ctx.stroke(hPath);
 			}
 		},
@@ -1086,7 +1098,7 @@
 
 			// style
 			var size = style0.size || hexagon.size;
-			var fill = style0.fill || this.options.defaultFill || "#ff0000";
+			var fill = style0.fill || this.options.styleFill || "#ff0000";
 
 
 			// calc path
@@ -1116,15 +1128,15 @@
 						className: 'leaflet-hexagonal-marker',
 						html: `<svg width="${w}" height="${h}" opacity="${ref.options.markerOpacity}" >
 							<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
-							<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${ref.options.defaultLineWidth+1}" /></mask>
-							<use href="#hexa${m0.id}" fill="${ref.options.defaultLine}" shape-rendering="geometricPrecision" />
+							<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${ref.options.styleLineWidth+1}" /></mask>
+							<use href="#hexa${m0.id}" fill="${ref.options.styleStroke}" shape-rendering="geometricPrecision" />
 							<image preserveAspectRatio="xMidYMid slice" href="${style0.image}" mask="url(#mask${m0.id})" width="${w}" height="${h}" ></image>
 							</svg>`,
 						className: "",
 						iconSize: [w,h],
 						iconAnchor: [w/2,h/2],
 					}); 
-					L.marker(hexagon.latlng, {icon: icon}).addTo(ref.markerLayer); 
+					L.marker(hexagon.latlng, {icon: icon, opacity:ref.options.markerOpacity}).addTo(ref.markerLayer); 
 				};
 
 				// onerror: replace with error-icon-marker
@@ -1156,15 +1168,15 @@
 					className: 'leaflet-hexagonal-marker',
 					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
 						<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
-						<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${this.options.defaultLineWidth}" /></mask>
-						<use href="#hexa${m0.id}" fill="${fill}" stroke="${this.options.defaultLine}" stroke-width="${this.options.defaultLineWidth}" shape-rendering="geometricPrecision" />
+						<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${this.options.styleLineWidth}" /></mask>
+						<use href="#hexa${m0.id}" fill="${fill}" stroke="${this.options.styleStroke}" stroke-width="${this.options.styleLineWidth}" shape-rendering="geometricPrecision" />
 						${svg}
 						</svg>`,
 					className: "",
 					iconSize: [w,h],
 					iconAnchor: [w/2,h/2],
 				}); 
-				L.marker(hexagon.latlng, {icon: icon}).addTo(this.markerLayer);
+				L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer);
 				return; 
 			}	
 
@@ -1201,15 +1213,15 @@
 				className: 'leaflet-hexagonal-marker',
 				html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
 					<symbol id="hexa${marker.id}"><polygon points="${poly}"></polygon></symbol>
-					<mask id="mask${marker.id}"><use href="#hexa${marker.id}" fill="#fff" stroke="#000" stroke-width="${this.options.defaultLineWidth}" /></mask>
-					<use href="#hexa${marker.id}" fill="${this.options.defaultFill}" stroke="${this.options.defaultLine}" stroke-width="${this.options.defaultLineWidth}" shape-rendering="geometricPrecision" />
+					<mask id="mask${marker.id}"><use href="#hexa${marker.id}" fill="#fff" stroke="#000" stroke-width="${this.options.styleLineWidth}" /></mask>
+					<use href="#hexa${marker.id}" fill="${this.options.styleFill}" stroke="${this.options.styleStroke}" stroke-width="${this.options.styleLineWidth}" shape-rendering="geometricPrecision" />
 					${svg}
 					</svg>`,
 				className: "",
 				iconSize: [w,h],
 				iconAnchor: [w/2,h/2],
 			}); 
-			L.marker(hexagon.latlng, {icon: icon}).addTo(this.markerLayer); 
+			L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer); 
 		},
 
 		drawHexagonSelected: function drawHexagonSelected(ctx, hexagon) {
@@ -1219,8 +1231,8 @@
 				ctx.fillStyle = this.options.selectionFill;
 				ctx.fill(hPath);
 			}
-			if(this.options.selectionLine) {
-				ctx.strokeStyle = this.options.selectionLine;
+			if(this.options.selectionStroke) {
+				ctx.strokeStyle = this.options.selectionStroke;
 				ctx.lineWidth = this.options.selectionLineWidth;
 				ctx.stroke(hPath);
 			}
@@ -1228,26 +1240,26 @@
 
 		drawLink: function drawLink(ctx, link, style) {
 			var path = new Path2D(link.path);
-			if(this.options.defaultLine) {
+			if(this.options.styleStroke) {
 				ctx.lineJoin = "round";
-				ctx.strokeStyle = this.options.defaultLine;
-				ctx.lineWidth = this.options.linkWidth + this.options.defaultLine*2;
+				ctx.strokeStyle = this.options.styleStroke;
+				ctx.lineWidth = this.options.styleLinkWidth + this.options.styleLineWidth*2;
 				ctx.stroke(path);
 			}
-			ctx.strokeStyle = style.defaultFill;
-			ctx.lineWidth = this.options.linkWidth;
+			ctx.strokeStyle = style.styleFill;
+			ctx.lineWidth = this.options.styleLinkWidth;
 			ctx.stroke(path);
 		},
 		drawLinkSelected: function drawLinkSelected(ctx, link) {
 			var path = new Path2D(link.path);
-			if(this.options.defaultLine && this.options.selectionLine) {
+			if(this.options.styleStroke && this.options.selectionStroke) {
 				ctx.lineJoin = "round";
-				ctx.strokeStyle = this.options.selectionLine;
-				ctx.lineWidth = this.options.linkWidth + this.options.defaultLine*2;
+				ctx.strokeStyle = this.options.selectionStroke;
+				ctx.lineWidth = this.options.styleLinkWidth + this.options.styleLineWidth*2;
 				ctx.stroke(path);
 			}
 			ctx.strokeStyle = this.options.selectionFill;
-			ctx.lineWidth = this.options.linkWidth;
+			ctx.lineWidth = this.options.styleLinkWidth;
 			ctx.stroke(path);
 		},
 
@@ -1406,7 +1418,7 @@
 				className: this.options.infoClassName
 			});
 
-			this.info = L.marker(info.latlng, {icon: divicon, zIndexOffset:1000 }).addTo(this.infoLayer);
+			this.info = L.marker(info.latlng, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
 			L.DomEvent.on(this.info, 'mousewheel', L.DomEvent.stopPropagation);
 			L.DomEvent.on(this.info, 'click', L.DomEvent.stopPropagation);
 		},
@@ -1787,7 +1799,7 @@
 
 				// svg not valid
 				else {
-					console.warn('Leaflet.hexagonal.addSvg: parameter must be an url, a svg-string or the name of a already cached icon', svg);
+					//console.warn('Leaflet.hexagonal.addSvg: parameter must be an url, a svg-string or the name of a already cached icon', svg);
 					resolve(false);
 				}
 
