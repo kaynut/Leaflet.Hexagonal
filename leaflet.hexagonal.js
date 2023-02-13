@@ -153,6 +153,7 @@
 		selection: {},
 
 		groupInfo: {},
+		groupStyle: {},
 
 		info: false,
 		infoLayer: false,
@@ -524,7 +525,6 @@
 			if(g.type == "Point" && g.coordinates) {
 				g.properties = g.properties || {};
 				var m = Object.assign({},g.properties, meta);
-console.log("Point", m);
 				if(m.image || m.icon) {
 					m.marker=true;
 					this.addMarker({lng:g.coordinates[0],lat:g.coordinates[1]}, m);
@@ -571,7 +571,6 @@ console.log("Point", m);
 					else {
 						m.marker = false;
 					}
-console.log(m);
 					c+= this.addGeojson(f.geometry, m);
 				}
 				return c;
@@ -856,7 +855,8 @@ console.log(m);
 						this.hexagonals[h.cell] = h;
 						this.hexagonals[h.cell].groups = {};
 						this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false }; 
-						this.hexagonals[h.cell].style = { fill:false };
+						this.hexagonals[h.cell].style0 = { fill:false };
+						this.hexagonals[h.cell].style1 = { fill:false };
 					}
 					if(!this.hexagonals[h.cell].point0) {
 						this.hexagonals[h.cell].point0 = point;
@@ -864,7 +864,7 @@ console.log(m);
 						this.hexagonals[h.cell].cluster.min = point.meta.data;
 						this.hexagonals[h.cell].cluster.max = point.meta.data;
 						this.hexagonals[h.cell].points = {};
-						this.hexagonals[h.cell].style = { fill: (point.style.fill || false) };
+						this.hexagonals[h.cell].style0 = { fill: (point.style.fill || false) };
 					}
 					this.hexagonals[h.cell].points[point.group] = point;
 					this.hexagonals[h.cell].groups[point.group] = point.group;
@@ -875,7 +875,7 @@ console.log(m);
 					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.count;
 					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, point.meta.data);
 					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, point.meta.data);
-
+					this.hexagonals[h.cell].style1 = { fill: (point.style.fill || false) };
 				}
 
 				point.cell = h;
@@ -899,7 +899,8 @@ console.log(m);
 							this.hexagonals[h.cell] = h;
 							this.hexagonals[h.cell].groups = {};
 							this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false };
-							this.hexagonals[h.cell].style = { fill:false };
+							this.hexagonals[h.cell].style0 = { fill:false };
+							this.hexagonals[h.cell].style1 = { fill:false };
 						}
 						if(!this.hexagonals[h.cell].marker0) {
 							this.hexagonals[h.cell].marker0 = marker;
@@ -979,7 +980,8 @@ console.log(m);
 						if(!this.options.styleMode) {
 							// if only one point in cluster, take point-style
 							if(links[i].end.cell.cluster.count==1) {
-								style.fill = links[i].end.style.fill || this.options.styleFill;
+								var gs = links[i].end.group;
+								style.fill = links[i].end.style.fill || this.groupStyle[gs]?.fill || this.options.styleFill;
 							}	
 							else {
 								style.fill = this.options.styleFill;
@@ -1001,7 +1003,10 @@ console.log(m);
 							style.fill = this.getColorRampColor(links[i].end.cell.cluster.max - this.totals.min, this.totals.delta);
 						}
 						else if(this.options.styleMode=="first") {
-							style.fill = links[i].end.style.fill || this.options.styleFill;
+							style.fill = links[i].end.style0.fill || this.options.styleFill;
+						}
+						else if(this.options.styleMode=="last") {
+							style.fill = links[i].end.style1.fill || this.options.styleFill;
 						}
 
 						this.drawLink(ctx, links[i], style);
@@ -1026,7 +1031,8 @@ console.log(m);
 						if(!this.options.styleMode) {
 							// if only one point in cluster, take point-style
 							if(hexagonals[hexs[h]].cluster.count===1) {
-								style.fill = hexagonals[hexs[h]].style.fill || this.options.styleFill;
+								var gs = hexagonals[hexs[h]].point0.group;
+								style.fill = hexagonals[hexs[h]].style0.fill || this.groupStyle[gs]?.fill || this.options.styleFill;
 							}
 							else {
 								style.fill = this.options.styleFill;
@@ -1048,7 +1054,10 @@ console.log(m);
 							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.max - this.totals.min, this.totals.delta);
 						}
 						else if(this.options.styleMode=="first") {
-							style.fill = hexagonals[hexs[h]].style.fill || this.options.styleFill;
+							style.fill = hexagonals[hexs[h]].style0.fill || this.options.styleFill;
+						}
+						else if(this.options.styleMode=="last") {
+							style.fill = hexagonals[hexs[h]].style1.fill || this.options.styleFill;
 						}
 
 						this.drawHexagon(ctx, hexagonals[hexs[h]], style);
@@ -1391,7 +1400,24 @@ console.log(m);
 
 
 		// #######################################################
-		// #region info
+		// #region group/info
+		setGroupStyle: function setGroupStyle(group, style = {}) {
+			if(typeof group != "string" && typeof group != "number") {
+				console.warn("Leaflet.hexagonal.setGroupStyle: name of group invalid", group);
+				return;
+			}
+			if(typeof style == "string") {
+				style = {fill: style};
+			}
+			if(typeof style !== "object") {
+				console.warn("Leaflet.hexagonal.setGroupStyle: style invalid", style);
+				return;				
+			}
+			if(typeof style.fill !== "string") {
+				style.fill = this.options.styleFill;
+			}
+			this.groupStyle[group] = style;
+		},
 		setGroupInfo: function setGroupInfo(group, info) {
 			if(typeof group != "string" && typeof group != "number") {
 				console.warn("Leaflet.hexagonal.setGroupInfo: name of group invalid", group);

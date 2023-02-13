@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-	<title>Leaflet.Hexagonal - exampleAddData.html</title>
+	<title>Leaflet.Hexagonal - exampleStyle.html</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
    <!-- Leaflet -->
@@ -53,6 +53,7 @@
 			border-radius:3px;
 			overflow:hidden;
 		}
+		
 	</style>
 
 </head>
@@ -78,23 +79,25 @@
 		// add single point
 		hexagonals.addPoint({ lat: 47, lng: 0 });
 		
-		hexagonals.addPoint({ lat: 47, lng: 1.2 }, {group:"B"});
-		hexagonals.addPoint({ lat: 48, lng: 1.2 }, {group:"B"});
-		//hexagonals.removeGroup("B");
+		hexagonals.addPoint({ lat: 47, lng: 1.2 }, {fill:"#0f0"});
+		hexagonals.addPoint({ lat: 48, lng: 1.2 });
+		hexagonals.addPoint({ lat: 49, lng: 1.2 }, {fill:"#f00"});
 
-		hexagonals.addPoint({ lat: 47, lng: 2.4 }, {group:"C", id:30});
-		hexagonals.addPoint({ lat: 48, lng: 2.4 }, {group:"C", id:31});
-		//hexagonals.removePoint(30);
+		hexagonals.setGroupStyle("C", "#00f");
+		hexagonals.addPoint({ lat: 47, lng: 2.4 }, {group:"C"});
+		hexagonals.addPoint({ lat: 48, lng: 2.4 }, {group:"C"});
+		hexagonals.addPoint({ lat: 49, lng: 2.4 }, {group:"C"});
 
-		hexagonals.addPoint({ lat: 47, lng: 3.6 }, {group:"D", id:40});
-		hexagonals.addPoint({ lat: 48, lng: 3.6 }, {group:"D", id:41});
-		hexagonals.addPoint({ lat: 49, lng: 3.6 }, {group:"D", id:42});
-		//hexagonals.removePoint(41);
+		hexagonals.setGroupStyle("D", "#0ff");
+		hexagonals.addPoint({ lat: 47, lng: 3.6 }, {group:"D", linked:true});
+		hexagonals.addPoint({ lat: 48, lng: 3.6 }, {group:"D", linked:true});
+		hexagonals.addPoint({ lat: 49, lng: 3.6 }, {group:"D", linked:true});
 
+		
 		hexagonals.addPoint({ lat: 47, lng: 4.8 }, {group:"E", id:50, linked:true});
 		hexagonals.addPoint({ lat: 48, lng: 4.8 }, {group:"E", id:51, linked:true});
 		hexagonals.addPoint({ lat: 49, lng: 4.8 }, {group:"E", id:52, linked:true});
-		hexagonals.removePoint(51);
+		//hexagonals.removePoint(51);
 
 		hexagonals.addLine([[6.075,47],[6.075,48],[6.075,49],[6.075,50]], {group:"F"});
 
@@ -197,7 +200,7 @@
 		import GUI from './assets/lil-gui.js';
 
 		var gui = new GUI({width:250});
-		gui.title("Leaflet.Hexagonal - exampleAddData.html");
+		gui.title("Leaflet.Hexagonal - exampleStyle.html");
 		gui.close(); 
 
 	</script>
