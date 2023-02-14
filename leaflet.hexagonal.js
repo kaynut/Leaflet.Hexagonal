@@ -141,6 +141,8 @@
 		totals:{
 			count:0,
 			data:0,
+			sum:0,
+			avg:0,
 			min: false,
 			max: false,
 			delta: 0
@@ -350,18 +352,16 @@
 			meta = meta || {};
 
 			// group
-			meta.group = meta.group || this._genGroup();
-			//var group = meta.group;
-			//if (typeof meta.group != "number" && typeof meta.group !="string") { group = this._genGroup(); }
+			var group = meta.group;
+			if (typeof meta.group != "number" && typeof meta.group !="string") { group = this._genGroup(); }
 
 			// id
-			meta.id = meta.id || this._genId();
-			//var id = meta.id;
-			//if(typeof meta.id!="number" && typeof meta.id != "string") { id = this._genId(); }
+			var id = meta.id;
+			if(typeof meta.id!="number" && typeof meta.id != "string") { id = this._genId(); }
 			
 			// link
 			var link = -1;
-			if(meta.linked) { link = this.getLinkPos(meta.group); } 
+			if(meta.linked) { link = this.getLinkPos(group); } 
 
 
 			// data
@@ -370,8 +370,8 @@
 
 			// point
 			var point = {
-				group: meta.group,
-				id: meta.id,
+				group: group,
+				id: id,
 				link: link,
 				cell: false,
 				latlng: latlng,
@@ -396,7 +396,7 @@
 
 			// totals
 			this.totals.count += 1;
-			if(data) {
+			if(typeof data == "number") {
 				this.totals.sum += point.meta.data;
 				if(this.totals.min === false) { this.totals.min = data; }
 				else { this.totals.min = Math.min(this.totals.min, data); }
@@ -436,6 +436,7 @@
 			if(!meta.group) {
 				meta.group = this._genGroup();
 			}
+
 			// linked
 			if(typeof meta.linked=="undefined") { 
 				meta.linked = true; 
@@ -678,8 +679,9 @@
 					var data = this.points[j].data;
 
 					this.totals.count -= 1;
-					this.totals.sum -= data;
-
+					if(typeof data == "number") {
+						this.totals.sum -= data;
+					}
 					this.points.splice(j, 1);
 
 					// readjust link
@@ -740,7 +742,9 @@
 					var data = this.points[j].data;
 
 					this.totals.count -= 1;
-					this.totals.sum -= data;
+					if(typeof data == "number") {
+						this.totals.sum -= data;
+					}
 
 					this.points.splice(j, 1);
 
@@ -784,6 +788,7 @@
 			this.totals = {
 				count:0,
 				sum:0,
+				avg:0,
 				min:false,
 				max:false,
 				delta:0
@@ -872,7 +877,7 @@
 					// cluster data
 					this.hexagonals[h.cell].cluster.count++;
 					this.hexagonals[h.cell].cluster.sum += point.meta.data;
-					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.count;
+					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.count; 
 					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, point.meta.data);
 					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, point.meta.data);
 					this.hexagonals[h.cell].style1 = { fill: (point.style.fill || false) };
@@ -969,57 +974,64 @@
 				linkWidth: this.options.styleLinkWidth || 1
 			};
 
+			
 			// draw links
 			if(links.length && options.linkVisible) {
 				for(var i=0; i<links.length; i++) {
-	
-					// if start/end-point is visivbly clustered (?!)
+
+					var cluster = false;
+					var link = false;
 					if(links[i].end.cell.cluster) {
+						cluster = links[i].end.cell.cluster;
+						link = links[i].end;
+					}
+					else if(links[i].start.cell.cluster) {
+						cluster = links[i].start.cell.cluster;
+						link = links[i].start;
+					}
+
+					// style
+					style.fill = link?.style?.fill || this.groupStyle[link.group]?.fill || this.options.styleFill;
+
+					// if start/end-point is visivbly clustered (?!)
+					if(cluster && this.options.styleMode) {
 
 						//styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
-						if(!this.options.styleMode) {
-							// if only one point in cluster, take point-style
-							if(links[i].end.cell.cluster.count==1) {
-								var gs = links[i].end.group;
-								style.fill = links[i].end.style.fill || this.groupStyle[gs]?.fill || this.options.styleFill;
-							}	
-							else {
-								style.fill = this.options.styleFill;
-							}
-						}
-						else if(this.options.styleMode=="count") {
-							style.fill = this.getColorRampColor(links[i].end.cell.cluster.count, this.totals.count);
+						if(this.options.styleMode=="count") {
+							style.fill = this.getColorRampColor(cluster.count, this.totals.count);
 						}
 						else if(this.options.styleMode=="sum") {
-							style.fill = this.getColorRampColor(links[i].end.cell.cluster.sum, this.totals.sum);
+							style.fill = this.getColorRampColor(cluster.sum, this.totals.sum);
 						}
 						else if(this.options.styleMode=="avg") {
-							style.fill = this.getColorRampColor(links[i].end.cell.cluster.avg - this.totals.min, this.totals.delta);
+							style.fill = this.getColorRampColor(cluster.avg - this.totals.min, this.totals.delta);
 						}
 						else if(this.options.styleMode=="min") {
-							style.fill = this.getColorRampColor(links[i].end.cell.cluster.min - this.totals.min, this.totals.delta);
+							style.fill = this.getColorRampColor(cluster.min - this.totals.min, this.totals.delta);
 						}
 						else if(this.options.styleMode=="max") {
-							style.fill = this.getColorRampColor(links[i].end.cell.cluster.max - this.totals.min, this.totals.delta);
+							style.fill = this.getColorRampColor(cluster.max - this.totals.min, this.totals.delta);
 						}
 						else if(this.options.styleMode=="first") {
-							style.fill = links[i].end.style0.fill || this.options.styleFill;
+							style.fill = link.style0.fill || this.options.styleFill;
 						}
 						else if(this.options.styleMode=="last") {
-							style.fill = links[i].end.style1.fill || this.options.styleFill;
-						}
-
-						this.drawLink(ctx, links[i], style);
-						if(selectionGroups[links[i].group] && options.selectionVisible) {
-							this.drawLinkSelected(ctx, links[i]);
+							style.fill = link.style1.fill || this.options.styleFill;
 						}
 					}
+
+					this.drawLink(ctx, links[i], style);
+					if(selectionGroups[links[i].group] && options.selectionVisible) {
+						this.drawLinkSelected(ctx, links[i]);
+					}
+
 				}
 
 			}
 
 
 			// draw points and marker
+			console.log(this.totals);
 			var hexs = Object.keys(hexagonals);
 			if(hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
@@ -1027,39 +1039,35 @@
 					// draw hexagon
 					if(options.hexagonVisible && hexagonals[hexs[h]].point0) {
 
-						//styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
-						if(!this.options.styleMode) {
-							// if only one point in cluster, take point-style
-							if(hexagonals[hexs[h]].cluster.count===1) {
-								var gs = hexagonals[hexs[h]].point0.group;
-								style.fill = hexagonals[hexs[h]].style0.fill || this.groupStyle[gs]?.fill || this.options.styleFill;
-							}
-							else {
-								style.fill = this.options.styleFill;
-							}
-						}
-						else if(this.options.styleMode=="count") {
-							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
-						}
-						else if(this.options.styleMode=="sum") {
-							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.sum, this.totals.sum);
-						}
-						else if(this.options.styleMode=="avg") {
-							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.avg - this.totals.min, this.totals.delta);
-						}
-						else if(this.options.styleMode=="min") {
-							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.min - this.totals.min, this.totals.delta);
-						}
-						else if(this.options.styleMode=="max") {
-							style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.max - this.totals.min, this.totals.delta);
-						}
-						else if(this.options.styleMode=="first") {
-							style.fill = hexagonals[hexs[h]].style0.fill || this.options.styleFill;
-						}
-						else if(this.options.styleMode=="last") {
-							style.fill = hexagonals[hexs[h]].style1.fill || this.options.styleFill;
-						}
+						//style.fill = this.options.styleFill;
+						var gs = hexagonals[hexs[h]].point0.group;
+						style.fill = hexagonals[hexs[h]].style0.fill || this.groupStyle[gs]?.fill || this.options.styleFill;
 
+						//styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
+						if(this.options.styleMode) {
+							if(this.options.styleMode=="count") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, this.totals.count);
+							}
+							else if(this.options.styleMode=="sum") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.sum, this.totals.sum);
+							}
+							else if(this.options.styleMode=="avg") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.avg - this.totals.min, this.totals.delta); 
+							}
+							else if(this.options.styleMode=="min") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.min - this.totals.min, this.totals.delta);
+							}
+							else if(this.options.styleMode=="max") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.max - this.totals.min, this.totals.delta);
+							}
+							else if(this.options.styleMode=="first") {
+								style.fill = hexagonals[hexs[h]].style0.fill || this.options.styleFill;
+							}
+							else if(this.options.styleMode=="last") {
+								style.fill = hexagonals[hexs[h]].style1.fill || this.options.styleFill;
+							}
+
+						}
 						this.drawHexagon(ctx, hexagonals[hexs[h]], style);
 
 						if(options.selectionVisible) {
@@ -1280,11 +1288,13 @@
 		},
 
 		getColorRampColor: function getColorRampColor(value, total, logarithmic=true) {
+			console.log(value, total, logarithmic);
 			var ramp = this.colorRamp;
 			var l = ramp.length - 1;
 
 			var t;
-			if(value>=total || !total) { t=1; }
+			if(value>total) { t=1; }
+			else if(value==0 || total==0) { t = 0; }
 			else if(logarithmic) { t = Math.log(value)/Math.log(total); }
 			else { t = value/total;	}
 
@@ -1297,6 +1307,7 @@
 
 			t = t * l;
 			var f = Math.floor(t);
+			console.log("f", f, t, ramp.length);
 			t = t - f;
 			
 			return "rgba(" + (ramp[f][0]*(1-t)+ramp[f+1][0]*t) + "," + (ramp[f][1]*(1-t)+ramp[f+1][1]*t) + "," + (ramp[f][2]*(1-t)+ramp[f+1][2]*t) + ","  + (ramp[f][3]*(1-t)+ramp[f+1][3]*t) + ")";

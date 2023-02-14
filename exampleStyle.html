@@ -70,93 +70,46 @@
 		var center = { lat: 47, lng: 10 };
 		var map = L.map('map').setView(center, 6);
 		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
-
+		
 
 		// hexagonals
 		var hexagonals = new L.Hexagonal().addTo(map);
+		hexagonals.options.styleProperty = "val";
+
 
 
 		// add single point
 		hexagonals.addPoint({ lat: 47, lng: 0 });
 		
-		hexagonals.addPoint({ lat: 47, lng: 1.2 }, {fill:"#0f0"});
-		hexagonals.addPoint({ lat: 48, lng: 1.2 });
-		hexagonals.addPoint({ lat: 49, lng: 1.2 }, {fill:"#f00"});
+		hexagonals.addPoint({ lat: 47, lng: 1.2 }, {fill:"#d44"});
+		hexagonals.addPoint({ lat: 48, lng: 1.2 }, {fill:"#4d4"});
+		hexagonals.addPoint({ lat: 49, lng: 1.2 }, {fill:"#44d"});
 
-		hexagonals.setGroupStyle("C", "#00f");
+		hexagonals.setGroupStyle("C", "#4aa");
 		hexagonals.addPoint({ lat: 47, lng: 2.4 }, {group:"C"});
 		hexagonals.addPoint({ lat: 48, lng: 2.4 }, {group:"C"});
 		hexagonals.addPoint({ lat: 49, lng: 2.4 }, {group:"C"});
 
-		hexagonals.setGroupStyle("D", "#0ff");
+		hexagonals.setGroupStyle("D", "#a4a");
 		hexagonals.addPoint({ lat: 47, lng: 3.6 }, {group:"D", linked:true});
 		hexagonals.addPoint({ lat: 48, lng: 3.6 }, {group:"D", linked:true});
 		hexagonals.addPoint({ lat: 49, lng: 3.6 }, {group:"D", linked:true});
 
-		
-		hexagonals.addPoint({ lat: 47, lng: 4.8 }, {group:"E", id:50, linked:true});
-		hexagonals.addPoint({ lat: 48, lng: 4.8 }, {group:"E", id:51, linked:true});
-		hexagonals.addPoint({ lat: 49, lng: 4.8 }, {group:"E", id:52, linked:true});
-		//hexagonals.removePoint(51);
 
-		hexagonals.addLine([[6.075,47],[6.075,48],[6.075,49],[6.075,50]], {group:"F"});
-
-		hexagonals.addLine([[7.3,47],[7.3,48],[7.3,49],[7.3,50]], {group:"G"});
-		//hexagonals.removeGroup("G");
-
-		
-		hexagonals.addMarker({ lat: 47, lng: 8.5 }, {group:"H", icon:'fallback' });
-		hexagonals.addMarker({ lat: 48, lng: 8.5 }, {group:"H", icon:'./assets/person.svg' });
-		//hexagonals.addMarker({ lat: 49, lng: 8.5 }, {group:"H", icon:'unknown.svg' });
-		hexagonals.cacheIcon("token","./assets/token.svg");
-		hexagonals.addMarker({ lat: 50, lng: 8.5 }, {group:"H", icon:'token' });
-	
-
-		hexagonals.addMarker({ lat: 47, lng: 9.7 }, {group:"I", image:'./assets/image0.jpg' });
-		//hexagonals.addMarker({ lat: 48, lng: 9.7 }, {group:"I", image: 'unknown.jpg' });
+		hexagonals.addLine([[4.8,47],[6.075,48],[6.075,49],[7.3,50]], {group:"E"});
+		hexagonals.addLine([[6.075,47],[6.075,48],[6.075,49],[6.075,50]], {group:"F", fill:"#f00"});
+		hexagonals.addLine([[7.3,47],[6.075,48],[6.075,49],[4.85,50]], {group:"G"});
+		hexagonals.addLine([[4.8,47],/*[6.075,46],*/[6.075,47],[7.3,47]], {group:"H"});
+		hexagonals.addLine([[4.9,50],/*[6.2,50.7],*/[6.2,50],[7.3,50]], {group:"I"});
 
 
-
-      // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
-      	var gj = {
-			"type": "FeatureCollection",
-			"features": [
-				{
-					"type": "Feature",
-					"properties": { icon:"token" },
-					"geometry": {
-						"coordinates": [ 11, 47 ],
-						"type": "Point"
-					}
-				},
-				{
-				"type": "Feature",
-				"properties": {},
-				"geometry": {
-					"coordinates": [ 11, 48 ],
-					"type": "Point"
-				}
-				},
-				{
-				"type": "Feature",
-				"properties": {},
-				"geometry": {
-					"coordinates": [ 11, 49 ],
-					"type": "Point"
-				}
-				},
-				{
-				"type": "Feature",
-				"properties": {},
-				"geometry": {
-					"coordinates": [ 11, 50 ],
-					"type": "Point"
-				}
-				}
-			]
+		hexagonals.setColorRamp(["#f00","#dd0","#0f0","#0dd","#00f","#d0d"]);
+		hexagonals.options.styleProperty = "val";
+		hexagonals.options.styleMode = false;
+		for(var c = 0; c< 100; c++) {
+			var val = Math.floor(Math.random()*100);
+			hexagonals.addPoint({ lat: 47 + Math.random()*3, lng: 9+val/33 }, { val: val });
 		}
-      	hexagonals.addGeojson(gj, {group:"J"});
-
 
 
 	  	// hexagonal: for example quick-and-dirty tooltips
@@ -201,7 +154,16 @@
 
 		var gui = new GUI({width:250});
 		gui.title("Leaflet.Hexagonal - exampleStyle.html");
-		gui.close(); 
+
+		var fStyle = gui.addFolder('Styles');
+		var oStyle = {
+			styleMode: false
+		};
+		fStyle.add(oStyle, 'styleMode', [ 'false', 'count','sum','avg','min','max' ] ).onChange(value => {
+			if(value=="false")  value = false; 
+			hexagonals.options.styleMode = value;
+			hexagonals.refresh();
+		});
 
 	</script>
 
