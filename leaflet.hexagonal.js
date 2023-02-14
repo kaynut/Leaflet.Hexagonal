@@ -877,7 +877,7 @@
 					// cluster data
 					this.hexagonals[h.cell].cluster.count++;
 					this.hexagonals[h.cell].cluster.sum += point.meta.data;
-					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.count; 
+					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.count || 0; 
 					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, point.meta.data);
 					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, point.meta.data);
 					this.hexagonals[h.cell].style1 = { fill: (point.style.fill || false) };
