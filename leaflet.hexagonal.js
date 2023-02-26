@@ -1746,7 +1746,6 @@
 					} 
 				}
 			}
-			console.log(cells.length);
 			return cells;
 
 		},
@@ -1773,22 +1772,9 @@
 						cx = (idx - idy/2) * size - offset.x;
 						cy = idy/2 * sqrt3 * size - offset.y;
 						cells.push("M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z");
-				
-/*
-						var t = Math.floor(xs + sqrt3 * ys + 1);
-						var idx = Math.floor((Math.floor(2 * xs + 1) + t) / 3);
-						var idy = Math.floor((t + Math.floor(-xs + sqrt3 * ys + 1)) / 3);
-						
-						var cx = (idx-idy/2) * size - offset.x;
-						var cy = idy/2 * sqrt3 * size - offset.y;
-						var clatlng = this._map.containerPointToLatLng([cx,cy]);
-						idx -= Math.floor(idy/2); // pointy - offset even-r
-*/
-
-			} 
+					} 
 				}
 			}
-			console.log(cells.length);
 			return cells;
 
 		},
