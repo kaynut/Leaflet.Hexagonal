@@ -123,7 +123,7 @@
       hexagonals.addMarker({ lat: 47, lng: 17 }, {group:"E", marker: true, image:"./assets/image0.jpg", size:48 });
 
       // add a marker with an svg-icon 
-      hexagonals.addIconSvg("token",'./assets/token.svg', 1);
+      hexagonals.cacheIcon("token",'./assets/token.svg', 1);
 
       console.log(hexagonals.icons)
       hexagonals.addMarker({ lat: 47, lng: 18.5 }, {group:"E", marker:true, icon:"token", size:32, fill:"#999" });

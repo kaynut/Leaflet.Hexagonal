@@ -75,6 +75,7 @@
 		// hexagonals
 		var hexagonals = new L.Hexagonal().addTo(map);
 		hexagonals.options.styleProperty = "val";
+		hexagonals.options.hexagonMode = "pointyTop";
 
 
 
@@ -103,7 +104,7 @@
 		hexagonals.addLine([[4.9,50],/*[6.2,50.7],*/[6.2,50],[7.3,50]], {group:"I"});
 
 
-		hexagonals.setColorRamp(["#f00","#dd0"]);  //hexagonals.setColorRamp(["#f00","#dd0","#0f0","#0dd","#00f","#d0d"]);
+		//hexagonals.setColorRamp(["#f00","#dd0","#0d0"]);  //hexagonals.setColorRamp(["#f00","#dd0","#0f0","#0dd","#00f","#d0d"]);
 		hexagonals.options.styleProperty = "val";
 		hexagonals.options.styleMode = false;
 		for(var c = 0; c< 100; c++) {

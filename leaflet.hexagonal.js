@@ -46,9 +46,10 @@
 			container: document.createElement("CANVAS"),
 			zIndex: undefined,
 			opacity: 0.5,
-			visible: !0,
+			visible: true,
 			minZoom: 0,
 			maxZoom: 18,
+			padding: 0.1,
 
 
 
@@ -74,14 +75,15 @@
 			styleMode: false,
 			//styleProperty: "meta.propertyName" 
 			styleProperty: "data", // propertyName for data-based coloring (included in meta)
-
+			// styleGutter: false || "#color"
+			styleGutter: "#f00",
 
 			// colorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
-			colorRamp: ["#ffdd11","#eeeeee","bb4400"],
+			colorRamp: ["#ffdd11","#dd0000"],
 			// colorRampMode: false="linear" || "square" || "log"
 			colorRampMode: false,
 			// colorRampFallback: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
-			colorRampFallback: ["#ffdd11","#eeeeee","bb4400"],
+			colorRampFallback: ["#ffdd11","#dd0000"],
 
 
 			
@@ -162,7 +164,9 @@
 		info: false,
 		infoLayer: false,
 
-		colorRamp: [[0,0,0,1],[255,255,255,1]],
+		colorRamp: false,
+
+		gutter: false,
 
 		images: { 
 			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
@@ -194,6 +198,7 @@
 				this._bounds = undefined;
 				this._center = undefined; 
 				this._zoom = undefined;
+				this._padding = undefined;
 
 				this._instanceUID = Date.now();
 				this._incId = (Date.now() & 16777215)*1000;
@@ -275,7 +280,12 @@
 			this._zoomVisible && (this._zoomVisible = !1, this._map.off(this.getEvents(), this), this._map.on({zoomend: this._onZoomVisible }, this), this.getContainer().style.display = "none");
 		},
 		_updateTransform: function _updateTransform(t, i) {
-			var o = this._map.getZoomScale(i, this._zoom), n = e.DomUtil.getPosition(this._container), s = this._map.getSize().multiplyBy(.5 + 0), a = this._map.project(this._center, i), r = this._map.project(t, i).subtract(a), h = s.multiplyBy(-o).add(n).add(s).subtract(r);
+			var o = this._map.getZoomScale(i, this._zoom);
+			var n = e.DomUtil.getPosition(this._container);
+			var s = this._map.getSize().multiplyBy(.5 + this.options.padding);
+			var a = this._map.project(this._center, i);
+			var r = this._map.project(t, i).subtract(a);
+			var h = s.multiplyBy(-o).add(n).add(s).subtract(r);
 			e.Browser.any3d ? e.DomUtil.setTransform(this._container, h, o) : e.DomUtil.setPosition(this._container, h);
 		},
 		_update: function _update() {
@@ -288,9 +298,10 @@
 			}
 		},
 		__update: function __update() {
-			var t = 0; 
+			var t = this.options.padding; 
 			var i = this._map.getSize();
 			var o = this._map.containerPointToLayerPoint(i.multiplyBy(-t));
+			this._padding = i.multiplyBy(t);
 			this._bounds = new e.Bounds(o, o.add(i.multiplyBy(1 + 2 * t)));
 			this._center = this._map.getCenter();
 			this._zoom = this._map.getZoom();
@@ -347,7 +358,7 @@
 
 
 		// #######################################################
-		// #region points
+		// #region add
 		// addPoint:  add single point with metadata
 		addPoint: function addPoint(latlng, meta) { //  {lng,lat} , {id, group, linked, data, marker}
 			latlng = this.validateLatLng(latlng);
@@ -422,7 +433,6 @@
 			return 1; 
 
 		},
-
 		// addLine: add array of points (all with same metadata), all in the same group and all linked by default
 		addLine: function addLine(points, meta) {  // [ latlng0, latlng1, ... ] , {group,data, marker} 
 			if(!Array.isArray(points)) {
@@ -454,7 +464,6 @@
 			return c;
 
 		},
-		
 		// addPoints: add array of points (all with same metadata), by default each in a seperate group and not linked
 		addPoints: function addPoints(points, meta) {  
 			if(!Array.isArray(points)) {
@@ -485,7 +494,6 @@
 			return c;
 
 		},
-
 		// addGeojson: add url || geojson-string || geosjon-object
 		addGeojson: function addGeojson(g, meta) {
 
@@ -583,8 +591,6 @@
 			return 0;
 
 		},
-	
-
 		// addMarker
 		addMarker: async function addMarker(latlng, meta) {
 			if(typeof latlng != "object") {
@@ -826,25 +832,39 @@
 			this._container.style.width = size.x + "px";
 			this._container.style.height = size.y + "px";
 			var zoom = this._map.getZoom();
+			var padding = this._padding;
 
 			// canvas
 			var ctx = this._container.getContext("2d");
 			if (L.Browser.retina) { ctx.scale(dpr, dpr); }
+			ctx.translate(padding.x, padding.y);
 			var w = dpr * size.x;
 			var h = dpr * size.y;
 
+
 			// hexagonals
 			this.hexagonals = {};
+
 
 			// hexagonSize
 			var hexagonSize = this.calcHexagonSize(zoom);
 			this.hexagonSize = hexagonSize;
 
-			// hexagonOffset, hexagonOverhang 
+
+			// hexagonOffset, hexagonOverhang
 			var nw = this._map.getBounds().getNorthWest();
 			var hexagonOffset = this._map.project(nw, zoom);
 			hexagonOffset= {x:Math.round(hexagonOffset.x), y: Math.round(hexagonOffset.y) };
-			var hexagonOverhang = (1 + (this.options.linkReach / this.calcHexagonDiameter()))*hexagonSize;
+			var hexagonOverhang = (1 + (this.options.linkReach / this.calcHexagonDiameter())) * hexagonSize;
+
+
+			// hexagonBounds
+			var hnw = this.calcHexagonCell(-padding.x,-padding.y, hexagonSize, hexagonOffset);
+			var hse = this.calcHexagonCell(w,h, hexagonSize, hexagonOffset);
+			var hexagonBounds = [hnw.idx, hnw.idy, hse.idx, hse.idy];
+
+
+			
 
 			// cluster points
 			for (var i = 0; i < this.points.length; i++) {
@@ -856,7 +876,7 @@
 
 				if (p.visible) {
 
-					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset)
+					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset);
 
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
@@ -900,7 +920,7 @@
 
 					//if (m.visible) {
 
-						var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset)
+						var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset);
 
 						if(!this.hexagonals[h.cell]) {
 							this.hexagonals[h.cell] = h;
@@ -917,6 +937,7 @@
 						this.hexagonals[h.cell].groups[marker.group] = marker.group;
 
 					//}
+
 					marker.cell = h;
 					
 				}
@@ -939,6 +960,11 @@
 						}
 					}
 				}
+			}
+
+			// gutter
+			if(this.options.styleGutter) {	
+				this.gutter = this.calcGutterCells(hexagonBounds, hexagonSize, hexagonOffset);
 			}
 
 			this.totals.cells = Object.keys(this.hexagonals).length;
@@ -976,7 +1002,13 @@
 				linkWidth: this.options.styleLinkWidth || 1
 			};
 
+
+			// draw gutter
+			if(this.options.styleGutter) {
+				this.drawGutter(ctx);
+			}
 			
+
 			// draw links
 			if(links.length && options.linkVisible) {
 				for(var i=0; i<links.length; i++) {
@@ -1040,7 +1072,6 @@
 
 
 			// draw points and marker
-			console.log(this.totals);
 			var hexs = Object.keys(hexagonals);
 			if(hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
@@ -1294,6 +1325,17 @@
 			ctx.strokeStyle = this.options.selectionFill;
 			ctx.lineWidth = this.options.styleLinkWidth;
 			ctx.stroke(path);
+		},
+		drawGutter: function drawGutter(ctx) {
+			if(!this.gutter.length) { return; }
+			ctx.strokeStyle = this.options.styleGutter;
+			ctx.fillStyle = this.options.styleGutter;
+			ctx.lineWidth = 1;
+			for(var g=0; g<this.gutter.length; g++) {
+				var path = new Path2D(this.gutter[g]);
+				//ctx.stroke(path);
+				ctx.fill(path);
+			}
 		},
 		getColorRampColor: function getColorRampColor(value, min=0, max=1) {
 			var ramp = this.colorRamp;
@@ -1670,11 +1712,85 @@
 			idx -= Math.floor(idy/2); // pointy - offset even-r
 			var cell = (idx + "_" + idy); 
 
-			var pointyTop = true;
-
 			var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
 
-			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:pointyTop };
+			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
+		},
+		calcGutterCells: function calcGutterCells(bounds, size, offset) { // hexagon top-flat
+			if(this.options.hexagonMode == "pointyTop") {
+				return this.calcGutterCells_pointyTop(bounds, size, offset);
+			}
+
+			var [x0,y0,x1,y1] = bounds || [0,0,0,0];
+
+			offset = offset || {x:0,y:0};
+			var gap = this.options.hexagonGap || 0;
+			var sqrt3 = 1.7320508075688772;  
+			var s0 = size - gap;
+			var s2 = s0/sqrt3;
+			var s4 = s2/2;
+			var h = s0/2; 
+
+			var cells = [];
+			var idx,idy,cx,cy;
+			for(var y=y0; y<=y1;y+=1) {
+				for(var x=x0;x<=x1;x+=1) {
+					idy = y;
+					idx = x;
+					if(this.hexagonals[idx+"_"+idy]?.cell) { }
+					else {
+						idy += Math.floor(idx/2);
+						cy = (idy - idx/2) * size - offset.y;
+						cx = idx/2 * sqrt3 * size - offset.x;
+						cells.push("M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z");				
+					} 
+				}
+			}
+			console.log(cells.length);
+			return cells;
+
+		},
+		calcGutterCells_pointyTop: function calcGutterCells_pointyTop(bounds, size, offset) { // hexagon top-flat
+			var [x0,y0,x1,y1] = bounds || [0,0,0,0];
+
+			offset = offset || {x:0,y:0};
+			var gap = this.options.hexagonGap || 0;
+			var sqrt3 = 1.7320508075688772;  
+			var s0 = size - gap;
+			var s2 = s0/sqrt3;
+			var s4 = s2/2;
+			var h = s0/2; 
+
+			var cells = [];
+			var idx,idy,cx,cy;
+			for(var y=y0; y<=y1;y+=1) {
+				for(var x=x0;x<=x1;x+=1) {
+					idy = y;
+					idx = x;
+					if(this.hexagonals[idx+"_"+idy]?.cell) { }
+					else {
+						idx += Math.floor(idy/2);
+						cx = (idx - idy/2) * size - offset.x;
+						cy = idy/2 * sqrt3 * size - offset.y;
+						cells.push("M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z");
+				
+/*
+						var t = Math.floor(xs + sqrt3 * ys + 1);
+						var idx = Math.floor((Math.floor(2 * xs + 1) + t) / 3);
+						var idy = Math.floor((t + Math.floor(-xs + sqrt3 * ys + 1)) / 3);
+						
+						var cx = (idx-idy/2) * size - offset.x;
+						var cy = idy/2 * sqrt3 * size - offset.y;
+						var clatlng = this._map.containerPointToLatLng([cx,cy]);
+						idx -= Math.floor(idy/2); // pointy - offset even-r
+*/
+
+			} 
+				}
+			}
+			console.log(cells.length);
+			return cells;
+
 		},
 		getLinkPath: function getLinkPath(point0, point1, size, offset) {
 
