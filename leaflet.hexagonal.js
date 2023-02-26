@@ -75,8 +75,7 @@
 			styleMode: false,
 			//styleProperty: "meta.propertyName" 
 			styleProperty: "data", // propertyName for data-based coloring (included in meta)
-			// styleGutter: false || "#color"
-			styleGutter: "#f00",
+
 
 			// colorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
 			colorRamp: ["#ffdd11","#dd0000"],
@@ -85,8 +84,6 @@
 			// colorRampFallback: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
 			colorRampFallback: ["#ffdd11","#dd0000"],
 
-
-			
 
 			// markerVisible: boolean
 			markerVisible: true,
@@ -104,6 +101,10 @@
 			linkJoin: 1,  
 
 
+			// gutterFill: false || "#color"
+			gutterFill: "#101214",
+			// gutterStroke: false || "#color"
+			gutterStroke: "#202224",
 
 
 			// selectionVisible: true || false
@@ -963,7 +964,7 @@
 			}
 
 			// gutter
-			if(this.options.styleGutter) {	
+			if(this.options.gutterFill || this.options.gutterStroke) {	
 				this.gutter = this.calcGutterCells(hexagonBounds, hexagonSize, hexagonOffset);
 			}
 
@@ -1004,7 +1005,7 @@
 
 
 			// draw gutter
-			if(this.options.styleGutter) {
+			if(this.options.gutterFill || this.options.gutterStroke) {
 				this.drawGutter(ctx);
 			}
 			
@@ -1328,13 +1329,17 @@
 		},
 		drawGutter: function drawGutter(ctx) {
 			if(!this.gutter.length) { return; }
-			ctx.strokeStyle = this.options.styleGutter;
-			ctx.fillStyle = this.options.styleGutter;
+			ctx.strokeStyle = this.options.gutterStroke;
+			ctx.fillStyle = this.options.gutterFill;
 			ctx.lineWidth = 1;
 			for(var g=0; g<this.gutter.length; g++) {
 				var path = new Path2D(this.gutter[g]);
-				//ctx.stroke(path);
-				ctx.fill(path);
+				if(this.options.gutterFill) {
+					ctx.fill(path);
+				}
+				if(this.options.gutterStroke) {
+					ctx.stroke(path);
+				}
 			}
 		},
 		getColorRampColor: function getColorRampColor(value, min=0, max=1) {
