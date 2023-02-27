@@ -93,7 +93,7 @@
 
 			// linkVisible: boolean
 			linkVisible: true,			
-			// linkMode: "default" || "line" ||"hexagonal" || false
+			// linkMode: "default" || "spline" || "line" ||"hexagonal" || false
 			linkMode: "default",
 			// linkReach: meters (longest distance to be linked. controls how large of an area will be evaluated - for performance issues)
 			linkReach: 50000,
@@ -102,9 +102,9 @@
 
 
 			// gutterFill: false || "#color"
-			gutterFill: "#101214",
+			gutterFill: false, //"#101214",
 			// gutterStroke: false || "#color"
-			gutterStroke: "#202224",
+			gutterStroke: false, //"#202224",
 
 
 			// selectionVisible: true || false
@@ -1836,7 +1836,7 @@
 
 				var x = h0.cx + (mx-h0.cx) * join;
 				var y = h0.cy + (my-h0.cy) * join;
-				var path = `M${x} ${y} L${mx} ${my} `;
+				var path = `M${x} ${y} L${mx} ${my} `; 
 				x = h1.cx + (mx-h1.cx) * join;
 				y = h1.cy + (my-h1.cy) * join;
 				path += `L${x} ${y}`;
@@ -1844,6 +1844,43 @@
 				return path;
 			}
 
+
+			// linkMode = spline
+			if(this.options.linkMode=="spline") {			
+				var join = 1 - this.options.linkJoin;
+				var ks = Object.keys(hs);
+		
+				var x = h0.cx + (hs[ks[0]].cx-h0.cx) * join;
+				var y = h0.cy + (hs[ks[0]].cy-h0.cy) * join;
+				var path = `M${x} ${y} `;
+				var i = ks.length-1;
+				path += `C ${hs[ks[i]].cx} ${hs[ks[i]].cy}, `;
+				i = 0;
+				path += `${hs[ks[i]].cx} ${hs[ks[i]].cy}, `;
+				x = h1.cx + (hs[ks[i]].cx-h1.cx) * join;
+				y = h1.cy + (hs[ks[i]].cy-h1.cy) * join;
+				path += `${x} ${y}`;
+				return path;
+			}
+
+
+			// linkMode = curve
+			if(this.options.linkMode=="curve") {			
+				var join = 1 - this.options.linkJoin;
+				var ks = Object.keys(hs);
+		
+				var x = h0.cx + (hs[ks[0]].cx-h0.cx) * join;
+				var y = h0.cy + (hs[ks[0]].cy-h0.cy) * join;
+				var path = `M${x} ${y} `;
+				var i = 0;
+				path += `C ${x} ${hs[ks[i]].cy}, `;
+				i = ks.length-1;
+				path += `${hs[ks[i]].cx} ${y}, `;
+				x = h1.cx + (hs[ks[i]].cx-h1.cx) * join;
+				y = h1.cy + (hs[ks[i]].cy-h1.cy) * join;
+				path += `${x} ${y}`;
+				return path;
+			}
 
 			// linkMode = default
 			if(this.options.linkMode=="default") {			
