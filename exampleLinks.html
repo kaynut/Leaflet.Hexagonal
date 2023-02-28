@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Leaflet.Hexagonal - examplePoints</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+   <!-- Leaflet -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+		integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+		integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+
+
+   <!-- Leaflet.Hexagonal -->  
+	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
+	<script src="./leaflet.hexagonal.js"></script>
+
+
+   <!-- styles -->
+	<style type="text/css">
+		html,
+		body {
+			position: absolute;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			margin: 0;
+		}
+
+		.leaflet-container {
+			height: 100%;
+			width: 100%;
+			opacity: 0.9;
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<div id="map"></div>
+
+	<script type="module">
+
+
+		// map
+		var center = { lat: 47, lng: 10 };
+		var map = L.map('map').setView(center, 6);
+		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+
+
+		// hexagonals
+		var hexagonals = new L.Hexagonal().addTo(map);
+		hexagonals.options.linkMode = "curve";
+		hexagonals.options.linkMode = "curve";
+		hexagonals.options.hexagonSize = 12;
+
+
+
+
+		// gui
+		import GUI from './assets/lil-gui.js';
+	    var gui = new GUI();
+		gui.title("Leaflet.Hexagonal - examplePoints.html");
+
+
+		// links
+		var oLinks = {
+			linkMode: 'curve',
+			linkWidth: 4,
+			linkJoin: 0.5,
+			linkReach: 50000,
+			refresh_A: function() { redraw("A"); },
+			refresh_B: function() { redraw("B"); },
+			refresh_C: function() { redraw("C"); }
+		};
+		gui.add(oLinks, 'linkMode', [ 'aligned', 'line','spline','curve','hexagonal' ] ).onChange(value => {
+			hexagonals.options.linkMode = value;
+			hexagonals.refresh();
+		});
+		gui.add(oLinks, 'linkWidth', 1, 12, 1 ).onChange(value => {
+			hexagonals.options.linkWidth = value;
+			hexagonals.refresh();
+		});
+		gui.add(oLinks, 'linkJoin', 0, 1, 0.1 ).onChange(value => {
+			hexagonals.options.linkJoin = value;
+			hexagonals.refresh();
+		});
+		gui.add(oLinks, 'linkReach', 0, 100000, 10000 ).onChange(value => {
+			hexagonals.options.linkReach = value;
+			hexagonals.refresh();
+		});
+		gui.add( oLinks, 'refresh_A' );
+		gui.add( oLinks, 'refresh_B' );
+		gui.add( oLinks, 'refresh_C' );
+
+
+		function redraw(group="all") {
+				// remove groups
+				if(group=="all" || group=="A") {
+					hexagonals.removeGroup("A");
+				}
+				if(group=="all" || group=="B") {
+					hexagonals.removeGroup("B");
+				}
+				if(group=="all" || group=="C") {
+					hexagonals.removeGroup("C");
+				}
+
+
+				//
+				var p = map.getCenter(); 
+				var a = {lat:p.lat, lng:p.lng };
+				var b = {lat:p.lat, lng:p.lng };
+				var c = {lat:p.lat, lng:p.lng };
+
+				var bounds = map.getBounds();
+				var latMax = (bounds.getNorth() - bounds.getSouth()) / 10;
+				var lngMax = (bounds.getEast() - bounds.getWest()) / 15;
+
+				for(var i=0;i<50;i++) {
+					if(group=="all" || group=="A") {
+						a.lng += (Math.random()-0.51) * lngMax;
+						a.lat += (Math.random()-0.49) * latMax;
+						hexagonals.addPoint( a , { group:"A", fill:"#a00", linked:true });
+					}
+					if(group=="all" || group=="B") {
+						b.lng += (Math.random()-0.49) * lngMax;
+						b.lat += (Math.random()-0.51) * latMax;
+						hexagonals.addPoint( b , { group:"B", fill:"#aa0", linked:true });
+					}
+					if(group=="all" || group=="C") {
+						c.lng += (Math.random()-0.51) * lngMax;
+						c.lat += (Math.random()-0.51) * latMax;
+						hexagonals.addPoint( c , { group:"C", fill:"#0a0", linked:true });
+					}
+				}
+
+				hexagonals.refresh(); 
+
+		}
+		redraw();
+
+	</script>
+
+
+
+</body>
+
+</html>

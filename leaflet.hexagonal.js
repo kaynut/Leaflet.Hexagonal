@@ -69,8 +69,6 @@
 			styleStroke: "#303234", 	
 			// styleLineWidth: pixels
 			styleLineWidth: 1,
-			// styleLinkWidth: pixels
-			styleLinkWidth: 2,	
 			// styleMode: "count" || "sum" || "avg" || "min" || "max" || "first" || false (style for hexagon-cluster: depending on point data) 	
 			styleMode: false,
 			//styleProperty: "meta.propertyName" 
@@ -92,9 +90,11 @@
 
 
 			// linkVisible: boolean
-			linkVisible: true,			
-			// linkMode: "default" || "spline" || "line" ||"hexagonal" || false
-			linkMode: "default",
+			linkVisible: true,	
+			// linkWidth: pixels
+			linkWidth: 2,			
+			// linkMode: "spline" || "line" || "aligned" || "hexagonal" || false
+			linkMode: "spline",
 			// linkReach: meters (longest distance to be linked. controls how large of an area will be evaluated - for performance issues)
 			linkReach: 50000,
 			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
@@ -473,7 +473,28 @@
 			}
 			if(!points.length) { return; }
 
+			// meta
+			var m = Object.assign({}, meta);
 
+			// group
+			m.group = m.group || this._genGroup();
+
+			// linked
+			m.linked = m.linked || false; 
+
+
+			console.log(m);
+
+			// loop points
+			var c = 0;
+			for(var i=0; i<points.length; i++) {
+				c += this.addPoint(points[i], m);
+			}
+
+			// return number of points added
+			return c;
+
+			/*
 			// meta
 			meta = meta || {};
 
@@ -482,7 +503,7 @@
 			if(group) { meta.group = group; }
 
 			// linked
-			meta.linked = meta.linked || false;
+			meta.linked = meta.linked || false; 
 
 			// loop points
 			var c = 0;
@@ -493,6 +514,7 @@
 
 			// return number of points added
 			return c;
+			*/
 
 		},
 		// addGeojson: add url || geojson-string || geosjon-object
@@ -955,7 +977,8 @@
 							if(p0.visible && p1.visible) {
 								var path = this.getLinkPath(p0,p1,hexagonSize, hexagonOffset);
 								if(path) {
-									this.links.push({group: p0.group, start:p0, end:p1, path:path});
+									var style = p0.style || p1.style || false;
+									this.links.push({group: p0.group, start:p0, end:p1, path:path, style:style});
 								}
 							}
 						}
@@ -1000,7 +1023,7 @@
 				fill: this.options.styleFill || "#f00", 
 				stroke: this.options.styleStroke || "#f00", 
 				lineWidth: this.options.styleLineWidth || 1,
-				linkWidth: this.options.styleLinkWidth || 1
+				linkWidth: this.options.linkWidth || 1
 			};
 
 
@@ -1027,6 +1050,10 @@
 						cluster = links[i].start.cell.cluster;
 						link = links[i].start;
 					}
+					else if(links[i].style) {
+						link = links[i];
+					}
+
 
 					// style
 					style.fill = link?.style?.fill || this.groupStyle[link.group]?.fill || this.options.styleFill;
@@ -1320,11 +1347,11 @@
 			if(this.options.styleStroke && this.options.selectionStroke) {
 				ctx.lineJoin = "round";
 				ctx.strokeStyle = this.options.selectionStroke;
-				ctx.lineWidth = this.options.styleLinkWidth + this.options.styleLineWidth*2;
+				ctx.lineWidth = this.options.linkWidth + this.options.styleLineWidth*2;
 				ctx.stroke(path);
 			}
 			ctx.strokeStyle = this.options.selectionFill;
-			ctx.lineWidth = this.options.styleLinkWidth;
+			ctx.lineWidth = this.options.linkWidth;
 			ctx.stroke(path);
 		},
 		drawGutter: function drawGutter(ctx) {
@@ -1447,6 +1474,7 @@
 			this.onClick(e,selection);
 		},
 		onClick: function onClick(e,selection) {
+			console.log(selection);
 			return selection;
 		},
 		_onMouseRest: function _onMouseRest(e) {
@@ -1882,8 +1910,8 @@
 				return path;
 			}
 
-			// linkMode = default
-			if(this.options.linkMode=="default") {			
+			// linkMode = aligned
+			if(this.options.linkMode=="aligned") {			
 				var join = 1 - this.options.linkJoin;
 				var ks = Object.keys(hs);
 		

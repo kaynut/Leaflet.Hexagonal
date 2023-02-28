@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-	<title>Leaflet.Hexagonal - exampleBasic</title>
+	<title>Leaflet.Hexagonal - examplePoints</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
    <!-- Leaflet -->
@@ -42,7 +42,7 @@
 
 	<div id="map"></div>
 
-	<script>
+	<script type="module">
 
 
 		// map
@@ -56,27 +56,19 @@
 
 
       // add single point
-      hexagonals.addPoint({ lat: 47, lng: 7.5 });
+      hexagonals.addPoint({ lat: 45.089036, lng: 2.702637 });
+      
+      // add single point with style to group B
+      hexagonals.addPoint({ lat: 45.089036, lng: 5.119629 }, { group:"B", fill:"#f00" });
 
-      // add single point with style
-      hexagonals.addPoint({ lat: 47, lng: 9 }, {fill:"#f00"} );
+      // add another single point with style to group B
+      hexagonals.addPoint({ lat: 46.073231, lng: 5.119629 }, { group:"B", fill:"#f00", line:"#ff0" });
 
-      // add line
-      hexagonals.addLine([[10,47],[10,48]] );
+      // add three points with style to group C
+      hexagonals.addPoints([[7.536621,45.089036],[7.536621,46.073231],[7.536621,47.040182]], { group:"C", fill:"#8d0" } );
 
-      // add line with style
-      hexagonals.addLine([{lat:47,lng:11},{lat:48,lng:11},{lat:49,lng:11}], {fill:"#f00"} );
-
-      // add two points to the same group 
-      hexagonals.addPoint({ lat: 47, lng: 12.5 }, {group:"A", fill:"#08d"} );
-      hexagonals.addPoint({ lat: 48, lng: 12.5 }, {group:"A", fill:"#08d", linked:true} );
-
-
-      // add three points as a line
-      hexagonals.addPoints([{ lat: 47, lng: 13.5 },{ lat: 48, lng: 13.5 },{ lat: 49, lng: 13.5 }], {group:"B", fill:"#8d0"} );
-
-      // add three points as single points
-      hexagonals.addPoints([{ lat: 47, lng: 15 },{ lat: 48, lng: 15 },{ lat: 49, lng: 15 }], {fill:"#fd1", linked:false} );
+      // add line (four linked points) with style
+      hexagonals.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922] ], { group:"D", fill:"#ff0"});
 
       // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
       var gj = {
@@ -86,7 +78,15 @@
                "type": "Feature",
                "properties": {},
                "geometry": {
-                  "coordinates": [ 16, 47 ],
+                  "coordinates": [ 12.370605, 45.089036 ],
+                  "type": "Point"
+               }
+            },
+            {
+               "type": "Feature",
+               "properties": { linked:true },
+               "geometry": {
+                  "coordinates": [ 12.370605, 46.073231 ],
                   "type": "Point"
                }
             },
@@ -94,40 +94,49 @@
                "type": "Feature",
                "properties": {},
                "geometry": {
-                  "coordinates": [ 16, 48 ],
+                  "coordinates": [ 12.370605, 47.040182 ],
                   "type": "Point"
                }
             },
             {
                "type": "Feature",
-               "properties": {},
+               "properties": { linked:true },
                "geometry": {
-                  "coordinates": [ 16, 49 ],
+                  "coordinates": [ 12.370605, 47.989922 ],
                   "type": "Point"
                }
             },
             {
                "type": "Feature",
-               "properties": {},
+               "properties": { linked:true },
                "geometry": {
-                  "coordinates": [ 16, 50 ],
+                  "coordinates": [ 12.370605, 48.922499 ],
                   "type": "Point"
                }
             }
          ]
       }
-      hexagonals.addGeojson(gj, {group:"D", fill:"#d22"});
+      hexagonals.addGeojson(gj, {group:"E", fill:"#d22"});
 
 
-      // add a marker with an image 
-      hexagonals.addMarker({ lat: 47, lng: 17 }, {group:"E", marker: true, image:"./assets/image0.jpg", size:48 });
+      // add a image-marker with a size
+      hexagonals.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", image:"./assets/image0.jpg", size:48 });
 
-      // add a marker with an svg-icon 
+      // add an icon-marker 
       hexagonals.cacheIcon("token",'./assets/token.svg', 1);
+      hexagonals.addMarker({ lat: 45.089036, lng: 17.204589 }, {group:"G", icon:"token", fill:"#999" });
 
-      console.log(hexagonals.icons)
-      hexagonals.addMarker({ lat: 47, lng: 18.5 }, {group:"E", marker:true, icon:"token", size:32, fill:"#999" });
+      // add another icon-marker 
+      hexagonals.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token", fill:"#bbb", size:48 });
 
+
+
+
+
+		// gui
+		import GUI from './assets/lil-gui.js';
+	   var gui = new GUI();
+		gui.title("Leaflet.Hexagonal - examplePoints.html");
 
 
 	</script>

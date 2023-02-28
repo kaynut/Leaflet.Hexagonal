@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Leaflet.Hexagonal - examplePoints</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+   <!-- Leaflet -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+		integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+		integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+
+
+   <!-- Leaflet.Hexagonal -->  
+	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
+	<script src="./leaflet.hexagonal.js"></script>
+
+
+   <!-- styles -->
+	<style type="text/css">
+		html,
+		body {
+			position: absolute;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			margin: 0;
+		}
+
+		.leaflet-container {
+			height: 100%;
+			width: 100%;
+			opacity: 0.9;
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<div id="map"></div>
+
+	<script type="module">
+
+
+		// map
+		var center = { lat: 47, lng: 10 };
+		var map = L.map('map').setView(center, 6);
+		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+
+
+		// hexagonals
+		var hexagonals = new L.Hexagonal().addTo(map);
+
+
+      /*
+      lngs     step:1.208496
+         2.702637
+         3.911133
+         5.119629    
+         6.328125
+         7.536621
+         8.745117
+         9.953613
+         11.162109
+         12.370605
+         13.579101
+         14.787597
+         15.996093
+
+      lats
+         45.089036  
+         46.073231   
+         47.040182
+         47.989922
+         48.922499
+      */
+
+
+      // add single point
+      hexagonals.addPoint({ lat: 45.089036, lng: 2.702637 });
+      
+      // add single point with style to group B
+      hexagonals.addPoint({ lat: 45.089036, lng: 5.119629 }, { group:"B", fill:"#f00" });
+
+      // add another single point with style to group B
+      hexagonals.addPoint({ lat: 46.073231, lng: 5.119629 }, { group:"B", fill:"#f00", line:"#ff0" });
+
+      // add three points with style to group C
+      hexagonals.addPoints([[7.536621,45.089036],[7.536621,46.073231],[7.536621,47.040182]], { group:"C", fill:"#8d0" } );
+
+      // add line (four linked points) with style
+      hexagonals.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922] ], { group:"D", fill:"#ff0"});
+
+      // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
+      var gj = {
+         "type": "FeatureCollection",
+         "features": [
+            {
+               "type": "Feature",
+               "properties": {},
+               "geometry": {
+                  "coordinates": [ 12.370605, 45.089036 ],
+                  "type": "Point"
+               }
+            },
+            {
+               "type": "Feature",
+               "properties": { linked:true },
+               "geometry": {
+                  "coordinates": [ 12.370605, 46.073231 ],
+                  "type": "Point"
+               }
+            },
+            {
+               "type": "Feature",
+               "properties": {},
+               "geometry": {
+                  "coordinates": [ 12.370605, 47.040182 ],
+                  "type": "Point"
+               }
+            },
+            {
+               "type": "Feature",
+               "properties": { linked:true },
+               "geometry": {
+                  "coordinates": [ 12.370605, 47.989922 ],
+                  "type": "Point"
+               }
+            },
+            {
+               "type": "Feature",
+               "properties": { linked:true },
+               "geometry": {
+                  "coordinates": [ 12.370605, 48.922499 ],
+                  "type": "Point"
+               }
+            }
+         ]
+      }
+      hexagonals.addGeojson(gj, {group:"E", fill:"#d22"});
+
+
+      // add a image-marker with a size
+      hexagonals.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", image:"./assets/image0.jpg", size:48 });
+
+      // add an icon-marker 
+      hexagonals.cacheIcon("token",'./assets/token.svg', 1);
+      hexagonals.addMarker({ lat: 45.089036, lng: 17.204589 }, {group:"G", icon:"token", fill:"#999" });
+
+      // add another icon-marker 
+      hexagonals.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token", fill:"#bbb", size:48 });
+
+
+
+
+
+		// gui
+		import GUI from './assets/lil-gui.js';
+	   var gui = new GUI();
+		gui.title("Leaflet.Hexagonal - examplePoints.html");
+
+      // add/remove
+		var fAddRemove = gui.addFolder( 'Add/Remove' );
+		var oAddRemove = { 
+			add_100_points: function() {  
+
+            // remove group H
+            hexagonals.removeGroup("H");
+
+            //
+            var point = map.getCenter(); 
+            var bounds = map.getBounds();
+            var latMax = (bounds.getNorth() - bounds.getSouth()) / 10;
+            var lngMax = (bounds.getEast() - bounds.getWest()) / 10;
+
+            for(var i=0;i<100;i++) {
+               point.lng += (Math.random()-0.5) * lngMax;
+               point.lat += (Math.random()-0.5) * latMax;
+               hexagonals.addPoint( point , { group:"H", fill:"#ca0", linked:true });
+            }
+
+            hexagonals.refresh(); 
+
+         }
+
+		};		
+		fAddRemove.add( oAddRemove, 'add_100_points');
+
+	</script>
+
+
+
+</body>
+
+</html>
