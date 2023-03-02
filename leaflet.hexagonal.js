@@ -69,18 +69,20 @@
 			styleStroke: "#303234", 	
 			// styleLineWidth: pixels
 			styleLineWidth: 1,
-			// styleMode: "count" || "sum" || "avg" || "min" || "max" || "first" || false (style for hexagon-cluster: depending on point data) 	
-			styleMode: false,
-			//styleProperty: "meta.propertyName" 
-			styleProperty: "data", // propertyName for data-based coloring (included in meta)
-
-
-			// colorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
-			colorRamp: ["#ffdd11","#dd0000"],
-			// colorRampMode: false="linear" || "square" || "log"
-			colorRampMode: false,
-			// colorRampFallback: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
-			colorRampFallback: ["#ffdd11","#dd0000"],
+			
+			
+			// clusterMode: "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false (style for hexagon-cluster: depending on point data) 	
+			clusterMode: false,
+			//clusterProperty: "meta.propertyName" 
+			clusterProperty: "data", // propertyName for data-based coloring (included in meta)
+			// clusterMin: false || number
+			clusterMin: false,
+			// clusterMax: false || number
+			clusterMax: false,
+			// clusterScale: false="linear" || "square" || "log"
+			clusterScale: false,
+			// clusterColorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
+			clusterColorRamp: ["#ffdd11","#dd0000"],
 
 
 			// markerVisible: boolean
@@ -167,7 +169,7 @@
 		info: false,
 		infoLayer: false,
 
-		colorRamp: false,
+		clusterColorRamp: false,
 
 		gutter: false,
 
@@ -207,7 +209,7 @@
 				this._incId = (Date.now() & 16777215)*1000;
 				this._incGroup = (Date.now() & 16777215)*1000;
 
-				this.setColorRamp(this.options.colorRamp);
+				this.setColorRamp(this.options.clusterColorRamp);
 
 		},
 		beforeAdd: function beforeAdd() {
@@ -381,7 +383,7 @@
 
 
 			// data
-			var data = meta[this.options.styleProperty];
+			var data = meta[this.options.clusterProperty];
 			if(typeof data != "number") { data = 0; }
 
 			// point
@@ -495,28 +497,6 @@
 
 			// return number of points added
 			return c;
-
-			/*
-			// meta
-			meta = meta || {};
-
-			// group
-			var group = meta.group || false;
-			if(group) { meta.group = group; }
-
-			// linked
-			meta.linked = meta.linked || false; 
-
-			// loop points
-			var c = 0;
-			for(var i=0; i<points.length; i++) {
-				if(!group) { meta.group = this._genGroup(); }
-				c += this.addPoint(points[i], meta);
-			}
-
-			// return number of points added
-			return c;
-			*/
 
 		},
 		// addGeojson: add url || geojson-string || geosjon-object
@@ -889,10 +869,15 @@
 			var hexagonBounds = [hnw.idx, hnw.idy, hse.idx, hse.idy];
 
 
+			// totals
+			var tSum = 0;
+			var tMin = Number.MAX_SAFE_INTEGER;
+			var tMax = Number.MIN_SAFE_INTEGER;
 			
 
 			// cluster points
-			for (var i = 0; i < this.points.length; i++) {
+			var pl = this.points.length;
+			for (var i = 0; i < pl; i++) {
 
 				var point = this.points[i];
 
@@ -931,6 +916,13 @@
 				}
 
 				point.cell = h;
+
+				if(point.meta) {
+					tSum += point.meta.data;
+					tMin = Math.min(tMin, point.meta.data); 
+					tMax = Math.max(tMax, point.meta.data); 
+				}
+
 			}
 
 			
@@ -971,8 +963,8 @@
 			// collect links
 			this.links = [];
 			if(this.options.linkVisible) {
-				if(this.options.linkMode && this.points.length>1) {
-					for(var i=1; i<this.points.length; i++) {
+				if(this.options.linkMode && pl>1) {
+					for(var i=1; i<pl; i++) {
 						var p1 = this.points[i];
 						if(p1.link>=0) {
 							var p0 = this.points[p1.link];
@@ -995,8 +987,14 @@
 
 			this.totals.cells = Object.keys(this.hexagonals).length;
 			this.totals.markers = this.markers.length;
-			this.totals.count = this.points.length;
+			this.totals.count = pl;
 			this.totals.links = this.links.length;
+			this.totals.sum = tSum;
+			this.totals.avg = tSum/pl || 0;
+			this.totals.min = tMin;
+			this.totals.max = tMax;
+			
+			console.log(this.totals);
 
 
 		},
@@ -1005,6 +1003,9 @@
 			this._preDraw();
 			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options);
 			this.totals.drawTime = performance.now() - drawTime; 
+
+			console.log(this.totals.drawTime);
+
 		},
 		onDraw: function onDraw(canvas, hexagonals, selection, links, options) {
 
@@ -1028,6 +1029,16 @@
 				linkWidth: this.options.linkWidth || 1
 			};
 
+			// totals
+			var tCount = this.totals.count;
+			var tMin = this.totals.min;
+			if(typeof this.options.clusterMin == "number") {
+				tMin = this.options.clusterMin;
+			}
+			var tMax = this.totals.max; 
+			if(typeof this.options.clusterMax == "number") {
+				tMax = this.options.clusterMax;
+			} 
 
 			// draw gutter
 			if(this.options.gutterFill || this.options.gutterStroke) {
@@ -1061,31 +1072,31 @@
 					style.fill = link?.style?.fill || this.groupStyle[link.group]?.fill || this.options.styleFill;
 
 					// if start/end-point is visibly clustered (?!)
-					if(this.options.styleMode) {
+					if(this.options.clusterMode) {
 
-						//styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
+						//clusterMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
 						if(!cluster) {
 							style.fill = this.getColorRampColor(0,0,1);
 						}
-						else if(this.options.styleMode=="count") {
-							style.fill = this.getColorRampColor(cluster.count, 1, this.totals.count);
+						else if(this.options.clusterMode=="count") {
+							style.fill = this.getColorRampColor(cluster.count, 1, tCount);
 						}
-						else if(this.options.styleMode=="sum") {
-							style.fill = this.getColorRampColor(cluster.sum, this.totals.min, this.totals.max);
+						else if(this.options.clusterMode=="sum") {
+							style.fill = this.getColorRampColor(cluster.sum, tMin, tMax);
 						}
-						else if(this.options.styleMode=="avg") {
-							style.fill = this.getColorRampColor(cluster.avg, this.totals.min, this.totals.max);
+						else if(this.options.clusterMode=="avg") {
+							style.fill = this.getColorRampColor(cluster.avg,  tMin, tMax);
 						}
-						else if(this.options.styleMode=="min") {
-							style.fill = this.getColorRampColor(cluster.min, this.totals.min, this.totals.max);
+						else if(this.options.clusterMode=="min") {
+							style.fill = this.getColorRampColor(cluster.min,  tMin, tMax);
 						}
-						else if(this.options.styleMode=="max") {
-							style.fill = this.getColorRampColor(cluster.max, this.totals.min, this.totals.max);
+						else if(this.options.clusterMode=="max") {
+							style.fill = this.getColorRampColor(cluster.max,  tMin, tMax);
 						}
-						else if(this.options.styleMode=="first") {
+						else if(this.options.clusterMode=="first") {
 							style.fill = link.style0.fill || this.options.styleFill;
 						}
-						else if(this.options.styleMode=="last") {
+						else if(this.options.clusterMode=="last") {
 							style.fill = link.style1.fill || this.options.styleFill;
 						}
 					}
@@ -1113,27 +1124,27 @@
 						var gs = hexagonals[hexs[h]].point0.group;
 						style.fill = hexagonals[hexs[h]].style0.fill || this.groupStyle[gs]?.fill || this.options.styleFill;
 
-						//styleMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
-						if(this.options.styleMode) {
-							if(this.options.styleMode=="count") {
-								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, 1, this.totals.count);
+						//clusterMode = "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false
+						if(this.options.clusterMode) {
+							if(this.options.clusterMode=="count") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.count, 1, tCount);
 							}
-							else if(this.options.styleMode=="sum") {
-								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.sum, this.totals.min, this.totals.max);
+							else if(this.options.clusterMode=="sum") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
 							}
-							else if(this.options.styleMode=="avg") {
-								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.avg, this.totals.min, this.totals.max);
+							else if(this.options.clusterMode=="avg") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
 							}
-							else if(this.options.styleMode=="min") {
-								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.min, this.totals.min, this.totals.max);
+							else if(this.options.clusterMode=="min") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
 							}
-							else if(this.options.styleMode=="max") {
-								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.max, this.totals.min, this.totals.max);
+							else if(this.options.clusterMode=="max") {
+								style.fill = this.getColorRampColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
 							}
-							else if(this.options.styleMode=="first") {
+							else if(this.options.clusterMode=="first") {
 								style.fill = hexagonals[hexs[h]].style0.fill || this.options.styleFill;
 							}
-							else if(this.options.styleMode=="last") {
+							else if(this.options.clusterMode=="last") {
 								style.fill = hexagonals[hexs[h]].style1.fill || this.options.styleFill;
 							}
 
@@ -1382,7 +1393,7 @@
 			}
 		},
 		getColorRampColor: function getColorRampColor(value, min=0, max=1) {
-			var ramp = this.colorRamp;
+			var ramp = this.clusterColorRamp;
 			var l = ramp.length - 1;
 
 			var t0 = Math.min(min,max);
@@ -1398,10 +1409,10 @@
 			
 			
 			var t;
-			if(this.options.colorRampMode=="log") {
+			if(this.options.clusterScale=="log") {
 				t = Math.log(value-t0+1)/Math.log(t1-t0+1); 
 			}
-			else if(this.options.colorRampMode=="log") {
+			else if(this.options.clusterScale=="square") {
 				t = Math.sqrt(value-t0)/Math.sqrt(t1-t0);
 			}
 			else {
@@ -1417,16 +1428,16 @@
 
 		setColorRamp: function setColorRamp(colorArray) {
 			if(!colorArray) {
-				this.colorRamp = this.colorRampFallback;
+				this.clusterColorRamp = ["#303234","#e0e2e4"];
 				return;
 			}
 
 			if(!Array.isArray(colorArray) || !colorArray.length) {
 				console.warn("Leaflet.hexagonal.setColorRamp: Parameter colorArray is invalid", colorArray);
-				this.colorRamp = this.colorRampFallback;
+				this.clusterColorRamp = ["#303234","#e0e2e4"];
 				return;
 			}
-			this.colorRamp = [];
+			this.clusterColorRamp = [];
 			for(var i=0; i<colorArray.length; i++) {
 				if(typeof colorArray[i] == "string") {
 					colorArray[i] = this.getRgbaFromColor(colorArray[i]);
@@ -1440,11 +1451,11 @@
 				colorArray[i][2] = colorArray[i][2] || 0;
 				colorArray[i][3] = colorArray[i][3] || 1;
 
-				this.colorRamp[i] = colorArray[i];
+				this.clusterColorRamp[i] = colorArray[i];
 			}
 
 			if(colorArray.length<2) {
-				this.colorRamp[1] = colorArray[0];
+				this.clusterColorRamp[1] = colorArray[0];
 			}
 
 		},

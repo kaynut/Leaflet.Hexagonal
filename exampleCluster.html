@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Leaflet.Hexagonal - examplePoints</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+   <!-- Leaflet -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+		integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+		integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+
+
+   <!-- Leaflet.Hexagonal -->  
+	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
+	<script src="./leaflet.hexagonal.js"></script>
+
+
+   <!-- styles -->
+	<style type="text/css">
+		html,
+		body {
+			position: absolute;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			margin: 0;
+		}
+
+		.leaflet-container {
+			height: 100%;
+			width: 100%;
+			opacity: 0.9;
+		}
+	</style>
+
+</head>
+
+<body>
+
+	<div id="map"></div>
+
+	<script type="module">
+
+
+		// map
+		var center = { lat: 47, lng: 10 };
+		var map = L.map('map').setView(center, 6);
+		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+
+
+		// hexagonals
+		var hexagonals = new L.Hexagonal().addTo(map);
+		hexagonals.options.clusterProperty = "pop";
+
+      	hexagonals.addGeojson("./assets/EUR1000.geojson", {group:"EUR1000", fill:"#d22"});
+
+
+
+
+
+
+		// gui
+		import GUI from './assets/lil-gui.js';
+
+		var gui = new GUI({width:250});
+		gui.title("Leaflet.Hexagonal - exampleStyle.html");
+
+		var fStyle = gui.addFolder('Styles');
+		var oStyle = {
+			clusterMode: false,
+			clusterMin:0,
+			clusterMax:0,
+			clusterScale:"linear"
+		};
+		fStyle.add(oStyle, 'clusterMode', [ false, 'count','sum','avg','min','max','first','last' ] ).onChange(value => {
+			hexagonals.options.clusterMode = value;
+			hexagonals.refresh();
+		});
+		fStyle.add(oStyle, 'clusterMin', 0,10000,1000).onChange(value => {
+			hexagonals.options.clusterMin = value;
+			hexagonals.refresh();
+		});
+		fStyle.add(oStyle, 'clusterMax', 0,5000000,100000 ).onChange(value => {
+			hexagonals.options.clusterMax = value;
+			hexagonals.refresh();
+		});
+		fStyle.add(oStyle, 'clusterScale', [ 'linear','square','log' ] ).onChange(value => {
+			hexagonals.options.clusterScale = value;
+			hexagonals.refresh();
+		});
+
+	</script>
+
+
+
+</body>
+
+</html>
