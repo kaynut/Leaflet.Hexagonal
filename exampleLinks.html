@@ -63,21 +63,31 @@
 		// gui
 		import GUI from './assets/lil-gui.js';
 	    var gui = new GUI();
-		gui.title("Leaflet.Hexagonal - examplePoints.html");
+		gui.title("Leaflet.Hexagonal");
 
 
 		// links
 		var oLinks = {
+			linkVisible: true,
 			linkMode: 'curve',
 			linkWidth: 4,
+			linkFill: true,
 			linkJoin: 0.5,
 			linkReach: 50000,
 			refresh_A: function() { redraw("A"); },
 			refresh_B: function() { redraw("B"); },
 			refresh_C: function() { redraw("C"); }
 		};
+		gui.add(oLinks, 'linkVisible').onChange(value => {
+			hexagonals.options.linkVisible = value;
+			hexagonals.refresh();
+		});
 		gui.add(oLinks, 'linkMode', [ 'aligned', 'line','spline','curve','hexagonal' ] ).onChange(value => {
 			hexagonals.options.linkMode = value;
+			hexagonals.refresh();
+		});
+		gui.add(oLinks, 'linkFill', [ false, true, '#222222',"#999999","#eeeeee" ] ).onChange(value => {
+			hexagonals.options.linkFill = value;
 			hexagonals.refresh();
 		});
 		gui.add(oLinks, 'linkWidth', 1, 12, 1 ).onChange(value => {

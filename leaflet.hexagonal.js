@@ -92,7 +92,9 @@
 			// linkVisible: boolean
 			linkVisible: true,	
 			// linkWidth: pixels
-			linkWidth: 2,			
+			linkWidth: 2,
+			// linkFill: false || true || "#color"
+			linkFill: true,			
 			// linkMode: "spline" || "line" || "aligned" || "hexagonal" || false
 			linkMode: "spline",
 			// linkReach: meters (longest distance to be linked. controls how large of an area will be evaluated - for performance issues)
@@ -1338,9 +1340,19 @@
 				ctx.lineWidth = style.linkWidth + style.lineWidth*2;
 				ctx.stroke(path);
 			}
-			ctx.strokeStyle = style.fill;
+
+			if(!this.options.linkFill) { return; }
+			
+			if(this.options.linkFill===true) {
+				ctx.strokeStyle = style.fill;
+			}
+			else {
+				ctx.strokeStyle = this.options.linkFill;
+			}
 			ctx.lineWidth = style.linkWidth;
 			ctx.stroke(path);
+
+			
 		},
 		drawLinkSelected: function drawLinkSelected(ctx, link) {
 			var path = new Path2D(link.path);
