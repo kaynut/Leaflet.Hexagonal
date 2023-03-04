@@ -1,14 +1,5 @@
 // todo:
-// todo: make loading url (image/svg) cache them first 
-// done : id => group... id => entity , entity => group
-// done: addLine, addPoints
-// imagesizeMax
-// done: namengebung straight => default, line, hexagonal
-// done: pointyTop => pointyTop flatTop
-// done: bug: Rundungsproblem bei hexagonen > exampleOptions.html (zoomlevel: 10) > offset-value needed rounding  
-// check all addFunctions (with parameters)
-// check removeFunctions
-// delete/sum up some options for style
+
 
 
 
@@ -74,14 +65,18 @@
 			// clusterMode: "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false (style for hexagon-cluster: depending on point data) 	
 			clusterMode: false,
 			//clusterProperty: "meta.propertyName" 
-			clusterProperty: "data", // propertyName for data-based coloring (included in meta)
+			clusterProperty: "data", // current property for data-based coloring (included in meta)
+			//clusterPropertyDefault: number 
+			clusterPropertyDefault: 0, // default value, when current clusterProperty is not set for datapoint
+			//clusterProperties: "meta.propertyName" 
+			clusterProperties: [], // properties for data-based coloring (included in meta)
 			// clusterMin: false || number
 			clusterMin: false,
 			// clusterMax: false || number
 			clusterMax: false,
 			// clusterScale: false="linear" || "square" || "log"
 			clusterScale: "log",
-			// clusterColorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
+			// clusterColorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...] after init, to be set with setColorRamp
 			clusterColorRamp: ["#4d4","#dd4","#d44","#800"],
 
 
@@ -149,7 +144,6 @@
 		points: [],
 		totals:{
 			count:0,
-			data:0,
 			sum:0,
 			avg:0,
 			min: false,
@@ -381,10 +375,11 @@
 			var link = -1;
 			if(meta.linked) { link = this.getLinkIndex(group); } 
 
+			// info
+			var info = meta.info || false; // todo: make sure, info and data are passed through by geojson
 
 			// data
-			var data = meta[this.options.clusterProperty];
-			if(typeof data != "number") { data = 0; }
+			var data = this.getMetaData(meta);
 
 			// point
 			var point = {
@@ -396,7 +391,8 @@
 
 				meta: { 
 					count: 1,
-					data: data
+					data: data,
+					info: info
 				},
 
 				style: {
@@ -412,16 +408,6 @@
 				marker: meta.marker || false
 			};
 
-			// totals
-			this.totals.count += 1;
-			if(typeof data == "number") {
-				this.totals.sum += point.meta.data;
-				if(this.totals.min === false) { this.totals.min = data; }
-				else { this.totals.min = Math.min(this.totals.min, data); }
-				if(this.totals.max === false) { this.totals.max = data; }
-				else { this.totals.max = Math.max(this.totals.max, data); }
-				this.totals.delta = this.totals.max - this.totals.min;
-			}
 
 			// add to points
 			this.points.push(point);
@@ -686,12 +672,7 @@
 				if(id===this.points[j].id) {
 
 					var link = this.points[j].link;
-					var data = this.points[j].data;
 
-					this.totals.count -= 1;
-					if(typeof data == "number") {
-						this.totals.sum -= data;
-					}
 					this.points.splice(j, 1);
 
 					// readjust link
@@ -749,12 +730,6 @@
 				if(group===this.points[j].group) {
 
 					var link = this.points[j].link;
-					var data = this.points[j].data;
-
-					this.totals.count -= 1;
-					if(typeof data == "number") {
-						this.totals.sum -= data;
-					}
 
 					this.points.splice(j, 1);
 
@@ -880,9 +855,12 @@
 				var p = this.getPixels_from_latlng(point.latlng, w, h, hexagonOverhang);
 				point.visible = p.visible;
 
+				var d = point.meta.data[this.options.clusterProperty] || this.options.clusterPropertyDefault || 0;
+
 				if (p.visible) {
 
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, zoom);
+					point.cell = h;
 
 					/* 	hexagonals
 					
@@ -896,7 +874,8 @@
 						pointyTop:false,
 
 						pointIndices:[i0,i1,i2...],
-						markerIndices: [m0,m1,m2, ...]
+						markerIndices: [i0,i1,i2, ...]
+						linkIndices: [[i01,i02],[i11,i12], ...]
 						groups:{"groupA:"groupA", "groupB":"groupB", ...},
 						...
 					*/
@@ -912,9 +891,9 @@
 						this.hexagonals[h.cell].style1 = { fill:false };
 					}
 					if(!this.hexagonals[h.cell].pointIndices.length) {
-						this.hexagonals[h.cell].cluster.first = point.meta.data;
-						this.hexagonals[h.cell].cluster.min = point.meta.data;
-						this.hexagonals[h.cell].cluster.max = point.meta.data;
+						this.hexagonals[h.cell].cluster.first = d;
+						this.hexagonals[h.cell].cluster.min = d;
+						this.hexagonals[h.cell].cluster.max = d;
 						this.hexagonals[h.cell].style0 = { fill: (point.style.fill || false) };
 					}
 					//this.hexagonals[h.cell].points[point.group] = point;
@@ -923,21 +902,19 @@
 
 					// cluster data
 					this.hexagonals[h.cell].cluster.count++;
-					this.hexagonals[h.cell].cluster.last = point.meta.data;
-					this.hexagonals[h.cell].cluster.sum += point.meta.data;
+					this.hexagonals[h.cell].cluster.last = d;
+					this.hexagonals[h.cell].cluster.sum += d;
 					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.count || 0; 
-					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, point.meta.data);
-					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, point.meta.data);
+					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, d);
+					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, d);
 					this.hexagonals[h.cell].style1 = { fill: (point.style.fill || false) };
 				}
 
-				point.cell = h;
+				
+				tSum += d;
+				tMin = Math.min(tMin, d); 
+				tMax = Math.max(tMax, d); 
 
-				if(point.meta) {
-					tSum += point.meta.data;
-					tMin = Math.min(tMin, point.meta.data); 
-					tMax = Math.max(tMax, point.meta.data); 
-				}
 
 			}
 
@@ -951,25 +928,20 @@
 					var m = this.getPixels_from_latlng(marker.latlng, w, h, hexagonOverhang);
 					marker.visible = m.visible;
 
-					//if (m.visible) {
+					var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset, zoom);
+					if(!this.hexagonals[h.cell]) {
+						this.hexagonals[h.cell] = h;
+						this.hexagonals[h.cell].pointIndices = [];
+						this.hexagonals[h.cell].markerIndices = [];
+						this.hexagonals[h.cell].linkIndices = [];
+						this.hexagonals[h.cell].groups = {};
+						this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false };
+						this.hexagonals[h.cell].style0 = { fill:false };
+						this.hexagonals[h.cell].style1 = { fill:false };
+					}
 
-						var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset, zoom);
-
-						if(!this.hexagonals[h.cell]) {
-							this.hexagonals[h.cell] = h;
-							this.hexagonals[h.cell].pointIndices = [];
-							this.hexagonals[h.cell].markerIndices = [];
-							this.hexagonals[h.cell].linkIndices = [];
-							this.hexagonals[h.cell].groups = {};
-							this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false };
-							this.hexagonals[h.cell].style0 = { fill:false };
-							this.hexagonals[h.cell].style1 = { fill:false };
-						}
-
-						this.hexagonals[h.cell].markerIndices.push(i);
-						this.hexagonals[h.cell].groups[marker.group] = marker.group;
-
-					//}
+					this.hexagonals[h.cell].markerIndices.push(i);
+					this.hexagonals[h.cell].groups[marker.group] = marker.group;
 
 					marker.cell = h;
 					
@@ -978,20 +950,18 @@
 
 			// collect links
 			this.links = [];
-			if(this.options.linkVisible) {
-				if(this.options.linkMode && pl>1) {
-					for(var i=1; i<pl; i++) {
-						var p1 = this.points[i];
-						var i1 = i;
-						if(p1.link>=0) {
-							var p0 = this.points[p1.link];
-							var i0 = p1.link;
-							if(p0.visible && p1.visible) {
-								var path = this.getLinkPath(i0,i1,hexagonSize, hexagonOffset, zoom);
-								if(path) {
-									var style = p0.style || p1.style || false;
-									this.links.push({group: p0.group, start:p0, end:p1, path:path, style:style});
-								}
+			if(this.options.linkVisible && this.options.linkMode && pl>1) {
+				for(var i=1; i<pl; i++) {
+					var p1 = this.points[i];
+					var i1 = i;
+					if(p1.link>=0) {
+						var p0 = this.points[p1.link];
+						var i0 = p1.link;
+						if(p0.visible && p1.visible) {
+							var path = this.getLinkPath(i0,i1,hexagonSize, hexagonOffset, zoom);
+							if(path) {
+								var style = p0.style || p1.style || false;
+								this.links.push({group: p0.group, start:p0, end:p1, path:path, style:style});
 							}
 						}
 					}
@@ -1003,14 +973,15 @@
 				this.gutter = this.calcGutterCells(hexagonBounds, hexagonSize, hexagonOffset);
 			}
 
-			this.totals.cells = Object.keys(this.hexagonals).length;
+			this.totals.cells = Object.keys(this.hexagonals).length; // todo: delete unness props from totals
 			this.totals.markers = this.markers.length;
-			this.totals.count = pl;
 			this.totals.links = this.links.length;
+			this.totals.count = pl;
 			this.totals.sum = tSum;
 			this.totals.avg = tSum/pl || 0;
 			this.totals.min = tMin;
 			this.totals.max = tMax;
+			this.totals.delta = tMax-tMin;
 
 		},
 		_onDraw: function _onDraw() {
@@ -1069,7 +1040,7 @@
 					var cluster = false;
 					var link = false;
 
-					// todo avg out start/end or make a gradient-link?
+					// todo: avg out start/end or make a gradient-link?
 
 					if(links[i].end.cell.cluster) {
 						cluster = links[i].end.cell.cluster;
@@ -1090,7 +1061,7 @@
 					// if start/end-point is visibly clustered (?!)
 					if(this.options.clusterMode) {
 
-						//clusterMode = "count" || "sum" || "avg" || "min" || "max" || "first" || false
+						//clusterMode = "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false
 						if(!cluster) {
 							style.fill = this.getColorRampColor(0,0,1);
 						}
@@ -1891,8 +1862,8 @@
 						this.hexagonals[h.cell].groups = {};
 					}
 
-					this.hexagonals[h.cell].linkIndices.push(index0,index1)
-					this.hexagonals[h.cell].groups[point0.group] = point0.group;
+					this.hexagonals[h.cell].linkIndices.push([index0,index1]);
+					this.hexagonals[h.cell].groups[group] = group;
 
 				}
 			}
@@ -1995,6 +1966,22 @@
 			//var ll1 = this._map.containerPointToLatLng([size*1.077,0]); // avg between shortest(1) and longest(2/sqrt(3)) hexagon-crosssection
 			var ll1 = this._map.containerPointToLatLng([size*1.0501,0]); // 1.0501 avg diameter, based on hexagonal-circular-area comp
 			return this.getDistance(ll0.lng,ll0.lat,ll1.lng,ll1.lat);
+		},
+		getMetaData: function getMetaData(meta) {
+			var cd = {};
+			var ps = this.options.clusterProperties;
+			if(!ps.length) {
+				if(!this.options.clusterProperty) {
+					return {};
+				}
+				ps.push(this.options.clusterProperty);
+			}
+			for(var i=0; i<ps.length;i++) {
+				if(typeof meta[ps[i]]=="number") {
+					cd[ps[i]] = meta[ps[i]];
+				}
+			}
+			return cd;
 		},
 		// #endregion
 
