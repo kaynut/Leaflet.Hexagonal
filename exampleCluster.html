@@ -54,6 +54,7 @@
 		// hexagonals
 		var hexagonals = new L.Hexagonal().addTo(map);
 		hexagonals.options.hexagonSize=16;
+		hexagonals.options.infoProperty = "name";
 		hexagonals.options.clusterColorRamp=["#80f31f","#cabe01","#f87212","#f92a4d","#cc039b","#820bde","#373ffe","#088bee"];
 		hexagonals.options.clusterProperty = "dem";
 		hexagonals.options.clusterProperties = ["dem","pop","c"];
