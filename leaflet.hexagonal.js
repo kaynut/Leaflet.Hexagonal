@@ -1,7 +1,6 @@
 // todo:
-// delete not needed options: eg for info
-// add: defineClustering(default, min, max, prop, ramp)
 // add: selectionMode > single hexagon, group
+// clusterMode: clusterIndicator (if single or clustered)
 // update marker-clickablility
 
 /*!
@@ -1001,6 +1000,7 @@
 		drawMarker: function drawMarker(hexagon) {
 			var m0 = this.markers[hexagon.markerIndices[0]];
 			var style0 = m0.style;
+			var ref = this;
 			if(typeof style0 != "object") { return; }
 
 
@@ -1029,7 +1029,6 @@
 			if(typeof style0.image == "string") {
 
 				// onload: add image-marker
-				var ref = this;
 				var ii = new Image();
 				ii.onload = function() {
 					var icon = L.divIcon({
@@ -1044,7 +1043,11 @@
 						iconSize: [w,h],
 						iconAnchor: [w/2,h/2],
 					}); 
-					L.marker(hexagon.latlng, {icon: icon, opacity:ref.options.markerOpacity}).addTo(ref.markerLayer); 
+					var lm = L.marker(hexagon.latlng, {icon: icon, opacity:ref.options.markerOpacity}).addTo(ref.markerLayer); 
+					L.DomEvent.on(lm, 'click', function(e) { 
+						L.DomEvent.stopPropagation;
+						ref._onClick(e);
+					});
 				};
 
 				// onerror: replace with error-icon-marker
@@ -1084,7 +1087,11 @@
 					iconSize: [w,h],
 					iconAnchor: [w/2,h/2],
 				}); 
-				L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer);
+				var lm = L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer);
+				L.DomEvent.on(lm, 'click', function(e) { 
+					L.DomEvent.stopPropagation;
+					ref._onClick(e);
+				});
 				return; 
 			}	
 
@@ -1093,6 +1100,7 @@
 		},
 		drawMarkerFallback: function drawMarkerFallback(hexagon, size) {
 			var marker = this.markers[hexagon.markerIndices[0]];
+			var ref = this;
 
 			// calc path
 			var w,h;
@@ -1129,7 +1137,11 @@
 				iconSize: [w,h],
 				iconAnchor: [w/2,h/2],
 			}); 
-			L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer); 
+			var lm = L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer); 
+			L.DomEvent.on(lm, 'click', function(e) { 
+				L.DomEvent.stopPropagation;
+				ref._onClick(e);
+			});
 		},
 		drawHexagonSelected: function drawHexagonSelected(ctx, hexagon) {
 			var hPath = new Path2D(hexagon.path);
@@ -1393,7 +1405,10 @@
 
 			this.info = L.marker(info.latlng, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
 			L.DomEvent.on(this.info, 'mousewheel', L.DomEvent.stopPropagation);
-			L.DomEvent.on(this.info, 'click', L.DomEvent.stopPropagation);
+			L.DomEvent.on(this.info, 'click', function(e) { 
+				L.DomEvent.stopPropagation;
+				console.log('clicked info!',e);
+			});
 		},
 		buildInfo: function buildInfo(info) {
 			var html = "";
