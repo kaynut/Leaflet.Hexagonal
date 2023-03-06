@@ -67,8 +67,8 @@
 			clusterMode: false,
 			//clusterProperty: "meta.propertyName" 
 			clusterProperty: "data", // current property for data-based coloring (included in meta)
-			//clusterPropertyDefault: number 
-			clusterPropertyDefault: 0, // default value, when current clusterProperty is not set for datapoint
+			//clusterDefaultValue: number 
+			clusterDefaultValue: 0, // default value, when current clusterProperty is not set for datapoint
 			//clusterProperties: "meta.propertyName" 
 			clusterProperties: [], // properties for data-based coloring (included in meta)
 			// clusterMin: false || number
@@ -77,8 +77,8 @@
 			clusterMax: false,
 			// clusterScale: false="linear" || "square" || "log"
 			clusterScale: "log",
-			// clusterColorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...] after init, to be set with setColorRamp
-			clusterColorRamp: ["#4d4","#dd4","#d44","#800"],
+			// clusterColors: [ "#color", "rgba(r,g,b)", [r,g,b,a],...] 
+			clusterColors: ["#4d4","#dd4","#d44","#800"],
 
 
 			// markerVisible: boolean
@@ -123,12 +123,8 @@
 			infoOpacity: 0.9,
 			// infoProperty: "propertyName" || false
 			infoProperty: "info",
-			// infoMode: "count" || "ids" || "custom" || false
-			infoMode: "count", 
 			// infoClassName: class || ""
-			infoClassName: "leaflet-hexagonal-info-container", 
-			// infoItemsMax: number (max items shown explicitly in info)
-			infoItemsMax: 5	
+			infoClassName: "leaflet-hexagonal-info-container"
 
 		},
 		// #endregion
@@ -166,7 +162,8 @@
 		info: false,
 		infoLayer: false,
 
-		clusterColorRamp: false,
+		clusterRamp: false,
+		clusterRampHash: false,
 
 		gutter: false,
 
@@ -205,8 +202,6 @@
 				this._instanceUID = Date.now();
 				this._incId = (Date.now() & 16777215)*1000;
 				this._incGroup = (Date.now() & 16777215)*1000;
-
-				this.setColorRamp(this.options.clusterColorRamp);
 
 		},
 		beforeAdd: function beforeAdd() {
@@ -806,6 +801,7 @@
 		_onDraw: function _onDraw() {
 			var drawTime = performance.now();
 			this.hexagonalize();
+			this.updateClusterRamp();
 			this.totals.hexTime = performance.now() - drawTime; 
 			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options);
 			this.totals.drawTime = performance.now() - drawTime; 
@@ -881,22 +877,22 @@
 
 						//clusterMode = "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false
 						if(!cluster) {
-							style.fill = this.calcColorRampColor(0,0,1);
+							style.fill = this.calcClusterColor(0,0,1);
 						}
 						else if(this.options.clusterMode=="count") {
-							style.fill = this.calcColorRampColor(cluster.count, 1, tCount);
+							style.fill = this.calcClusterColor(cluster.count, 1, tCount);
 						}
 						else if(this.options.clusterMode=="sum") {
-							style.fill = this.calcColorRampColor(cluster.sum, tMin, tMax);
+							style.fill = this.calcClusterColor(cluster.sum, tMin, tMax);
 						}
 						else if(this.options.clusterMode=="avg") {
-							style.fill = this.calcColorRampColor(cluster.avg,  tMin, tMax);
+							style.fill = this.calcClusterColor(cluster.avg,  tMin, tMax);
 						}
 						else if(this.options.clusterMode=="min") {
-							style.fill = this.calcColorRampColor(cluster.min,  tMin, tMax);
+							style.fill = this.calcClusterColor(cluster.min,  tMin, tMax);
 						}
 						else if(this.options.clusterMode=="max") {
-							style.fill = this.calcColorRampColor(cluster.max,  tMin, tMax);
+							style.fill = this.calcClusterColor(cluster.max,  tMin, tMax);
 						}
 						else if(this.options.clusterMode=="first") {
 							style.fill = link.style0.fill || this.options.styleFill;
@@ -935,19 +931,19 @@
 						//clusterMode = "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false
 						if(this.options.clusterMode) {
 							if(this.options.clusterMode=="count") {
-								style.fill = this.calcColorRampColor(hexagonals[hexs[h]].cluster.count, 1, tCount);
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.count, 1, tCount);
 							}
 							else if(this.options.clusterMode=="sum") {
-								style.fill = this.calcColorRampColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="avg") {
-								style.fill = this.calcColorRampColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="min") {
-								style.fill = this.calcColorRampColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="max") {
-								style.fill = this.calcColorRampColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="first") {
 								style.fill = hexagonals[hexs[h]].style0.fill || this.options.styleFill;
@@ -960,9 +956,9 @@
 						this.drawHexagon(ctx, hexagonals[hexs[h]], style);
 
 						if(options.selectionVisible) {
-							var hgroups = Object.keys(hexagonals[hexs[h]].groups);
-							for(var i=0;i<hgroups.length;i++) {
-								var hid = hexagonals[hexs[h]].groups[hgroups[i]];
+							var hgs = Object.keys(hexagonals[hexs[h]].groups);
+							for(var i=0;i<hgs.length;i++) {
+								var hid = hexagonals[hexs[h]].groups[hgs[i]];
 								if(selectionGroups[hid]) {
 									this.drawHexagonSelected(ctx, hexagonals[hexs[h]]);
 								}
@@ -990,7 +986,6 @@
 		afterDraw: function afterDraw() {
 
 		},
-
 		drawHexagon: function drawHexagon(ctx, hexagon, style) {
 			var hPath = new Path2D(hexagon.path);
 			if(style.fill) {
@@ -1203,9 +1198,77 @@
 
 
 		// #######################################################
-		// #region colorRamp
-		calcColorRampColor: function calcColorRampColor(value, min=0, max=1) {
-			var ramp = this.clusterColorRamp;
+		// #region cluster
+		setClustering: function setClustering(options) {
+			if(typeof options != "object") { return; }
+
+			if(typeof options.property == "string" && options.property!="") {
+				this.options.clusterProperty = options.property;
+			}
+			if(typeof options.defaultValue == "number") {
+				this.options.clusterDefaultValue = options.defaultValue;
+			}
+			if(typeof options.min == "number") {
+				this.options.clusterMin = options.min;
+			}
+			if(typeof options.max == "number") {
+				this.options.clusterMax = options.max;
+			}
+			if(typeof options.mode == "string") {
+				this.options.clusterMode = options.mode;
+			}
+			if(typeof options.scale == "string") {
+				this.options.clusterScale = options.scale;
+			}
+			if(typeof options.colors == "object" && Array.isArray(options.colors)) {
+				this.options.clusterColors = options.colors;
+			}
+
+		},
+		updateClusterRamp: function checkClusterRamp() {
+			var ocr = JSON.stringify(this.options.clusterColors);
+			if(ocr!=this.clusterRampHash) {
+				this.setClusterRamp(this.options.clusterColors);
+				console.log(ocr);
+			}
+		},
+		setClusterRamp: function setClusterRamp(colorArray) {
+			this.clusterRamp = [[48, 50, 52, 1] , [224, 226, 228, 1]]; // default value
+			this.clusterRampHash = JSON.stringify(this.clusterRamp);
+			if(!colorArray) {
+				return;
+			}
+			if(!Array.isArray(colorArray) || !colorArray.length) {
+				console.warn("Leaflet.hexagonal.setClusterRamp: Parameter colorArray is invalid", colorArray);
+				return;
+			}
+
+			this.clusterRamp = [];
+			for(var i=0; i<colorArray.length; i++) {
+				if(typeof colorArray[i] == "string") {
+					colorArray[i] = this.getRGBA(colorArray[i]);
+				}
+				else if(Array.isArray(colorArray[i])) {}
+				else {
+					colorArray[i] = [0,0,0,1];
+				}
+				colorArray[i][0] = colorArray[i][0] || 0;
+				colorArray[i][1] = colorArray[i][1] || 0;
+				colorArray[i][2] = colorArray[i][2] || 0;
+				colorArray[i][3] = colorArray[i][3] || 1;
+
+				this.clusterRamp[i] = colorArray[i];
+			}
+
+			if(colorArray.length<2) {
+				this.clusterRamp[1] = colorArray[0];
+			}
+
+			this.clusterRampHash = JSON.stringify(this.clusterRamp);
+
+		},
+		calcClusterColor: function calcClusterColor(value, min=0, max=1) {
+			var ramp = this.clusterRamp;
 			var l = ramp.length - 1;
 
 			var t0 = Math.min(min,max);
@@ -1234,63 +1297,6 @@
 			t = t - f;
 			
 			return "rgba(" + (ramp[f][0]*(1-t)+ramp[f+1][0]*t) + "," + (ramp[f][1]*(1-t)+ramp[f+1][1]*t) + "," + (ramp[f][2]*(1-t)+ramp[f+1][2]*t) + ","  + (ramp[f][3]*(1-t)+ramp[f+1][3]*t) + ")";
-		},
-		setColorRamp: function setColorRamp(colorArray) {
-			if(!colorArray) {
-				this.clusterColorRamp = ["#303234","#e0e2e4"];
-				return;
-			}
-
-			if(!Array.isArray(colorArray) || !colorArray.length) {
-				console.warn("Leaflet.hexagonal.setColorRamp: Parameter colorArray is invalid", colorArray);
-				this.clusterColorRamp = ["#303234","#e0e2e4"];
-				return;
-			}
-			this.clusterColorRamp = [];
-			for(var i=0; i<colorArray.length; i++) {
-				if(typeof colorArray[i] == "string") {
-					colorArray[i] = this.getColorRGBA(colorArray[i]);
-				}
-				else if(Array.isArray(colorArray[i])) {}
-				else {
-					colorArray[i] = [0,0,0,1];
-				}
-				colorArray[i][0] = colorArray[i][0] || 0;
-				colorArray[i][1] = colorArray[i][1] || 0;
-				colorArray[i][2] = colorArray[i][2] || 0;
-				colorArray[i][3] = colorArray[i][3] || 1;
-
-				this.clusterColorRamp[i] = colorArray[i];
-			}
-
-			if(colorArray.length<2) {
-				this.clusterColorRamp[1] = colorArray[0];
-			}
-
-		},
-		getColorRGBA: function getColorRGBA(color) {
-			var r,g,b,a;
-			if(!color.indexOf("#")) {
-				color = color.toUpperCase() + "FF";
-				  if(color.length>8) { 
-					[r,g,b,a] = color.match(/[0-9A-F]{2}/g).map(x => parseInt(x, 16));
-					return [r,g,b,a];
-				  }
-				   color += "F";
-				   [r,g,b,a] = color.match(/[0-9A-F]{1}/g).map(x => parseInt(x, 16)*17);
-				return [r,g,b,a];
-			}
-			if(!color.indexOf("rgb")) {
-				color += ",1";
-				[r,g,b,a] = color.match(/[.0-9]{1,3}/g);
-				return [r,g,b,a];
-			}
-			if(Array.isArray(color)) {
-				if(color.length==4) {
-					return color;
-				}
-			}
-			return [0,0,0,1];
 		},
 		// #endregion
 
@@ -1390,67 +1396,24 @@
 			L.DomEvent.on(this.info, 'click', L.DomEvent.stopPropagation);
 		},
 		buildInfo: function buildInfo(info) {
-			var html = "-";
+			var html = "";
+
 			var pis =  info.pointIndices.length;
 			var ps = [];
 			for(var i=0; i< pis; i++) {
-				console.log(info.pointIndices[i]);
 				var p = this.points[info.pointIndices[i]];
 				if(p.meta.info) {
 					ps.push(p.meta.info);
 				}
 			}
-			if(!ps.length) { return `[0 | ${pis}]`; }
-			else if(ps.length==1) { return `${ps[0]}`; }
-			else if(ps.length==2) { return `${ps[0]}<br>${ps[1]}`; }
-			else if(ps.length==3) { return `${ps[0]}<br>${ps[1]}<br>${ps[2]}`; }
-			return `${ps[0]}<br>${ps[1]}<br>${ps[2]}<br>[${ps.length} | ${pis}]`;
+			if(!ps.length) { html = `${pis}`; }
+			else if(ps.length==1) { html = `${ps[0]}`; }
+			else if(ps.length==2) { html = `${ps[0]}<br>${ps[1]}`; }
+			else if(ps.length==3) { html = `${ps[0]}<br>${ps[1]}<br>${ps[2]}`; }
+			else { html = `${ps[0]}<br>${ps[1]}<br>...<br>${ps[ps.length-1]}`; }
 
-			
-			/*
-			var points = info.pointIndices;
+			return html;
 
-			var html = "";
-			var more = "";
-			var br = "";
-			var maxPoints = this.options.infoItemsMax;
-
-			// infoMode: count
-			if(this.options.infoMode=="count") {
-				return points.length;
-			}
-
-			// infoMode: ids
-			if(this.options.infoMode=="ids") {
-				if(points.length>maxPoints) {
-					more = "<br><span style='float:right'>[" + (points.length - maxPoints) + " more]</span>"; 
-				}
-				maxPoints = Math.min(points.length, maxPoints);
-
-				for(var i=0;i<maxPoints; i++) {
-					html += br + points[i].group;
-					br = "<br>";
-				}
-				return html + more;
-			}
-
-			// infoMode: custom
-			if(this.infoCustom) {
-				if(points.length>maxPoints) {
-					more = "<br><span style='float:right'>[" + (points.length - maxPoints) + " more]</span>"; 
-				}
-				maxPoints = Math.min(points.length, maxPoints);
-
-				for(var i=0;i<maxPoints; i++) {
-					html += br + this.infoCustom(points[i]);
-					br = "<br>";
-				}
-				return html + more;
-			}
-
-			// // infoMode: default
-			return points.length;
-			*/
 		},
 		showInfo: function showInfo() {
 			if(this.info) {
@@ -1588,7 +1551,7 @@
 				var p = this.getPixels_from_latlng(point.latlng, w, h, hexagonOverhang);
 				point.visible = p.visible;
 
-				var d = point.meta.data[this.options.clusterProperty] || this.options.clusterPropertyDefault || 0;
+				var d = point.meta.data[this.options.clusterProperty] || this.options.clusterDefaultValue || 0;
 
 				if (p.visible) {
 
@@ -2197,6 +2160,30 @@
 			dist = dist * r2d * 111319.49;
 			return Math.round(dist * 100) / 100;
 
+		},
+		getRGBA: function getRGBA(color) {
+			var r,g,b,a;
+			if(!color.indexOf("#")) {
+				color = color.toUpperCase() + "FF";
+				  if(color.length>8) { 
+					[r,g,b,a] = color.match(/[0-9A-F]{2}/g).map(x => parseInt(x, 16));
+					return [r,g,b,a];
+				  }
+				   color += "F";
+				   [r,g,b,a] = color.match(/[0-9A-F]{1}/g).map(x => parseInt(x, 16)*17);
+				return [r,g,b,a];
+			}
+			if(!color.indexOf("rgb")) {
+				color += ",1";
+				[r,g,b,a] = color.match(/[.0-9]{1,3}/g);
+				return [r,g,b,a];
+			}
+			if(Array.isArray(color)) {
+				if(color.length==4) {
+					return color;
+				}
+			}
+			return [0,0,0,1];
 		},
 		_toArray: function _toArray(obj) {
 			var arr = [];

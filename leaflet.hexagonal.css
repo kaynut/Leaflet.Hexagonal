@@ -14,9 +14,9 @@
     padding: 10px 10px;    
     line-height:15px;
     background-color: rgb(30,32,34);
-    color:#eee;
-    border-radius: 2px; 
-    opacity: 0.75;
+    color:#ddd;
+    border-radius: 3px; 
+    opacity: 0.85;
     cursor: default;
     white-space: nowrap;
 }
