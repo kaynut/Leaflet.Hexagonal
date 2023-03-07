@@ -65,7 +65,7 @@ and
 <br>
 
 ## Options
-Apart from the default options of a canvas-layer, there are plenty of options, to change the appearance and behaviour to your needs. Those can be set on initiation or at a later point.  
+Apart from the default options of a canvas-layer, there are plenty of options, to change the appearance and behaviour to your needs. Those can be set on initiation or at a later point. [For a complete list of options see below](#options)
 
 ```js
 
@@ -76,22 +76,51 @@ Apart from the default options of a canvas-layer, there are plenty of options, t
       hexagonMode:"flatTop"
    }).addTo(map);
 
-   ...
+   //... (e.g. adding data)
 
    // set options later on
    hexagonals.options.hexagonSize = 24;
 
 ```
-|layer option|default|values|description|
+### Options {#options}
+### hexagon options
+```js
+// hexagonVisible: boolean 
+// > whether or not hexagons will be visible
+hexagonVisible: true,
+
+// hexagonSize: integer || function
+// size of hexagonal grid
+hexagonSize: 16, 
+hexagonSize: function(zoom) { return Math.max(16,Math.pow(2, zoom-6)); }, 
+
+// hexagonGap: pixels 
+// gap between the cells of the hexagonal grid 
+hexagonGap: 0, 	
+
+// hexagonOrientation: "flatTop" || "pointyTop",
+// whether the hexagons are flat or pointy on the upper part
+hexagonOrientation: "flatTop",
+```        
+### style options
+```js
+// styleFill: "color" || false
+styleFill: "#fd1",
+// styleStroke: "color" || false
+styleStroke: "#303234", 	
+// styleLineWidth: pixels
+styleLineWidth: 1,
+```  
+
+|default layer options|type|default|description|
 |--|--|--|--|
-||||
-|zIndex|integer|100| after init to be set by method: layer.setZIndex()|
-|opacity|float|0.5|after init to be set by method: layer.setOpacity()|
 |visible|boolean|true|after init to be set by method: layer.setVisibility()|
+|opacity|float|0.5|after init to be set by method: layer.setOpacity()|
 |minZoom|float|0|minimal zoomlevel at which the layer is rendered|
 |maxZoom|float|18|maximmal zoomlevel at which the layer is rendered|
 |padding|float|0.1|amount of rendering beyond the viewport
-||||
+|zIndex|integer|100| after init to be set by method: layer.setZIndex()|
+
 
 
 ## Use cases
@@ -106,6 +135,8 @@ This layer was designed to be
 - easy to use out of then box and easy to adjust through options ([Options](#Options))
 - customization-friendly: Lots of functions simply exist to be overwritten for specific needs ([Customization](#Customization))
 - of reasonable performance: It should handle 10.000 points quite easly. (If you would dump a lot of the easy/friendly-stuff and took webgl for rendering, you could definitly improve performance a lot... but in this case performance  only comes in at third place. ([examplePerformance.html](https://kaynut.github.io/Leaflet.Hexagonal/examplePerformance.html))
+
+
 
 
 ## Options
