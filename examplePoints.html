@@ -137,7 +137,20 @@
 		import GUI from './assets/lil-gui.js';
 	   var gui = new GUI();
 		gui.title("Leaflet.Hexagonal - examplePoints.html");
-
+      var guiOptions = {
+			toggle: function() { 
+            hexagonals.setVisibility();
+            /*
+            if(hexagonals.options.visible) {
+               hexagonals.hide();
+            }
+            else {
+               hexagonals.show();
+            }
+            */
+         }
+      }
+      gui.add(guiOptions, 'toggle');
 
 	</script>
 

@@ -1,34 +1,33 @@
 # Leaflet.Hexagonal
 
 ![image](/assets/demo.jpg)
-
-
 [Click here for a quick example](https://kaynut.github.io/Leaflet.Hexagonal/)
-- [Example: adding data](./exampleBasic.html)
-- [Example: manipulating options](./exampleOptions.html)
-- [Test: performance](./examplePerformance.html) 
 
-## What is Leaflet.Hexagonal
+
+<br>
+
+### What is Leaflet.Hexagonal
 Leaflet.Hexagonal is a Leaflet-canvas-layer, that takes 
 - points (single, multiple or linked points) 
-- geojson (Point, LineString, Feature, FeatureCollection),
-- markers (images,svg)
+- lines (array of array, array of latLng-objects)
+- geojson (Point, LineString, Feature, FeatureCollection)
+- markers (images or svg-icons)
 
 and 
 
 - clusters them - based on a hexagonal grid 
 - links them up - based on supplied identifiers
 - styles them - based on supplied metadata
-- makes them interactive (highlight, select)
+- makes them interactive (highlight, select via click/hover)
+
+<br>
 
 
-
-## How to use Leaflet.Hexagonal
+### How to use Leaflet.Hexagonal
 ```html
 <!DOCTYPE html>
 <html>
    <head>    
-      
       <meta name="viewport" content="width=device-width, initial-scale=1">
       
       <!-- Leaflet -->
@@ -42,7 +41,7 @@ and
    </head>
    <body>
 
-<div id="map" style="width: 600px; height: 400px;"></div>
+      <div id="map" style="width: 600px; height: 400px;"></div>
       
       <script type="text/javascript">
 
@@ -61,6 +60,39 @@ and
    </body>
 </html>
 ```
+
+<br>
+<br>
+
+## Options
+Apart from the default options of a canvas-layer, there are plenty of options, to change the appearance and behaviour to your needs. Those can be set on initiation or at a later point.  
+
+```js
+
+   // set options on initiation
+   var hexagonals = L.hexagonal({
+      opacity:0.7,
+      hexagonSize:16,
+      hexagonMode:"flatTop"
+   }).addTo(map);
+
+   ...
+
+   // set options later on
+   hexagonals.options.hexagonSize = 24;
+
+```
+|layer option|default|values|description|
+|--|--|--|--|
+||||
+|zIndex|integer|100| after init to be set by method: layer.setZIndex()|
+|opacity|float|0.5|after init to be set by method: layer.setOpacity()|
+|visible|boolean|true|after init to be set by method: layer.setVisibility()|
+|minZoom|float|0|minimal zoomlevel at which the layer is rendered|
+|maxZoom|float|18|maximmal zoomlevel at which the layer is rendered|
+|padding|float|0.1|amount of rendering beyond the viewport
+||||
+
 
 ## Use cases
 Developed to cluster sparse data (bounding-boxes of tracks) in a nice (hexagonal) manner, the layer evolved to kind of a "eierlegende Wollmilchsau" (direct translation from German would be something like "egg-laying wool-milk-sow"). Possible scenarios:

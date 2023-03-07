@@ -329,14 +329,44 @@
 		},
 		show: function show() {
 			if (!this.options.visible) {
-				if (this.options.visible = !0, this._isZoomVisible()) return this._map.on(this.getEvents(), this),
-					this.getContainer().style.display = "", this._update(), this;
+				if (this.options.visible = !0, this._isZoomVisible()) {
+					return this._map.on(this.getEvents(), this),
+					this.getContainer().style.display = "", 
+					this._update(), 
+					this; 
+				}
 				this._zoomHide();
+				
 			}
 		},
 		hide: function hide() {
-			if (this.options.visible) return this.options.visible = !1, this._zoomHide(), this._map.off(this.getEvents(), this),
-				this.getContainer().style.display = "none", this;
+			if (this.options.visible) {
+				return this.options.visible = !1, 
+				this._zoomHide(), 
+				this._map.off(this.getEvents(), this),
+				this.getContainer().style.display = "none", 
+				this;
+			}
+		},
+		setVisibility: function setVisibility(show) {
+			if(typeof show != "boolean") {
+				show = !this.options.visible;
+			}
+			if(show==this.options.visible) { return; }
+			if(show) {
+				if(!this._map.hasLayer(this.markerLayer)) {
+					this._map.addLayer(this.markerLayer);
+				}
+				if(!this._map.hasLayer(this.infoLayer)) {
+					this._map.addLayer(this.infoLayer);
+				}
+				this.show();
+			}
+			else if(this._map.hasLayer(this.markerLayer) || this._map.hasLayer(this.infoLayer)) {
+				this._map.removeLayer(this.markerLayer);
+				this._map.removeLayer(this.infoLayer);
+				this.hide();
+			}
 		},
 
 		// #endregion
