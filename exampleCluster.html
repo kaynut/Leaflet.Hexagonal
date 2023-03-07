@@ -6,10 +6,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
    <!-- Leaflet -->
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-		integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
-	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-		integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
 
 
    <!-- Leaflet.Hexagonal -->  
@@ -34,6 +32,11 @@
 			width: 100%;
 			opacity: 0.9;
 		}
+
+		.gui-highlight {
+			font-weight:800;
+			color:#fd1;
+		}
 	</style>
 
 </head>
@@ -45,17 +48,23 @@
 	<script type="module">
 
 
-		// map
+		// ###########################
+		//  leaflet setup
 		var center = { lat: 47, lng: 10 };
 		var map = L.map('map').setView(center, 6);
 		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 
 
-		// hexagonals
+		// ###########################
+		// Leaflet.hexagonal setup
 		var hexagonals = new L.Hexagonal().addTo(map);
+
+		// basic options
 		hexagonals.options.hexagonSize = 16;
 		hexagonals.options.selectionVisible = false;
 		hexagonals.options.infoProperty = "name";
+
+		// cluster options
 		hexagonals.options.clusterColors = ["#4d4","#dd4","#d44","#800"];
 		hexagonals.options.clusterProperty = "dem";
 		hexagonals.options.clusterProperties = ["dem","pop","c"];
@@ -63,134 +72,149 @@
 		hexagonals.options.clusterMax = 2000;
 		hexagonals.options.clusterMode = "max";
 		hexagonals.options.clusterScale = "square";
+
+		// add data
       	hexagonals.addGeojson("./assets/EUROPE5000.geojson", {group:"EUROPE5000", fill:"#d22"});
 
 
 
+		// below this point, there's just stuff for switching between clustering-variants
 
+
+
+		// ###########################
 		// gui
 		import GUI from './assets/lil-gui.js';
-
 		var gui = new GUI({width:250});
-		gui.title("Leaflet.Hexagonal - exampleStyle.html");
-/*
-		var fStyle = gui.addFolder('Styles');
-		var oStyle = {
-			clusterMode: false,
-			clusterMin:0,
-			clusterMax:0,
-			clusterScale:"log"
-		};
-		fStyle.add(oStyle, 'clusterMode', [ false, 'count','sum','avg','min','max','first','last' ] ).onChange(value => {
-			hexagonals.options.clusterMode = value;
-			hexagonals.refresh();
-		});
-		fStyle.add(oStyle, 'clusterMin', 0,10000,1000).onChange(value => {
-			hexagonals.options.clusterMin = value;
-			hexagonals.refresh();
-		}).disable();
-		fStyle.add(oStyle, 'clusterMax', 0,1000000,100 ).onChange(value => {
-			hexagonals.options.clusterMax = value;
-			hexagonals.refresh();
-		});
-		fStyle.add(oStyle, 'clusterScale', [ 'linear','square','log' ] ).onChange(value => {
-			hexagonals.options.clusterScale = value;
-			hexagonals.refresh();
-			console.log(hexagonals.points);
-		});
-	*/
-		var fModes = gui.addFolder('Modes');
-		var oModes = {
-			mode: "Altitude",
-			
+		gui.title("Leaflet.Hexagonal");
+		var guiOptions = {
+			altitudes: function() { guiAltitudes(); },
+			population: function() { guiPopulation(); },
+			countries: function() { guiCountries(); },
+
 			clusterProperty:"dem",
 			clusterMin:0,
 			clusterMax:2000,
 			clusterMode: "max",
 			clusterScale:"log"
 		};
-	
-		fModes.add(oModes, 'mode', [ "Altitude","Population","Country" ] ).onChange(value => {
-			if(value=="Altitude") {
-				hexagonals.options.clusterColors = ["#4d4","#dd4","#d44","#800"];
-				hexagonals.options.clusterProperty = "dem";
-				hexagonals.options.clusterDefaultValue = 0;
-				hexagonals.options.clusterMin = 0;
-				hexagonals.options.clusterMax = 2000;
-				hexagonals.options.clusterMode = "max";
-				hexagonals.options.clusterScale = "square";
-
-				oModes.clusterProperty = "dem";
-				oModes.clusterMin = 0;
-				oModes.clusterMax = 2000;
-				oModes.clusterMode = "max";
-				oModes.clusterMode = "square";
-			}
-			else if(value=="Population") {
-				hexagonals.options.clusterColors = ["#404244","#808284","#c0c2c4","#d00204"];
-				hexagonals.options.clusterProperty = "pop";
-				hexagonals.options.clusterDefaultValue = 0;
-				hexagonals.options.clusterMin = 0;
-				hexagonals.options.clusterMax = 5000000;
-				hexagonals.options.clusterMode = "sum";
-				hexagonals.options.clusterScale = "log";
-
-				oModes.clusterProperty = "pop";
-				oModes.clusterMin = 0;
-				oModes.clusterMax = 5000000;
-				oModes.clusterMode = "sum";
-				oModes.clusterMode = "log";
-			}
-			else if(value=="Country") {
-				hexagonals.setClustering({
-					property:"c",
-					defaultValue:0,
-					min:0,
-					max:45,
-					mode:"min",
-					scale:"linear",
-					colors: ["#d44","#dd4","#4d4","#4dd"]
-				})
-
-				oModes.clusterProperty = "c";
-				oModes.clusterMin = 0;
-				oModes.clusterMax = 45;
-				oModes.clusterMode = "min";
-				oModes.clusterMode = "linear";
-			}
-			else if(value=="CountryOld") {
-				hexagonals.options.clusterColors = ["#d44","#dd4","#4d4","#4dd"];
-				hexagonals.options.clusterProperty = "c";
-				hexagonals.options.clusterDefaultValue = 0;
-				hexagonals.options.clusterMin = 0;
-				hexagonals.options.clusterMax = 45;
-				hexagonals.options.clusterMode = "min";
-				hexagonals.options.clusterScale = "linear";
-
-				oModes.clusterProperty = "c";
-				oModes.clusterMin = 0;
-				oModes.clusterMax = 45;
-				oModes.clusterMode = "min";
-				oModes.clusterMode = "linear";
-			}
+		
+		// altitudes
+		var guiAltitudes = function() {
+			hexagonals.options.clusterColors = ["#4d4","#dd4","#d44","#800"];
+			hexagonals.options.clusterProperty = "dem";
+			hexagonals.options.clusterDefaultValue = 0;
+			hexagonals.options.clusterMin = 0;
+			hexagonals.options.clusterMax = 2000;
+			hexagonals.options.clusterMode = "max";
+			hexagonals.options.clusterScale = "square";
 			hexagonals.refresh();
 
+			// gui
+			guiHighlight("altitudes");
+			cmin.min(-100);
+			cmin.max(3000);
+			cmin.step(100);
+			guiOptions.clusterMin = 0;
+			cmax.min(-100);
+			cmax.max(3000);
+			cmax.step(100);
+			guiOptions.clusterMax = 2000;
 
-		});
+			guiOptions.clusterMode = "max";
+			guiOptions.clusterScale = "square";
+		}
+		gui.add(guiOptions, 'altitudes');
+		document.getElementById("lil-gui-name-1").className = "name views altitudes";
 
-		fModes.add(oModes, 'clusterMode', [ false, 'count','sum','avg','min','max','first','last' ] ).onChange(value => {
+		// population
+		var guiPopulation = function() {
+			hexagonals.options.clusterColors = ["#404244","#808284","#c0c2c4","#d00204"];
+			hexagonals.options.clusterProperty = "pop";
+			hexagonals.options.clusterDefaultValue = 0;
+			hexagonals.options.clusterMin = 0;
+			hexagonals.options.clusterMax = 5000000;
+			hexagonals.options.clusterMode = "sum";
+			hexagonals.options.clusterScale = "log";
+			hexagonals.refresh();
+
+			// gui
+			guiHighlight("population");
+			cmin.min(0);
+			cmin.max(10000000);
+			cmin.step(100000);			
+			guiOptions.clusterMin = 0;
+			cmax.min(0);
+			cmax.max(10000000);
+			cmax.step(100000);
+			guiOptions.clusterMax = 5000000;
+
+			guiOptions.clusterMode = "sum";
+			guiOptions.clusterScale = "log";
+		}
+		gui.add(guiOptions, 'population');
+		document.getElementById("lil-gui-name-2").className = "name views population";
+
+		// countries
+		var guiCountries = function() {
+			hexagonals.setClustering({
+				property:"c",
+				defaultValue:0,
+				min:0,
+				max:45,
+				mode:"min",
+				scale:"linear",
+				colors: ["#d44","#dd4","#4d4","#4dd"]
+			});
+			hexagonals.refresh();
+
+			// gui
+			guiHighlight("countries");
+			cmin.min(0);
+			cmin.max(50);
+			cmin.step(1);			
+			guiOptions.clusterMin = 0;
+			cmax.min(0);
+			cmax.max(50);
+			cmax.step(1);
+			guiOptions.clusterMax = 45;
+
+			guiOptions.clusterMode = "min";
+			guiOptions.clusterScale = "linear";
+		}
+		gui.add(guiOptions, 'countries');
+		document.getElementById("lil-gui-name-3").className = "name views countries";
+
+		// gui highlight
+		var guiHighlight = function(viewName) {
+			var btns = document.querySelectorAll(".views");
+			for(var i=0;i<btns.length;i++) {
+				if(btns[i].classList.contains(viewName)) {
+					btns[i].classList.add("gui-highlight");
+				}
+				else {
+					btns[i].classList.remove("gui-highlight");
+				}
+			}
+		}
+		guiHighlight("altitudes");
+
+
+		// hexagonal.options
+		var options = gui.addFolder('hexagonal.options');
+		var cmode = options.add(guiOptions, 'clusterMode', [ false, 'count','sum','avg','min','max','first','last' ] ).onChange(value => {
 			hexagonals.options.clusterMode = value;
 			hexagonals.refresh();
 		}).listen();
-		fModes.add(oModes, 'clusterMin', 0,10000,1000).onChange(value => {
+		var cmin = options.add(guiOptions, 'clusterMin', 0,10000,1000).onChange(value => {
 			hexagonals.options.clusterMin = value;
 			hexagonals.refresh();
 		}).listen();
-		fModes.add(oModes, 'clusterMax', 0,1000000,100 ).onChange(value => {
+		var cmax = options.add(guiOptions, 'clusterMax', 0,1000000,100 ).onChange(value => {
 			hexagonals.options.clusterMax = value;
 			hexagonals.refresh();
 		}).listen();
-		fModes.add(oModes, 'clusterScale', [ 'linear','square','log' ] ).onChange(value => {
+		var cscale = options.add(guiOptions, 'clusterScale', [ 'linear','square','log' ] ).onChange(value => {
 			hexagonals.options.clusterScale = value;
 			hexagonals.refresh();
 			console.log(hexagonals.points);
