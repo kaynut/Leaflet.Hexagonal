@@ -44,14 +44,22 @@
 
 
 
-			// hexagonVisible: boolean
+			// hexagonVisible: boolean 
+			// > whether or not hexagons will be visible
 			hexagonVisible: true,
-			// hexagonSize: number || function(zoom) { return size; }
-			hexagonSize: function(zoom) { return Math.max(32,Math.pow(2, zoom-5)); }, 
-			// hexagonGap: pixels (difference between display- and clustering-size of hexagon) 
+
+			// hexagonSize: integer || function
+			// size of hexagonal grid
+			hexagonSize: 16, 
+			hexagonSize: function(zoom) { return Math.max(16,Math.pow(2, zoom-6)); }, 
+
+			// hexagonGap: pixels 
+			// gap between the cells of the hexagonal grid 
 			hexagonGap: 0, 	
-			// hexagonMode: "flatTop" || "pointyTop",
-			hexagonMode: "flatTop",
+
+			// hexagonOrientation: "flatTop" || "pointyTop",
+			// whether the hexagons are flat or pointy on the upper part
+			hexagonOrientation: "flatTop",		
 
 
 			// styleFill: "color" || false
@@ -1737,7 +1745,7 @@
 			return 16;
 		},	
 		calcHexagonCell: function calcHexagonCell(x,y, size, offset, zoom) { // hexagon top-flat
-			if(this.options.hexagonMode == "pointyTop") {
+			if(this.options.hexagonOrientation == "pointyTop") {
 				return this.calcHexagonCell_pointyTop(x,y, size, offset, zoom);
 			}
 
@@ -1793,7 +1801,7 @@
 			return { cell:cell, idx:idx, idy:idy, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
 		},
 		calcGutterCells: function calcGutterCells(bounds, size, offset) { // hexagon top-flat
-			if(this.options.hexagonMode == "pointyTop") {
+			if(this.options.hexagonOrientation == "pointyTop") {
 				return this.calcGutterCells_pointyTop(bounds, size, offset);
 			}
 
