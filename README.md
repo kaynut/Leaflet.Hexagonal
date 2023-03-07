@@ -3,10 +3,9 @@
 ![image](/assets/demo.jpg)
 [Click here for a quick example](https://kaynut.github.io/Leaflet.Hexagonal/)
 
-
 <br>
 
-### What is Leaflet.Hexagonal
+## What is Leaflet.Hexagonal
 Leaflet.Hexagonal is a Leaflet-canvas-layer, that takes 
 - points (single, multiple or linked points) 
 - lines (array of array, array of latLng-objects)
@@ -22,49 +21,94 @@ and
 
 <br>
 
-
-### How to use Leaflet.Hexagonal
+## How to use Leaflet.Hexagonal
 ```html
-<!DOCTYPE html>
-<html>
-   <head>    
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      
-      <!-- Leaflet -->
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
-      <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
-      
-      <!-- Leaflet.hexagonal -->
-      <link rel="stylesheet" href="./leaflet.hexagonal.css" />
-      <script src="./leaflet.hexagonal.js" />
-   
-   </head>
-   <body>
+      <!DOCTYPE html>
+      <html>
+         <head>    
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            
+            <!-- Leaflet -->
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+            <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+            
+            <!-- Leaflet.hexagonal -->
+            <link rel="stylesheet" href="./leaflet.hexagonal.css" />
+            <script src="./leaflet.hexagonal.js" />
+         
+         </head>
+         <body>
 
-      <div id="map" style="width: 600px; height: 400px;"></div>
-      
-      <script type="text/javascript">
+            <div id="map" style="width: 600px; height: 400px;"></div>
+            
+            <script type="text/javascript">
 
-         // init Leaflet
-         var map = L.map('map').setView([65, -17], 13);
-         var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+               // init Leaflet
+               var map = L.map('map').setView([65, -17], 13);
+               var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
 
-         // init Leaflet.hexagonal
-         var hexagonals = L.hexagonal().addTo(map);
+               // init Leaflet.hexagonal
+               var hexagonals = L.hexagonal().addTo(map);
 
-         // add data
-         hexagonals.addPoint({lng:-17.1, lat:65.1});
+               // add data
+               hexagonals.addPoint({lng:-17.1, lat:65.1});
 
-      </script>
+            </script>
 
-   </body>
-</html>
+         </body>
+      </html>
 ```
+## How to add/remove data
+Depending on the kind and format of your data, you can choose betweem different functions for adding data. 
+All of these function expect at least one parameter, containing the coordinate - in some way. 
+```js
+      // add a single point
+      hexagonals.addPoint( [120,30] );
+      hexagonals.addPoint({ lat: 31, lng: 121 });
 
-<br>
+      // add 2 points
+      hexagonals.addPoints([ [122,32], [123,33] ],
+
+      // add a line (linked points)
+      hexagonals.addLine([ [124,34], [125,35], [126,36] ],
+
+      // add a marker (with an image)
+      hexagonals.addMarker( [127,37] , { image:"./assets/image0.jpg" });
+
+      // add a marker (with an svg-icon)
+      hexagonals.addMarker( [128,38] , { icon:"default" });
+
+      // add line (four linked points) with style
+      hexagonals.addGeojson("./assets/EUROPE5000.geojson");
+```
+Each of these functions accepts a second parameter: An object, containing various metadata for the point/points defined in the first parameter.
+
+```js
+      // add point with metadata
+      hexagonals.addPoint( [122,32], {
+         linked: false,
+         fill: "#a00",
+         group: "A",
+         id: "a001",
+         info: "Group A"
+      });
+```
+Added data, qualified by 'group' or 'id', can removed with as follows
+```js
+      // remove point by id
+      hexagonals.removeItem("a001"); // can be point or marker
+      hexagonals.removePoint("a001"); // has to be point
+      hexagonals.removeMarker("a001"); // has to be marker
+
+      // remove group of points
+      hexagonals.removeGroup("A");
+
+      // remove all points
+      hexagonals.removeAll();
+```  
 <br>
 
-## Options
+## How to change the appearance and behaviour
 Apart from the default options of a canvas-layer, there are plenty of options, to change the appearance and behaviour to your needs. Those can be set on initiation or at a later point. [For a complete list of options see below](#options)
 
 ```js
@@ -82,7 +126,9 @@ Apart from the default options of a canvas-layer, there are plenty of options, t
    hexagonals.options.hexagonSize = 24;
 
 ```
-### Options {#options}
+
+
+## options
 ### hexagon options
 ```js
 // hexagonVisible: boolean 
@@ -132,65 +178,10 @@ Developed to cluster sparse data (bounding-boxes of tracks) in a nice (hexagonal
 
 ## Priorities
 This layer was designed to be  
-- easy to use out of then box and easy to adjust through options ([Options](#Options))
+- easy to use out of then box and easy to adjust through options ([Options](#ptions))
 - customization-friendly: Lots of functions simply exist to be overwritten for specific needs ([Customization](#Customization))
 - of reasonable performance: It should handle 10.000 points quite easly. (If you would dump a lot of the easy/friendly-stuff and took webgl for rendering, you could definitly improve performance a lot... but in this case performance  only comes in at third place. ([examplePerformance.html](https://kaynut.github.io/Leaflet.Hexagonal/examplePerformance.html))
 
-
-
-
-## Options
-Below, you find a list of all options, that you can pass on initialisation - and most of them can be altered afterwards. Take a look at the [exampleOptions.html](./exampleOptions.html) to play around with them
-```html
-
-hexagonVisible: true || false
-hexagonSize: number || function(zoom) { return size; } 	
-hexagonGap: pixels (difference between clustering-size and display-size of the hexagons) 
-hexagonMode: "topFlat" || "topPointy"
-hexagonFill: "color" || false
-hexagonLine: "color" || false
-hexagonLineWidth: pixels || false
-
-colorStyle: "count" || "weight" || "point0" || false 
-   (coloring for hexagon-clusters depends on point-count || sum of point.weight || first point metadata || default) 	
-colorWeightProp: string
-   (name of property in point-metadata, that should be used as weight)
-colorRamp: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
-   (an array of colors, defining the ramp for colorStyle=count and colorStyle=weight)
-colorRampFallback: [ "#color", "rgba(r,g,b)", [r,g,b,a],...]
-
-markerVisible: true || false
-markerFill: "color" || false
-markerLine: "color" || false
-markerLineWidth: pixels
-markerOpacity: number (0-1)
-
-
-linkVisible: true || false
-linkMode: "centered" || "straight" || "hexagonal" || false
-   (how a link is drawn between two points)
-linkForce: integer 
-   (0=only adjacent points with same id get linked, 100= 100 points (with different id) may be added in the meantime)
-linkReach: meters 
-   (longest distance to be linked. controls how large of an area will be evaluated - for performance issues)
-linkJoin: number 
-   (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
-linkFill: "color" || false
-linkLine: "color" || false
-linkLineWidth: pixels
-linkLineBorder: pixels
-
-selectionVisible: true || false
-selectionFill: "color" || false
-selectionLine: "color" || false
-selectionLineWidth: pixels
-
-infoVisible: true || false
-infoMode: "count" || "ids" || "custom" || false
-infoClassName: string || ""
-infoItemsMax: number (max items shown explicitly in info)
-
-```
 
 
 ## Customization
