@@ -3,6 +3,7 @@
 ![image](/assets/demo.jpg)
 [Click here for a quick example](https://kaynut.github.io/Leaflet.Hexagonal/)
 
+[Click here for a jsfiddle](https://jsfiddle.net/badorties/5udqgs4c/24/)
 <br>
 
 ## What is Leaflet.Hexagonal
@@ -61,8 +62,8 @@ and
 
 <br>
 
-## Adding data
-Depending on the kind and format of your data, you can choose between different functions for adding data. The most basic function is called ***addPoint(coordinates, metadata)***. The other ones internally all use this one. They are just there to make unpacking, configuring and then adding your data a bit more straight forward. [(Click here for a jsfiddle)](https://jsfiddle.net/badorties/5udqgs4c/21/)
+## Adding data 
+Depending on the kind and format of your data, you can choose between different functions for adding data. The most basic function is called ***addPoint(coordinates, metadata)***. The other ones internally all use this one. They are just there to make unpacking, configuring and then adding your data a bit more straight forward. 
 ```js
       // add a single point
       layer.addPoint({ lat: 31, lng: 121 });
