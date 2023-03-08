@@ -62,7 +62,7 @@ and
 <br>
 
 ## Adding data
-Depending on the kind and format of your data, you can choose between different functions for adding data. The most basic function is called ***addPoint(coordinates, metadata)***. The other ones internally all use this one. They are just there to make unpacking, configuring and then adding your data a bit more straight forward.
+Depending on the kind and format of your data, you can choose between different functions for adding data. The most basic function is called ***addPoint(coordinates, metadata)***. The other ones internally all use this one. They are just there to make unpacking, configuring and then adding your data a bit more straight forward. [(Click here for a jsfiddle)](https://jsfiddle.net/badorties/5udqgs4c/21/)
 ```js
       // add a single point
       layer.addPoint({ lat: 31, lng: 121 });
@@ -119,7 +119,8 @@ There are three recognised coordinate-notations (see below). For data containing
    // geojson
    { type:"Point", "coordinates": [ 121, 31 ] }
 
-```  
+```
+<br>  
 ### Metadata
 The second argument is optional. It contains additional data for the supplied point/points. 
 |metadata|type|default|description|
