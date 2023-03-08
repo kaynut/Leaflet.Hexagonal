@@ -61,6 +61,9 @@
 			// whether the hexagons are flat or pointy on the upper part
 			hexagonOrientation: "flatTop",		
 
+			// hexagonGroupDefault: false || "groupName"
+			// if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
+			hexagonGroupDefault: false,
 
 			// styleFill: "color" || false
 			styleFill: "#fd1",
@@ -2257,6 +2260,7 @@
 			return this._incId;
 		},
 		_genGroup: function _genGroup() {
+			if(this.options.hexagonGroupDefault!==false) { return this.options.hexagonGroupDefault; }
 			this._incGroup++;
 			return this._incGroup;
 		},

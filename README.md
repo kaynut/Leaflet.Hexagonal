@@ -6,7 +6,7 @@
 <br>
 
 ## What is Leaflet.Hexagonal
-Leaflet.Hexagonal is a Leaflet-canvas-layer, that takes 
+Leaflet.Hexagonal is a Leaflet-canvas-layer (composite-layer), that takes 
 - points (single, multiple or linked points) 
 - lines (array of array, array of latLng-objects)
 - geojson (Point, LineString, Feature, FeatureCollection)
@@ -21,7 +21,7 @@ and
 
 <br>
 
-## How to use Leaflet.Hexagonal
+## Basic setup
 ```html
       <!DOCTYPE html>
       <html>
@@ -43,49 +43,96 @@ and
             
             <script type="text/javascript">
 
-               // init Leaflet
+               // init Leaflet map
                var map = L.map('map').setView([65, -17], 13);
                var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
 
-               // init Leaflet.hexagonal
-               var hexagonals = L.hexagonal().addTo(map);
+               // init Leaflet.hexagonal layer
+               var layer = L.hexagonal().addTo(map);
 
-               // add data
-               hexagonals.addPoint({lng:-17.1, lat:65.1});
+               // add data to layer
+               layer.addPoint({lng:-17.1, lat:65.1});
 
             </script>
 
          </body>
       </html>
 ```
-## How to add/remove data
-Depending on the kind and format of your data, you can choose betweem different functions for adding data. 
-All of these function expect at least one parameter, containing the coordinate - in some way. 
+
+<br>
+
+## Adding data
+Depending on the kind and format of your data, you can choose between different functions for adding data. The most basic function is called ***addPoint(coordinates, metadata)***. The other ones internally all use this one. They are just there to make unpacking, configuring and then adding your data a bit more straight forward.
 ```js
       // add a single point
-      hexagonals.addPoint( [120,30] );
-      hexagonals.addPoint({ lat: 31, lng: 121 });
+      layer.addPoint({ lat: 31, lng: 121 });
 
       // add 2 points
-      hexagonals.addPoints([ [122,32], [123,33] ],
+      layer.addPoints( [ [122,32], [123,33] ] ),
 
       // add a line (linked points)
-      hexagonals.addLine([ [124,34], [125,35], [126,36] ],
+      layer.addLine( [ [124,34], [125,35], [126,36] ] ),
 
       // add a marker (with an image)
-      hexagonals.addMarker( [127,37] , { image:"./assets/image0.jpg" });
+      layer.addMarker( [127,37] , { image:"./assets/image0.jpg" });
 
       // add a marker (with an svg-icon)
-      hexagonals.addMarker( [128,38] , { icon:"default" });
+      layer.addMarker( [128,38] , { icon:"default" });
 
-      // add line (four linked points) with style
-      hexagonals.addGeojson("./assets/EUROPE5000.geojson");
-```
-Each of these functions accepts a second parameter: An object, containing various metadata for the point/points defined in the first parameter.
+      // add geojson-object
+      var geojson_obj = {"type": "FeatureCollection", "features": [ { 
+         "type": "Feature", 
+         "properties": {},
+         "geometry": {
+            "coordinates": [10.5,47.5],
+            "type": "Point"
+      }}]};
+      layer.addGeojson(geojson_obj);
+
+      // add geojson-file
+      layer.addGeojson("./assets/EUROPE5000.geojson");
+``` 
+
+Each of those functions takes one mandatory argument (***coordinates***) and one optional argument (***metadata***)
+
+```js
+   // addFunction(   coordinates         ,   metadata       ) 
+   layer.addPoint( { lat: 31, lng: 121 } , { fill: "#f00" } );
+``` 
+<br>
+
+### Coordinates
+There are three recognised coordinate-notations (see below). For data containing more than one point, use those notations inside an array. In case of geojson-data you have to stick to the geojson-convention. 
+```js
+   // object with lat, lng           
+   { lat: 31, lng: 121 } 
+
+   // object with lat, lon
+   { lat: 31, lon: 121 }
+
+   // array with at least two items, the first being longitude, the second latitude
+   [ 121, 31 ]
+
+   // array of coordinates
+   [ {lat: 31, lng: 121} , {lat: 32, lon: 122} , [123,133] ]
+
+   // geojson
+   { type:"Point", "coordinates": [ 121, 31 ] }
+
+```  
+### Metadata
+The second argument is optional. It contains additional data for the supplied point/points. 
+|metadata|type|default|description|
+|--|--|--|--|
+|id|string|auto|a value identifing a single point. Used for example to remove this point|
+|group|string|auto|a value to bind this point to a [new/existing] group of points|
+|linked|boolean|false|whether point should be linked to previous point in group. addLine(...) and addGeojson(LineString) default to true|
+|fill|color|options.hexagonFill| Color, the point is drawn, if drawn on its own (not clustered,etc)|
+|info|string|false|Info to be passed on selection| 
 
 ```js
       // add point with metadata
-      hexagonals.addPoint( [122,32], {
+      layer.addPoint( [121,31], {
          linked: false,
          fill: "#a00",
          group: "A",
@@ -93,28 +140,31 @@ Each of these functions accepts a second parameter: An object, containing variou
          info: "Group A"
       });
 ```
-Added data, qualified by 'group' or 'id', can removed with as follows
+
+<br>
+
+## Removing data
+Added data, qualified by 'group' or 'id', can removed as follows. Removing all points and adding them back may be a quite good option in some cases.
 ```js
       // remove point by id
-      hexagonals.removeItem("a001"); // can be point or marker
-      hexagonals.removePoint("a001"); // has to be point
-      hexagonals.removeMarker("a001"); // has to be marker
+      layer.removeItem("a001"); // can be point or marker
+      layer.removePoint("a001"); // has to be point
+      layer.removeMarker("a001"); // has to be marker
 
       // remove group of points
-      hexagonals.removeGroup("A");
+      layer.removeGroup("A");
 
       // remove all points
-      hexagonals.removeAll();
+      layer.removeAll();
 ```  
 <br>
 
-## How to change the appearance and behaviour
-Apart from the default options of a canvas-layer, there are plenty of options, to change the appearance and behaviour to your needs. Those can be set on initiation or at a later point. [For a complete list of options see below](#options)
-
+## Options
+Apart from the default options of a canvas-layer, there are plenty of options, to change the appearance and behaviour to your needs. Those can be set on initiation or at a later point. 
 ```js
 
    // set options on initiation
-   var hexagonals = L.hexagonal({
+   var layer = L.hexagonal({
       opacity:0.7,
       hexagonSize:16,
       hexagonMode:"flatTop"
@@ -123,7 +173,7 @@ Apart from the default options of a canvas-layer, there are plenty of options, t
    //... (e.g. adding data)
 
    // set options later on
-   hexagonals.options.hexagonSize = 24;
+   layer.options.hexagonSize = 24;
 
 ```
 
