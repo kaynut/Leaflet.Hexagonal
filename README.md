@@ -3,7 +3,7 @@
 ![image](/assets/demo.jpg)
 [Click here for a quick example](https://kaynut.github.io/Leaflet.Hexagonal/)
 
-[Click here for a jsfiddle](https://jsfiddle.net/badorties/5udqgs4c/24/)
+[Click here for a jsfiddle](https://jsfiddle.net/badorties/5udqgs4c/27/)
 <br>
 
 ## What is Leaflet.Hexagonal
