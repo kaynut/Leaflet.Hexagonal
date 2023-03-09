@@ -61,9 +61,9 @@
 			// whether the hexagons are flat or pointy on the upper part
 			hexagonOrientation: "flatTop",		
 
-			// hexagonGroupDefault: false || "groupName"
+			// groupDefault: false || "groupName"
 			// if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
-			hexagonGroupDefault: false,
+			groupDefault: false,
 
 			// styleFill: "color" || false
 			styleFill: "#fd1",
@@ -178,10 +178,10 @@
 		gutter: false,
 
 		images: { 
-			default: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAK5JREFUSEvtlMsNgzAQBYcO6CTpIKSElJJKUgolEDognaSE6ElG2gPxrvkckOwTCPTGb1jccPBqDs6nAlzDVVEL9MATmJZ8bVGk8AG4AiPQ7Qmw4Z8U/t0LEA4XMKdI1V/AA5h3VxTuAd7ALX28e6o/O89qsapyDbRbQS5mQtQqHO410HML0X1ReARgIbrWKC5Oy78zI/ofqIlWUXi0gXug5V6INlgNqQBX3fkV/QBZex4ZCtJcsAAAAABJRU5ErkJggg=="
+			fallback: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9TRS0VBzuIOGSoTlZERRy1CkWoEGqFVh1MLv2CJg1Jiouj4Fpw8GOx6uDirKuDqyAIfoC4ujgpukiJ/0sKLWI8OO7Hu3uPu3eAUC8zzeoYBzTdNlOJuJjJropdrwiiByGMQZSZZcxJUhK+4+seAb7exXiW/7k/R6+asxgQEIlnmWHaxBvE05u2wXmfOMKKskp8Tjxq0gWJH7muePzGueCywDMjZjo1TxwhFgttrLQxK5oa8RRxVNV0yhcyHquctzhr5Spr3pO/MJzTV5a5TnMICSxiCRJEKKiihDJsxGjVSbGQov24j3/Q9UvkUshVAiPHAirQILt+8D/43a2Vn5zwksJxoPPFcT6Gga5doFFznO9jx2mcAMFn4Epv+St1YOaT9FpLix4BfdvAxXVLU/aAyx1g4MmQTdmVgjSFfB54P6NvygL9t0BozeutuY/TByBNXSVvgINDYKRA2es+7+5u7+3fM83+fgBrWnKkrQ9hpQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAJhJREFUaN7t1rENhDAQRNHRVbCluP8EdwAd+RIHDg68BJzG4r+IwEgzgJaVAAAAAODliqRNUiTORj9bnApUSU3SPikR/Uzr99gIScekxBj+SL4tmxL24a9KLBP+rMRS4X+VeDT858ES7eR6iac/fjaz6WQdPpIj1jb8nf+EbfglStTktBlLWK0SpQfKLnPVbZkDAAAAgL/7Aqb3P9fcxRkbAAAAAElFTkSuQmCC"
 		},
 		icons: {
-			fallback: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M12 21q-.825 0-1.412-.587Q10 19.825 10 19q0-.825.588-1.413Q11.175 17 12 17t1.413.587Q14 18.175 14 19q0 .825-.587 1.413Q12.825 21 12 21Zm-2-6V3h4v12Z"/></svg>', size:{width:24, height:24}, scale:1 }
+			fallback: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>', size:{width:24, height:24}, scale:1 }
 		},
 		
 		// #endregion
@@ -413,6 +413,10 @@
 			var link = -1;
 			if(meta.linked) { link = this.getLinkIndex(group); } 
 
+
+			// pointless
+			var pointless = meta.pointless || false;
+
 			// info
 			var iprop = this.options.infoProperty || "info";
 			var info = meta[iprop] || "";
@@ -425,6 +429,7 @@
 				group: group,
 				id: id,
 				link: link,
+				pointless: pointless,
 				cell: false,
 				latlng: latlng,
 
@@ -638,6 +643,10 @@
 				meta.marker = true;
 			}
 
+			if(typeof meta.pointless == "undefined") {
+				meta.pointless = true;
+			}
+
 			meta.scale = meta.scale || 1;
 
 			if(meta.marker) {
@@ -681,6 +690,45 @@
 				}
 	
 			}
+
+		},
+		// addIcon
+		addIcon: async function addIcon(latlng, meta) {
+			if(typeof latlng != "object") {
+				console.warn("Leaflet.hexagonal.addIcon: latlng not valid", latlng);
+				return 0;
+			}
+			latlng.lat = latlng.lat || 0;
+			latlng.lng = latlng.lng || 0;
+
+			// meta
+			meta = meta || {};
+
+			if(!meta.icon) {
+				meta.icon = "fallback";
+			}
+
+			return this.addMarker(latlng, meta);
+
+		},
+		// addImage
+		addImage: async function addImage(latlng, meta) {
+			if(typeof latlng != "object") {
+				console.warn("Leaflet.hexagonal.addIcon: latlng not valid", latlng);
+				return 0;
+			}
+			latlng.lat = latlng.lat || 0;
+			latlng.lng = latlng.lng || 0;
+
+			// meta
+			meta = meta || {};
+
+			if(!meta.image) {
+				meta.image = this.images.fallback;
+				meta.scale = 0.5;
+			}
+
+			return this.addMarker(latlng, meta);
 
 		},
 
@@ -958,10 +1006,6 @@
 			if(hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
 
-					if(!hexagonals[hexs[h]].pointIndices) {
-						console.log(">>", hexagonals[hexs[h]]);
-					}
-
 					// draw point
 					if(options.hexagonVisible && hexagonals[hexs[h]].pointIndices.length) {
 
@@ -993,8 +1037,10 @@
 							}
 
 						}
-						this.drawHexagon(ctx, hexagonals[hexs[h]], style);
 
+						if(hexagonals[hexs[h]].pointless==false) {
+							this.drawHexagon(ctx, hexagonals[hexs[h]], style);
+						}
 						if(options.selectionVisible) {
 							var hgs = Object.keys(hexagonals[hexs[h]].groups);
 							for(var i=0;i<hgs.length;i++) {
@@ -1641,6 +1687,7 @@
 						this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false }; 
 						this.hexagonals[h.cell].style0 = { fill:false };
 						this.hexagonals[h.cell].style1 = { fill:false };
+						this.hexagonals[h.cell].pointless = false;
 					}
 					if(!this.hexagonals[h.cell].pointIndices.length) {
 						this.hexagonals[h.cell].cluster.first = d;
@@ -1660,6 +1707,7 @@
 					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, d);
 					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, d);
 					this.hexagonals[h.cell].style1 = { fill: (point.style.fill || false) };
+					this.hexagonals[h.cell].pointless = point.pointless || this.hexagonals[h.cell].pointless;
 				}
 
 				
@@ -1690,6 +1738,7 @@
 						this.hexagonals[h.cell].cluster = { count:0, sum:0, avg:0, min:0, max:0, first:false };
 						this.hexagonals[h.cell].style0 = { fill:false };
 						this.hexagonals[h.cell].style1 = { fill:false };
+						this.hexagonals[h.cell].pointless = false;
 					}
 
 					this.hexagonals[h.cell].markerIndices.push(i);
@@ -2260,7 +2309,7 @@
 			return this._incId;
 		},
 		_genGroup: function _genGroup() {
-			if(this.options.hexagonGroupDefault!==false) { return this.options.hexagonGroupDefault; }
+			if(this.options.groupDefault!==false) { return this.options.groupDefault; }
 			this._incGroup++;
 			return this._incGroup;
 		},

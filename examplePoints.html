@@ -68,7 +68,7 @@
       hexagonals.addPoints([[7.536621,45.089036],[7.536621,46.073231],[7.536621,47.040182]], { group:"C", fill:"#8d0" } );
 
       // add line (four linked points) with style
-      hexagonals.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922] ], { group:"D", fill:"#ff0"});
+      hexagonals.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922] ], { group:"D", fill:"#ff0" });
 
       // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
       var gj = {
@@ -118,16 +118,22 @@
       }
       hexagonals.addGeojson(gj, {group:"E", fill:"#d22"});
 
+      // add a image-marker 
+      hexagonals.addImage({ lat: 45.089036, lng: 14.787597 }, {group:"F" });
+
+      // add another icon-marker 
+      hexagonals.addIcon({ lat: 45.089036, lng: 17.204589 }, {group:"G" });
 
       // add a image-marker with a size
-      hexagonals.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", image:"./assets/image0.jpg", size:48 });
+      hexagonals.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", image:"./assets/image0.jpg", size:48 });
 
       // add an icon-marker 
       hexagonals.cacheIcon("token",'./assets/token.svg', 1);
-      hexagonals.addMarker({ lat: 45.089036, lng: 17.204589 }, {group:"G", icon:"token", fill:"#999" });
+      hexagonals.addMarker({ lat: 47.040182, lng: 17.204589 }, {group:"G", icon:"token", fill:"#999" });
 
       // add another icon-marker 
       hexagonals.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token", fill:"#bbb", size:48 });
+
 
 
 

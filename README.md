@@ -74,24 +74,25 @@ Depending on the kind and format of your data, you can choose between different 
       // add a line (linked points)
       layer.addLine( [ [124,34], [125,35], [126,36] ] ),
 
-      // add a marker (with an image)
-      layer.addMarker( [127,37] , { image:"./assets/image0.jpg" });
-
-      // add a marker (with an svg-icon)
-      layer.addMarker( [128,38] , { icon:"default" });
-
       // add geojson-object
-      var geojson_obj = {"type": "FeatureCollection", "features": [ { 
-         "type": "Feature", 
-         "properties": {},
-         "geometry": {
-            "coordinates": [10.5,47.5],
-            "type": "Point"
-      }}]};
+      var geojson_obj = {"type": "FeatureCollection", "features": [ { "type": "Feature", "properties": {}, "geometry": { "type": "Point",
+         "coordinates": [127, 37] } } ] };
       layer.addGeojson(geojson_obj);
 
       // add geojson-file
       layer.addGeojson("./assets/EUROPE5000.geojson");
+
+      // add an icon (with an svg-icon)
+      layer.addIcon( [128,38] , { icon: "fallback" });
+
+      // add an image (with an svg-icon)
+      layer.addImage( [129,39] , { image: "./assets/image0.jpg" });
+
+      // add a marker (with an svg-icon)
+      layer.addMarker( [130,40] , { icon: "fackback" });
+
+      // add a marker (with an image)
+      layer.addMarker( [131,41] , { image: "./assets/image0.jpg" });
 ``` 
 
 Each of those functions takes one mandatory argument (***coordinates***) and one optional argument (***metadata***)
@@ -122,6 +123,7 @@ There are three recognised coordinate-notations (see below). For data containing
 
 ```
 <br>  
+
 ### Metadata
 The second argument is optional. It contains additional data for the supplied point/points. 
 |metadata|type|default|description|
@@ -129,8 +131,10 @@ The second argument is optional. It contains additional data for the supplied po
 |id|string|auto|a value identifing a single point. Used for example to remove this point|
 |group|string|auto|a value to bind this point to a [new/existing] group of points|
 |linked|boolean|false|whether point should be linked to previous point in group. addLine(...) and addGeojson(LineString) default to true|
-|fill|color|options.hexagonFill| Color, the point is drawn, if drawn on its own (not clustered,etc)|
-|info|string|false|Info to be passed on selection| 
+|fill|color|options. hexagonFill| Color, the point is drawn, if drawn on its own (not clustered,etc)|
+|info|string|false|Info to be passed on selection|
+|pointless|boolean|false|if point should be drawn. Using addMarker(...) defaults to true|
+|scale|number|1|Determines the scaling of svg-icons 
 
 ```js
       // add point with metadata
@@ -146,7 +150,7 @@ The second argument is optional. It contains additional data for the supplied po
 <br>
 
 ## Removing data
-Added data, qualified by 'group' or 'id', can removed as follows. Removing all points and adding them back may be a quite good option in some cases.
+Added data, qualified by 'group' or 'id', can removed as follows. (Removing all points and adding the needed ones back may be a quite good option in some cases.)
 ```js
       // remove point by id
       layer.removeItem("a001"); // can be point or marker
@@ -162,7 +166,7 @@ Added data, qualified by 'group' or 'id', can removed as follows. Removing all p
 <br>
 
 ## Options
-Apart from the default options of a canvas-layer, there are plenty of options, to change the appearance and behaviour to your needs. Those can be set on initiation or at a later point. 
+Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacity, etc), there are plenty of options, to change the appearance and behaviour of the layer. Those can be set on instantiation or (for nearly all) at some later point. 
 ```js
 
    // set options on initiation
@@ -178,39 +182,35 @@ Apart from the default options of a canvas-layer, there are plenty of options, t
    layer.options.hexagonSize = 24;
 
 ```
-
-
-## options
-### hexagon options
-```js
-// hexagonVisible: boolean 
-// > whether or not hexagons will be visible
-hexagonVisible: true,
-
-// hexagonSize: integer || function
-// size of hexagonal grid
-hexagonSize: 16, 
-hexagonSize: function(zoom) { return Math.max(16,Math.pow(2, zoom-6)); }, 
-
-// hexagonGap: pixels 
-// gap between the cells of the hexagonal grid 
-hexagonGap: 0, 	
-
-// hexagonOrientation: "flatTop" || "pointyTop",
-// whether the hexagons are flat or pointy on the upper part
-hexagonOrientation: "flatTop",
-```        
-### style options
-```js
-// styleFill: "color" || false
-styleFill: "#fd1",
-// styleStroke: "color" || false
-styleStroke: "#303234", 	
-// styleLineWidth: pixels
-styleLineWidth: 1,
-```  
-
-|default layer options|type|default|description|
+|option|type|default|description|
+|--|--|--|--|
+||||
+|hexagonVisible|boolean|true|Whether or not hexagons should be visible|
+|hexagonSize|pixels|16|Size in pixels of the hexagonal grid. Defines the smallest crossection of a hexagon in pixels.|
+|hexagonSize|function||The size can also be given as a function (depending on the zoomlevel), returning a number. For example, if you want your hexagons not to shrink (in realworld area) beyond a certain zoomlevel, pass something like this: <br>``` hexagonSize: function(zoom) { return Math.max(16,Math.pow(2, zoom-6));```|
+|hexagonGap|pixels|0|Visual gap between the cells of the hexagonal grid|
+|hexagonOrientation|"flatTop", "pointyTop"|"flatTop"|Orientation of the hexagonal grid. flatTop, meaning each hexagon has a horizontal line on its northern edge, is the default|
+||||
+|markerVisible|boolean|true|Whether markers (icons/images) should be visible|
+|markerOpacity|number|0.9|Opacity of markers|
+||||
+|styleFill|color|"#ffdd11"|Sets the fillcolor for the hexagons|
+|styleStroke|color|"#303234"|Sets the linecolor for the hexagons|
+|styleLineWidth|pixels|1|Sets the linewidth for the line surrounding the hexagons|
+||||
+|groupDefault|string|false|Normally each point, that is not set to a group (via metadata), opens a new, autogenerated group. If you want all those points to belong to one specific group, pass a name for this group.| 
+||||
+|linkVisible|boolean|true|Whether the links should be visible|	
+|linkWidth|pixels|2|How thick the link-line should be|
+|linkFill|color boolean|true|Whether the link-line should have a fixed (color) or a adapted (boolean) colorfilling|	
+|linkMode|"curve", "spline", "line", "aligned", "hexagonal"|"spline"|Determines the way the links are drawn. For better understanding, what each mode does, it's probably best to play around with them.|
+|linkJoin|number|1| Determines from where to where the links are drawn: <br>0 = link starts at the following cell<br>0.5 = link starts midway<br>1 = link starts in the center of the cell itself|  
+|linkReach|number|50000|longest distance (meter) outside the viewport links are calculated (If you're not missing any far away links, don't care about this one: It's a performance thing)|
+||||
+|gutterFill|color, false|false|If you want hexagons, that don't contain any data, to be drawn, set a fillcolor for those|
+|gutterStroke|color, false|false|If you want hexagons, that don't contain any data, to be drawn, set a linecolor for those|
+||||
+|cluster, selection, info|||
 |--|--|--|--|
 |visible|boolean|true|after init to be set by method: layer.setVisibility()|
 |opacity|float|0.5|after init to be set by method: layer.setOpacity()|
