@@ -2,12 +2,36 @@
 
 ![image](/assets/demo.jpg)
 [Click here for a quick example](https://kaynut.github.io/Leaflet.Hexagonal/)
+| [Click here for a jsfiddle](https://jsfiddle.net/badorties/5udqgs4c/27/)
 
-[Click here for a jsfiddle](https://jsfiddle.net/badorties/5udqgs4c/27/)
+<br>
+
+## Contents
+- [What is Leaflet.Hexagonal](#what-is-leaflet-hexagonal)
+- [Basic setup](#basic-setup)
+- [Adding data](#adding-data)
+   - [coordinates](#coordinates)
+   - [metadata](#metadata)
+- [Removing data](#removing-data)
+- [Options](#options)
+   - [hexagon options](#hexagon-options)
+   - [marker options](#marker-options)
+   - [group options](#group-options)
+   - [link options](#link-options)
+   - [gutter options](#gutter-options)
+   - [cluster options](#cluster-options)
+   - [selection options](#selection-options)
+   - [info options](#info-options)
+   - [layer-options](#layer-options)
+- [Demos](#demos)
+- [Use cases](#use-cases)
+- [Priorities](#priorities)
+- [License](#license)
+
 <br>
 
 ## What is Leaflet.Hexagonal
-Leaflet.Hexagonal is a Leaflet-canvas-layer (composite-layer), that takes 
+Leaflet.Hexagonal is mainly a Leaflet-canvas-layer, that takes 
 - points (single, multiple or linked points) 
 - lines (array of array, array of latLng-objects)
 - geojson (Point, LineString, Feature, FeatureCollection)
@@ -24,40 +48,37 @@ and
 
 ## Basic setup
 ```js
-      <!DOCTYPE html>
-      <html>
-         <head>    
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            
-            <!-- Leaflet -->
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
-            <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
-            
-            <!-- Leaflet.hexagonal -->
-            <link rel="stylesheet" href="./leaflet.hexagonal.css" />
-            <script src="./leaflet.hexagonal.js" />
-         
-         </head>
-         <body>
+<!DOCTYPE html>
+<html>
+   <head>    
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      
+      <!-- Leaflet -->
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+      <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+      
+      <!-- Leaflet.hexagonal -->
+      <link rel="stylesheet" href="./leaflet.hexagonal.css" />
+      <script src="./leaflet.hexagonal.js" />
 
-            <div id="map" style="width: 600px; height: 400px;"></div>
-            
-            <script type="text/javascript">
+   </head>
+   <body>
+      <div id="map" style="width: 600px; height: 400px;"></div>
+      <script type="text/javascript">
 
-               // init Leaflet map
-               var map = L.map('map').setView([65, -17], 13);
-               var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+         // init Leaflet map
+         var map = L.map('map').setView([65, -17], 13);
+         var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
 
-               // init Leaflet.hexagonal layer
-               var layer = L.hexagonal().addTo(map);
+         // init Leaflet.hexagonal layer
+         var layer = L.hexagonal().addTo(map);
 
-               // add data to layer
-               layer.addPoint({lng:-17.1, lat:65.1});
+         // add data to layer
+         layer.addPoint({lng:-17.1, lat:65.1});
 
-            </script>
-
-         </body>
-      </html>
+      </script>
+   </body>
+</html>
 ```
 
 <br>
@@ -65,61 +86,60 @@ and
 ## Adding data 
 Depending on the kind and format of your data, you can choose between different functions for adding data. The most basic function is called ***addPoint(coordinates, metadata)***. The other ones internally all use this one. They are just there to make unpacking, configuring and then adding your data a bit more straight forward. 
 ```js
-      // add a single point
-      layer.addPoint({ lat: 31, lng: 121 });
+// add a single point
+layer.addPoint({ lat: 31, lng: 121 });
 
-      // add 2 points
-      layer.addPoints( [ [122,32], [123,33] ] ),
+// add two points
+layer.addPoints( [ [122,32], [123,33] ] ),
 
-      // add a line (linked points)
-      layer.addLine( [ [124,34], [125,35], [126,36] ] ),
+// add a line (linked points)
+layer.addLine( [ [124,34], [125,35], [126,36] ] ),
 
-      // add geojson-object
-      var geojson_obj = {"type": "FeatureCollection", "features": [ { "type": "Feature", "properties": {}, "geometry": { "type": "Point",
-         "coordinates": [127, 37] } } ] };
-      layer.addGeojson(geojson_obj);
+// add a geojson-object
+var geojson_obj = {"type": "FeatureCollection", "features": [ { "type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [127, 37] } } ] };
+layer.addGeojson(geojson_obj);
 
-      // add geojson-file
-      layer.addGeojson("./assets/EUROPE5000.geojson");
+// add a geojson-file
+layer.addGeojson("./assets/EUROPE5000.geojson");
 
-      // add an icon (with an svg-icon)
-      layer.addIcon( [128,38] , { icon: "fallback" });
+// add an icon (with an svg-icon)
+layer.addIcon( [128,38] , { icon: "fallback" });
 
-      // add an image (with an svg-icon)
-      layer.addImage( [129,39] , { image: "./assets/image0.jpg" });
+// add an image (with an svg-icon)
+layer.addImage( [129,39] , { image: "./assets/image0.jpg" });
 
-      // add a marker (with an svg-icon)
-      layer.addMarker( [130,40] , { icon: "fackback" });
+// add a marker (with an svg-icon)
+layer.addMarker( [130,40] , { icon: "fackback" });
 
-      // add a marker (with an image)
-      layer.addMarker( [131,41] , { image: "./assets/image0.jpg" });
+// add a marker (with an image)
+layer.addMarker( [131,41] , { image: "./assets/image0.jpg" });
 ``` 
 
 Each of those functions takes one mandatory argument (***coordinates***) and one optional argument (***metadata***)
 
 ```js
-   // addFunction(   coordinates         ,   metadata       ) 
-   layer.addPoint( { lat: 31, lng: 121 } , { fill: "#f00" } );
+// addFunction(   coordinates         ,   metadata       ) 
+layer.addPoint( { lat: 31, lng: 121 } , { fill: "#f00" } );
 ``` 
 <br>
 
 ### Coordinates
 There are three recognised coordinate-notations (see below). For data containing more than one point, use those notations inside an array. In case of geojson-data you have to stick to the geojson-convention. 
 ```js
-   // object with lat, lng           
-   { lat: 31, lng: 121 } 
+// object with lat, lng           
+{ lat: 31, lng: 121 } 
 
-   // object with lat, lon
-   { lat: 31, lon: 121 }
+// object with lat, lon
+{ lat: 31, lon: 121 }
 
-   // array with at least two items, the first being longitude, the second latitude
-   [ 121, 31 ]
+// array with at least two items, the first being longitude, the second latitude
+[ 121, 31 ]
 
-   // array of coordinates
-   [ {lat: 31, lng: 121} , {lat: 32, lon: 122} , [123,133] ]
+// array of coordinates
+[ {lat: 31, lng: 121} , {lat: 32, lon: 122} , [123,133] ]
 
-   // geojson
-   { type:"Point", "coordinates": [ 121, 31 ] }
+// geojson
+{ type:"Point", "coordinates": [ 121, 31 ] }
 
 ```
 <br>  
@@ -185,13 +205,13 @@ Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacit
 <br>
 
 ### hexagon-options
-|option|type|default|description|
+|<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |--|--|--|--|
 |hexagonVisible|boolean|true|Whether or not hexagons should be visible|
 |hexagonSize|pixels|16|Size in pixels of the hexagonal grid. Defines the smallest crossection of a hexagon in pixels.|
 |hexagonSize|function||The size can also be given as a function (depending on the zoomlevel), returning a number. For example, if you want your hexagons not to shrink (in realworld area) beyond a certain zoomlevel, pass something like this: <br>``` hexagonSize: function(zoom) { return Math.max(16,Math.pow(2, zoom-6));```|
 |hexagonGap|pixels|0|Visual gap between the cells of the hexagonal grid|
-|hexagonOrientation|"flatTop", "pointyTop"|"flatTop"|Orientation of the hexagonal grid. flatTop, meaning each hexagon has a horizontal line on its northern edge, is the default|
+|hexagonOrientation|"flatTop"<br> "pointyTop"|"flatTop"|Orientation of the hexagonal grid. flatTop, meaning each hexagon has a horizontal line on its northern edge, is the default|
 |hexagonFill|color|"#ffdd11"|Sets the default fillcolor for the hexagons|
 |hexagonStroke|color|"#303234"|Sets the standard linecolor for the hexagons|
 |hexagonLineWidth|pixels|1|Sets the linewidth for the line surrounding the hexagons|
@@ -199,34 +219,34 @@ Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacit
 <br>
 
 ### marker-options
-|option|type|default|description|
+|<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |--|--|--|--|
 |markerVisible|boolean|true|Whether markers (icons/images) should be visible|
-|markerOpacity|number|0.9|Opacity of markers|
+|markerOpacity|number|0.9|Opacity of the Leafelt.groupLayer() every added marker automatically gets attached to.|
 
 <br>
 
 ### group-options
-|option|type|default|description|
+|<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |--|--|--|--|
 |groupDefault|string|false|Normally each point, that is not set to a group (via metadata), opens a new, autogenerated group. If you want all those points to belong to one specific group, pass a name for this group.| 
 
 <br>
 
 ### link-options
-|option|type|default|description|
+|<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |--|--|--|--|
 |linkVisible|boolean|true|Whether the links should be visible|	
 |linkWidth|pixels|2|How thick the link-line should be|
 |linkFill|color boolean|true|Whether the link-line should have a fixed (color) or a adapted (boolean) colorfilling|	
-|linkMode|"curve", "spline", "line", "aligned", "hexagonal"|"spline"|Determines the way the links are drawn. For better understanding, what each mode does, it's probably best to play around with them.|
+|linkMode|"curve"<br> "spline"<br> "line"<br> "aligned"<br> "hexagonal"|"spline"|Determines the way the links are drawn. For better understanding, what each mode does, it's probably best to play around with them.|
 |linkJoin|number|1| Determines from where to where the links are drawn: <br>0 = link starts at the following cell<br>0.5 = link starts midway<br>1 = link starts in the center of the cell itself|  
-|linkReach|number|50000|longest distance (meter) outside the viewport links are calculated (If you're not missing any far away links, don't care about this one: It's a performance thing)|
+|linkReach|number|50000|Max distance (meter) beyond the viewport, for which links are calculated. If you're not missing any far reaching links, don't care about this one: It's a performance thing|
 
 <br>
 
 ### gutter-options
-|option|type|default|description|
+|<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |--|--|--|--|
 |gutterFill|color, false|false|If you want hexagons, that don't contain any data, to be drawn, set a fillcolor for those|
 |gutterStroke|color, false|false|If you want hexagons, that don't contain any data, to be drawn, set a linecolor for those|
@@ -252,7 +272,7 @@ Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacit
 <br>
 
 ### layer-options
-|option|type|default|description|
+|<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |--|--|--|--|
 |visible|boolean|true|after init to be set by method: layer.setVisibility()|
 |opacity|float|0.5|after init to be set by method: layer.setOpacity()|
@@ -261,6 +281,12 @@ Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacit
 |padding|float|0.1|amount of rendering beyond the viewport
 |zIndex|integer|100| after init to be set by method: layer.setZIndex()|
 
+<br>
+
+
+## Demos
+
+<br>
 
 
 ## Use cases
@@ -278,7 +304,6 @@ This layer was designed to be
 
 
 
-## Customization
 
 ## License
 
