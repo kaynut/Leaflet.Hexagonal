@@ -23,7 +23,7 @@ and
 <br>
 
 ## Basic setup
-```html
+```js
       <!DOCTYPE html>
       <html>
          <head>    
