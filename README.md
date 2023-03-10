@@ -2,7 +2,7 @@
 
 ![image](/assets/demo.jpg)
 [Click here for a quick example](https://kaynut.github.io/Leaflet.Hexagonal/)
-| [Click here for a jsfiddle](https://jsfiddle.net/badorties/5udqgs4c/27/)
+| [Click here to play around with the plugin](https://codepen.io/kaynut/pen/VwGywjB?editors=0010)
 
 <br>
 
