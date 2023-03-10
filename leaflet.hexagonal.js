@@ -61,26 +61,28 @@
 			// whether the hexagons are flat or pointy on the upper part
 			hexagonOrientation: "flatTop",		
 
-			// hexagonFill: "color" || false
-			hexagonFill: "#fd1",
-			// hexagonStroke: "color" || false
-			hexagonStroke: "#303234", 	
-			// hexagonLineWidth: pixels
-			hexagonLineWidth: 1,
-
+			// fillColor: "color" || false
+			fillColor: "#fd1",
+			// strokeColor: "color" || false
+			strokeColor: "#303234", 	
+			// borderWidth: pixels
+			borderWidth: 1,
+			//dataProperties: "meta.propertyName" 
+			dataProperties: [], // properties for data-based coloring (included in meta)
+			// idProperty: false || "meta.propertyName" 
+			idProperty: "id",
+			// groupProperty: false || "meta.propertyName" 
+			groupProperty: "group",
 			// groupDefault: false || "groupName"
 			// if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
 			groupDefault: false,
 
-			
 			// clusterMode: "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false (style for hexagon-cluster: depending on point data) 	
 			clusterMode: false,
 			//clusterProperty: "meta.propertyName" 
 			clusterProperty: "data", // current property for data-based coloring (included in meta)
 			//clusterDefaultValue: number 
 			clusterDefaultValue: 0, // default value, when current clusterProperty is not set for datapoint
-			//clusterProperties: "meta.propertyName" 
-			clusterProperties: [], // properties for data-based coloring (included in meta)
 			// clusterMin: false || number
 			clusterMin: false,
 			// clusterMax: false || number
@@ -119,12 +121,12 @@
 
 			// selectionVisible: true || false
 			selectionVisible: true,
-			// selectionFill: "color" || false
-			selectionFill: "rgba(255,255,255,0.2)", 	
-			// selectionStroke: "color" || false
-			selectionStroke: "rgba(255,255,255,0.2)", 	 	
-			// selectionLineWidth: pixels
-			selectionLineWidth: 2,	
+			// selectionFillColor: "color" || false
+			selectionFillColor: "rgba(255,255,255,0.2)", 	
+			// selectionStrokeColor: "color" || false
+			selectionStrokeColor: "rgba(255,255,255,0.2)", 	 	
+			// selectionBorderWidth: pixels
+			selectionBorderWidth: 2,	
 			
 
 			// infoVisible: true || false
@@ -402,12 +404,20 @@
 			meta = meta || {};
 
 			// group
-			var group = meta.group;
-			if (typeof meta.group != "number" && typeof meta.group !="string") { group = this._genGroup(); }
+			var group = false;
+			if(this.options.groupProperty) {
+				group = meta[this.options.groupProperty];
+			}
+			group = group || this._genGroup(); 
+
 
 			// id
-			var id = meta.id;
-			if(typeof meta.id!="number" && typeof meta.id != "string") { id = this._genId(); }
+			var id = false;
+			if(this.options.idProperty) {
+				id = meta[this.options.idProperty];
+			}
+			id = id || this._genId(); 
+
 			
 			// link
 			var link = -1;
@@ -417,12 +427,17 @@
 			// pointless
 			var pointless = meta.pointless || false;
 
+
 			// info
-			var iprop = this.options.infoProperty || "info";
-			var info = meta[iprop] || "";
+			var info = "";
+			if(this.options.infoProperty) {
+				info = meta[this.options.infoProperty] || "";
+			}
+
 
 			// data
 			var data = this.getMetaData(meta);
+
 
 			// point
 			var point = {
@@ -894,7 +909,7 @@
 			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options);
 			this.totals.drawTime = performance.now() - drawTime; 
 
-			console.log("totals",this.totals.hexTime, this.totals.drawTime, this.totals);
+			//console.log("totals",this.totals.hexTime, this.totals.drawTime, this.totals);
 
 		},
 		onDraw: function onDraw(canvas, hexagonals, selection, links, options) {
@@ -912,9 +927,9 @@
 
 			// style
 			var style = { 
-				fill: this.options.hexagonFill || "#f00", 
-				stroke: this.options.hexagonStroke || "#f00", 
-				lineWidth: this.options.hexagonLineWidth || 1,
+				fill: this.options.fillColor || "#f00", 
+				stroke: this.options.strokeColor || "#f00", 
+				lineWidth: this.options.borderWidth || 1,
 				linkWidth: this.options.linkWidth || 1
 			};
 
@@ -958,7 +973,7 @@
 
 
 					// style
-					style.fill = link?.style?.fill || this.groupStyle[link.group]?.fill || this.options.hexagonFill;
+					style.fill = link?.style?.fill || this.groupStyle[link.group]?.fill || this.options.fillColor;
 
 					// if start/end-point is visibly clustered (?!)
 					if(this.options.clusterMode) {
@@ -983,10 +998,10 @@
 							style.fill = this.calcClusterColor(cluster.max,  tMin, tMax);
 						}
 						else if(this.options.clusterMode=="first") {
-							style.fill = link.style0.fill || this.options.hexagonFill;
+							style.fill = link.style0.fill || this.options.fillColor;
 						}
 						else if(this.options.clusterMode=="last") {
-							style.fill = link.style1.fill || this.options.hexagonFill;
+							style.fill = link.style1.fill || this.options.fillColor;
 						}
 					}
 
@@ -1010,7 +1025,7 @@
 					if(options.hexagonVisible && hexagonals[hexs[h]].pointIndices.length) {
 
 						var gs = this.points[hexagonals[hexs[h]].pointIndices[0]].group;
-						style.fill = hexagonals[hexs[h]].style0.fill || this.groupStyle[gs]?.fill || this.options.hexagonFill;
+						style.fill = hexagonals[hexs[h]].style0.fill || this.groupStyle[gs]?.fill || this.options.fillColor;
 
 						//clusterMode = "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false
 						if(this.options.clusterMode) {
@@ -1030,10 +1045,10 @@
 								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="first") {
-								style.fill = hexagonals[hexs[h]].style0.fill || this.options.hexagonFill;
+								style.fill = hexagonals[hexs[h]].style0.fill || this.options.fillColor;
 							}
 							else if(this.options.clusterMode=="last") {
-								style.fill = hexagonals[hexs[h]].style1.fill || this.options.hexagonFill;
+								style.fill = hexagonals[hexs[h]].style1.fill || this.options.fillColor;
 							}
 
 						}
@@ -1093,7 +1108,7 @@
 
 			// style
 			var size = style0.size || hexagon.size;
-			var fill = style0.fill || this.options.hexagonFill || "#ff0000";
+			var fill = style0.fill || this.options.fillColor || "#ff0000";
 
 
 			// calc path
@@ -1122,8 +1137,8 @@
 						className: 'leaflet-hexagonal-marker',
 						html: `<svg width="${w}" height="${h}" opacity="${ref.options.markerOpacity}" >
 							<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
-							<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${ref.options.hexagonLineWidth+1}" /></mask>
-							<use href="#hexa${m0.id}" fill="${ref.options.hexagonStroke}" shape-rendering="geometricPrecision" />
+							<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${ref.options.borderWidth+1}" /></mask>
+							<use href="#hexa${m0.id}" fill="${ref.options.strokeColor}" shape-rendering="geometricPrecision" />
 							<image preserveAspectRatio="xMidYMid slice" href="${style0.image}" mask="url(#mask${m0.id})" width="${w}" height="${h}" ></image>
 							</svg>`,
 						className: "",
@@ -1166,8 +1181,8 @@
 					className: 'leaflet-hexagonal-marker',
 					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
 						<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
-						<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${this.options.hexagonLineWidth}" /></mask>
-						<use href="#hexa${m0.id}" fill="${fill}" stroke="${this.options.hexagonStroke}" stroke-width="${this.options.hexagonLineWidth}" shape-rendering="geometricPrecision" />
+						<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${this.options.borderWidth}" /></mask>
+						<use href="#hexa${m0.id}" fill="${fill}" stroke="${this.options.strokeColor}" stroke-width="${this.options.borderWidth}" shape-rendering="geometricPrecision" />
 						${svg}
 						</svg>`,
 					className: "",
@@ -1216,8 +1231,8 @@
 				className: 'leaflet-hexagonal-marker',
 				html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
 					<symbol id="hexa${marker.id}"><polygon points="${poly}"></polygon></symbol>
-					<mask id="mask${marker.id}"><use href="#hexa${marker.id}" fill="#fff" stroke="#000" stroke-width="${this.options.hexagonLineWidth}" /></mask>
-					<use href="#hexa${marker.id}" fill="${this.options.hexagonFill}" stroke="${this.options.hexagonStroke}" stroke-width="${this.options.hexagonLineWidth}" shape-rendering="geometricPrecision" />
+					<mask id="mask${marker.id}"><use href="#hexa${marker.id}" fill="#fff" stroke="#000" stroke-width="${this.options.borderWidth}" /></mask>
+					<use href="#hexa${marker.id}" fill="${this.options.fillColor}" stroke="${this.options.strokeColor}" stroke-width="${this.options.borderWidth}" shape-rendering="geometricPrecision" />
 					${svg}
 					</svg>`,
 				className: "",
@@ -1233,19 +1248,19 @@
 		drawHexagonSelected: function drawHexagonSelected(ctx, hexagon) {
 			var hPath = new Path2D(hexagon.path);
 
-			if(this.options.selectionFill) {
-				ctx.fillStyle = this.options.selectionFill;
+			if(this.options.selectionFillColor) {
+				ctx.fillStyle = this.options.selectionFillColor;
 				ctx.fill(hPath);
 			}
-			if(this.options.selectionStroke) {
-				ctx.strokeStyle = this.options.selectionStroke;
-				ctx.lineWidth = this.options.selectionLineWidth;
+			if(this.options.selectionStrokeColor) {
+				ctx.strokeStyle = this.options.selectionStrokeColor;
+				ctx.lineWidth = this.options.selectionBorderWidth;
 				ctx.stroke(hPath);
 			}
 		},
 		drawLink: function drawLink(ctx, link, style) {
 			var path = new Path2D(link.path);
-			if(this.options.hexagonStroke) {
+			if(this.options.strokeColor) {
 				ctx.lineJoin = "round";
 				ctx.strokeStyle = style.stroke;
 				ctx.lineWidth = style.linkWidth + style.lineWidth*2;
@@ -1267,13 +1282,13 @@
 		},
 		drawLinkSelected: function drawLinkSelected(ctx, link) {
 			var path = new Path2D(link.path);
-			if(this.options.hexagonStroke && this.options.selectionStroke) {
+			if(this.options.strokeColor && this.options.selectionStrokeColor) {
 				ctx.lineJoin = "round";
-				ctx.strokeStyle = this.options.selectionStroke;
-				ctx.lineWidth = this.options.linkWidth + this.options.hexagonLineWidth*2;
+				ctx.strokeStyle = this.options.selectionStrokeColor;
+				ctx.lineWidth = this.options.linkWidth + this.options.borderWidth*2;
 				ctx.stroke(path);
 			}
-			ctx.strokeStyle = this.options.selectionFill;
+			ctx.strokeStyle = this.options.selectionFillColor;
 			ctx.lineWidth = this.options.linkWidth;
 			ctx.stroke(path);
 		},
@@ -1328,7 +1343,6 @@
 			var ocr = JSON.stringify(this.options.clusterColors);
 			if(ocr!=this.clusterRampHash) {
 				this.setClusterRamp(this.options.clusterColors);
-				console.log(ocr);
 			}
 		},
 		setClusterRamp: function setClusterRamp(colorArray) {
@@ -1412,7 +1426,10 @@
 		},
 		onClick: function onClick(e,selection) {
 			if(selection) {
+
  				console.log("onClick", selection);
+				console.log("onClick points",this.points);
+				console.log("onClick-point0.meta.data", this.points[selection.pointIndices[0]].meta.data);
 				console.log("onClick-point0.meta.info", this.points[selection.pointIndices[0]].meta.info);
 			}
 			return selection;
@@ -1457,7 +1474,7 @@
 				return;				
 			}
 			if(typeof style.fill !== "string") {
-				style.fill = this.options.hexagonFill;
+				style.fill = this.options.fillColor;
 			}
 			this.groupStyle[group] = style;
 		},
@@ -2060,16 +2077,18 @@
 		},
 		getMetaData: function getMetaData(meta) {
 			var cd = {};
-			var ps = this.options.clusterProperties;
+			var ps = this.options.dataProperties || [];
 			if(!ps.length) {
-				if(!this.options.clusterProperty) {
-					return {};
-				}
-				ps.push(this.options.clusterProperty);
+				if(this.options.clusterProperty) {
+					ps.push(this.options.clusterProperty);
+				}	
 			}
 			for(var i=0; i<ps.length;i++) {
 				if(typeof meta[ps[i]]=="number") {
 					cd[ps[i]] = meta[ps[i]];
+				}
+				else {
+					cd[ps[i]] = false;
 				}
 			}
 			return cd;
