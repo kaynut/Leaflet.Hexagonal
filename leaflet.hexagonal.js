@@ -643,8 +643,6 @@
 			if(typeof latlng != "object") {
 				console.warn("Leaflet.hexagonal.addMarker: latlng not valid", latlng);
 			}
-			latlng.lat = latlng.lat || 0;
-			latlng.lng = latlng.lng || 0;
 
 			// meta
 			meta = meta || {};
@@ -713,8 +711,6 @@
 				console.warn("Leaflet.hexagonal.addIcon: latlng not valid", latlng);
 				return 0;
 			}
-			latlng.lat = latlng.lat || 0;
-			latlng.lng = latlng.lng || 0;
 
 			// meta
 			meta = meta || {};
@@ -732,8 +728,6 @@
 				console.warn("Leaflet.hexagonal.addIcon: latlng not valid", latlng);
 				return 0;
 			}
-			latlng.lat = latlng.lat || 0;
-			latlng.lng = latlng.lng || 0;
 
 			// meta
 			meta = meta || {};

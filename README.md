@@ -74,29 +74,29 @@ Depending on the kind and format of your data, you can choose between different 
 // add a single point
 layer.addPoint({ lat: 31, lng: 121 });
 
-// add two points
+// add two points: points default to linked:false
 layer.addPoints( [ [122,32], [123,33] ] ),
 
-// add a line (linked points)
+// add a line: lines default to linked:true
 layer.addLine( [ [124,34], [125,35], [126,36] ] ),
 
-// add a geojson-object
+// add a geojson-object: valid geojson of type Point,Points,LineString,Feature,FeatureCollection
 var geojson_obj = {"type": "FeatureCollection", "features": [ { "type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [127, 37] } } ] };
 layer.addGeojson(geojson_obj);
 
-// add a geojson-file
+// add a geojson-file: valid geojson of type Point,Points,LineString,Feature,FeatureCollection
 layer.addGeojson("./assets/EUROPE5000.geojson");
 
-// add an icon (with an svg-icon)
+// add an icon: property icon is mandatory. gives a name to a icon added by .cacheIcon(...)
 layer.addIcon( [128,38] , { icon: "fallback" });
 
-// add an image (with an svg-icon)
+// add an image: property image is mandatory. has to be URI or dataUrl
 layer.addImage( [129,39] , { image: "./assets/image0.jpg" });
 
-// add a marker (with an svg-icon)
+// add a marker: with an icon 
 layer.addMarker( [130,40] , { icon: "fackback" });
 
-// add a marker (with an image)
+// add a marker: with an image
 layer.addMarker( [131,41] , { image: "./assets/image0.jpg" });
 ``` 
 
