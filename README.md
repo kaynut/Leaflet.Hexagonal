@@ -4,50 +4,27 @@
 [Click here for a quick example](https://kaynut.github.io/Leaflet.Hexagonal/)
 | [Click here to play around with the plugin](https://codepen.io/kaynut/pen/VwGywjB?editors=0010)
 
-<br>
-
-## Contents
-- [What is Leaflet.Hexagonal](#what-is-leaflet-hexagonal)
-- [Setup](#setup)
-- [Adding data](#adding-data)
-   - [coordinates](#coordinates)
-   - [metadata](#metadata)
-- [Removing data](#removing-data)
-- [Options](#options)
-   - [hexagon options](#hexagon-options)
-   - [style options](#style-options)
-   - [marker options](#marker-options)
-   - [link options](#link-options)
-   - [gutter options](#gutter-options)
-   - [cluster options](#cluster-options)
-   - [selection options](#selection-options)
-   - [info options](#info-options)
-   - [layer-options](#layer-options)
-- [Demos](#demos)
-- [Use cases](#use-cases)
-- [Priorities](#priorities)
-- [License](#license)
 
 <br>
 
 ## What is Leaflet.Hexagonal
-Leaflet.Hexagonal is mainly a Leaflet-canvas-layer, that takes 
-- points (single, multiple or linked points) 
-- lines (array of array, array of latLng-objects)
-- geojson (Point, LineString, Feature, FeatureCollection)
-- markers (images or svg-icons)
+**Leaflet.Hexagonal** is mainly a **Leaflet-canvas-layer**, that takes 
+- **points** (single, multiple or linked points) 
+- **lines** (array of array, array of latLng-objects)
+- **geojson** (Point, LineString, Feature, FeatureCollection)
+- **markers** (images or svg-icons)
 
 and 
 
-- clusters them - based on a hexagonal grid 
-- links them up - based on supplied identifiers
-- styles them - based on supplied metadata
-- makes them interactive (highlight, select via click/hover)
+- **clusters** them - based on a hexagonal grid 
+- **links** them up - based on supplied identifiers
+- **styles** them - based on supplied metadata
+- makes them **interactive** (highlight, select via click/hover)
 
 <br>
 
 ## Setup
-Download this repository and include leaflet.hexagonal.js and leaflet.hexagonal.css below your links to leaflet.js and leaflet.css
+Download this repository and add the links to **leaflet.hexagonal.js** and **leaflet.hexagonal.css** to your project - below the links to **leaflet.js** and **leaflet.css**.
 ```js
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
@@ -58,109 +35,129 @@ Download this repository and include leaflet.hexagonal.js and leaflet.hexagonal.
 <script src="./leaflet.hexagonal.js"></script>
 ```
 
-If you, for now, just want to play around with it, you can also link those by using jsdelivr.net
+<br>
 
+If you just want to play with the plugin, you can also link to those files by using jsdelivr.net
 
 ```js
+<!-- Leaflet.hexagonal - using jsdelivr.net -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh//kaynut/Leaflet.Hexagonal/leaflet.hexagonal.css" />
 <script src="https://cdn.jsdelivr.net/gh//kaynut/Leaflet.Hexagonal/leaflet.hexagonal.js">
 ```
 
 <br>
 
-## Adding data 
-Depending on the kind and format of your data, you can choose between different functions for adding data. The most basic function is called ***addPoint(coordinates, metadata)***. The other ones internally all use this one. They are just there to make unpacking, configuring and then adding your data a bit more straight forward. 
-```js
-// add a single point
-layer.addPoint({ lat: 31, lng: 121 });
-
-// add two points: points default to linked:false
-layer.addPoints( [ [122,32], [123,33] ] ),
-
-// add a line: lines default to linked:true
-layer.addLine( [ [124,34], [125,35], [126,36] ] ),
-
-// add a geojson-object: valid geojson of type Point,Points,LineString,Feature,FeatureCollection
-var geojson_obj = {"type": "FeatureCollection", "features": [ { "type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [127, 37] } } ] };
-layer.addGeojson(geojson_obj);
-
-// add a geojson-file: valid geojson of type Point,Points,LineString,Feature,FeatureCollection
-layer.addGeojson("./assets/EUROPE5000.geojson");
-
-// add an icon: property icon is mandatory. gives a name to a icon added by .cacheIcon(...)
-layer.addIcon( [128,38] , { icon: "fallback" });
-
-// add an image: property image is mandatory. has to be URI or dataUrl
-layer.addImage( [129,39] , { image: "./assets/image0.jpg" });
-
-// add a marker: with an icon 
-layer.addMarker( [130,40] , { icon: "fackback" });
-
-// add a marker: with an image
-layer.addMarker( [131,41] , { image: "./assets/image0.jpg" });
-``` 
-
-Each of those functions takes one mandatory argument (***coordinates***) and one optional argument (***metadata***)
+After the instantiation of leaflet-map you can add the hexagonal-layer like you would do, with every other leaflet-layer.
 
 ```js
-// addFunction(   coordinates         ,   metadata       ) 
-layer.addPoint( { lat: 31, lng: 121 } , { fill: "#f00" } );
-``` 
+// init Leaflet map
+var map = L.map('map').setView([65, -17], 13);
+var tiles = L.tileLayer(tileUrl, tilesOptions).addTo(map);
+
+// init Leaflet.hexagonal layer
+var layer = L.hexagonal().addTo(map);
+
+// add data to layer
+layer.addPoint({lng:-17.1, lat:65.1});
+```
+
+
 <br>
 
-### Coordinates
-There are three recognised coordinate-notations (see below). For data containing more than one point, use those notations inside an array. In case of geojson-data you have to stick to the geojson-convention. 
+## Adding data 
+Depending on the kind and format of your data, you can choose between different functions for adding data. The basic function for adding data is called ***addPoint(coordinates, metadata)***. All other functions internally use this one: They are just there to make unpacking, configuring and then adding your data a bit more convenient. Each of these functions takes one mandatory argument (***coordinates***) and one optional argument (***metadata***).
 ```js
-// object with lat, lng           
-{ lat: 31, lng: 121 } 
+// add a single point: using coordinate object {lat:y , lng:x } 
+layer.addPoint( { lat: 31, lng: 121 } );
 
-// object with lat, lon
-{ lat: 31, lon: 121 }
+// add a single point: using coordinate object {lat:y , lon:x } 
+layer.addPoint( { lat: 31, lon: 121 } );
 
-// array with at least two items, the first being longitude, the second latitude
-[ 121, 31 ]
+// add a single point: using coordinate notation [longitude, latitude] 
+layer.addPoint( [ 121, 31 ] ); // ATTENTION: order of arguments is [x,y]
+                               // LIKE in geojson-standard / classic coordinate-systems 
+                               // NOT LIKE in leaflet.js, where it is [y,x]
 
-// array of coordinates
-[ {lat: 31, lng: 121} , {lat: 32, lon: 122} , [123,133] ]
+// add three points: points default to metadata.linked:false
+layer.addPoints( [ [121,31], [122,32], [123,33] ] ),
 
-// geojson
-{ type:"Point", "coordinates": [ 121, 31 ] }
+// add a line: lines default to metadata.linked:true
+layer.addLine( [ {lat: 31, lng: 121}, {lat: 32, lon: 122}, [123,33] ] ),
 
+// add a geojson-file: geojson of type Point,Points,LineString,Feature,FeatureCollection
+layer.addGeojson("./assets/EUROPE5000.geojson");
+
+// add a geojson-object: geojson of type Point,Points,LineString,Feature,FeatureCollection
+var geojson_obj = {"type": "FeatureCollection", "features": [ { "type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [127, 37] } } ] };
+layer.addGeojson(geojson_obj);
 ```
-<br>  
+
+<br>
+
+The functions addMarker(...), addIcon(...), addImage(...) work as the above functions, but will create a Leaflet.divIcon, sitting ontop of the canvas layer, where all the other additions to this layer find there place. 
+
+```js
+// add an image: mandatory property 'image' takes a url
+layer.addImage( [129,39] , { image: "./assets/image0.jpg" });
+// add an image: mandatory property 'image' takes a dataUrl
+layer.addImage( [131,41] , { image: "data:image/png;base64,..." });
+
+// add an icon: mandatory property 'icon' takes a svg-string
+layer.addIcon( [128,38] , { icon: '<svg xmlns="http://www.w3.org/2000/svg" ... </svg>"' });
+// add an icon: mandatory property 'icon' takes an identifier of a previously cached icon
+layer.cacheIcon("home",'<svg xmlns="http://www.w3.org/2000/svg" ... </svg>', 0.5);
+layer.addIcon( [130,40] , { icon: "home" }); // 
+
+// add an icon or image, depending on the property passed
+layer.addMarker( [131,41] , { image: "data:image/png;base64,..." });
+layer.addMarker( [130,40] , { icon: "home" });
+
+``` 
+
+<br>
 
 ### Metadata
-The second argument is optional. It contains additional data for the supplied point/points. 
+The second argument is optional. It contains additional data for the supplied point/points. Data-properties needed for clustering-purposes also belong here: See 'altitude' and 'population' in the example - and watch for the possibility of **collisions** with default metadata-properties. 
 |metadata|type|default|description|
 |:--|:--|:--|:--|
 |id|string|auto|a value identifing a single point. Used for example to remove this point|
 |group|string|auto|a value to bind this point to a [new/existing] group of points|
-|linked|boolean|false|whether point should be linked to previous point in group. addLine(...) and addGeojson(LineString) default to true|
-|fill|color|options. hexagonFill| Color, the point is drawn, if drawn on its own (not clustered,etc)|
 |info|string|false|Info to be passed on selection|
+|fill|color|false| Color, the point is drawn, if drawn on its own (not clustered,etc)|
+|linked|boolean|false|whether point should be linked to previous point in group. addLine(...) and addGeojson(LineString) default to true|
 |pointless|boolean|false|if point should be drawn. Using addMarker(...) defaults to true|
-|scale|number|1|Determines the scaling of svg-icons 
+|marker|boolean|false|**Images** and **icons** default to true|
+|image|string|false|**Images** only: Determines the image source. Can be a regular url or a dataUrl|
+|icon|string|false|**Icons** only: Determines the icon source. Can be a svg-string or the name of a previously cached icon. See cacheIcon(...)|
+|scale|number|1|**Icons** only: Determines the scaling of svg-icons|
+
+
 
 ```js
       // add point with metadata
       layer.addPoint( [121,31], {
-         linked: false,
-         fill: "#a00",
-         group: "A",
          id: "a001",
-         info: "Group A"
+         group: "A",
+         info: "Group A",
+         fill: "#a00",   
+         linked: false,
+         // cluster-properties                
+         altitude: 4810,
+         population: 1000000
       });
 ```
 
 <br>
 
 ## Removing data
-Added data, qualified by 'group' or 'id', can removed as follows. (Removing all points and adding the needed ones back may be a quite good option in some cases.)
+Added data, qualified by 'group' or 'id', can removed as follows: (Removing all points and adding the needed ones back may be a quite good option in some cases.)
 ```js
       // remove point by id
-      layer.removeItem("a001"); // can be point or marker
-      layer.removePoint("a001"); // has to be point
-      layer.removeMarker("a001"); // has to be marker
+      layer.removeItem("a00"); // can be point or marker
+      layer.removePoint("a00"); // has to be point
+      layer.removeMarker("a00"); // has to be marker
+      layer.removeIcon("a00"); // has to be marker
+      layer.removeImage("a00"); // has to be marker
 
       // remove group of points
       layer.removeGroup("A");
@@ -170,8 +167,47 @@ Added data, qualified by 'group' or 'id', can removed as follows. (Removing all 
 ```  
 <br>
 
+## Concepts
+### group
+- A group ist not set explicitly. If you add a point, declaring a group, then from hereon the group exists. 
+- You can add points to a group at any point in time - and add/remove other points in between. 
+- Only points within a group can be linked.
+- Removing a group, removes all containing points.
+- You can assign a fillcolor to a group by **setGroupColor(groupName, color)**
+- You can assign an info to a group by **setGroupInfo(groupName, info)** 
+```js
+layer.addPoint([120,30], { id:"A0", group: "A"}); // from hereon there exists a group called "A"
+layer.addPoint([121,31], { id:"A1", group: "A"});
+layer.setGroupColor( "A", "#f00" );
+layer.setGroupInfo( "A", "Group A" );
+layer.removeGroup("A");
+```
+
+### link
+- A link is not set explicitly: If you add a point, declaring an already existing group and setting linked:true, a link will be added.
+- A link reaches from a specific point (with: linked:true) to its group internal predecessor.
+```js
+layer.addPoint([120,30], { id:"A0", group: "A"});
+layer.addPoint([121,31], { id:"B0", group: "B"});
+layer.addPoint([122,32], { id:"A1", group: "A", linked:true }); // link > A1 back to A0 
+```
+
+### refresh
+- There should be no cases, where it's nessesary to call **refresh()**.
+- Every change you make to the data/appearance should automatically issue a refresh.
+- Adding thousands of points individually should not be painful: The refreshing of the layer is debounced.
+- If you have issues, where you think, the layer isn't updating properly, feel free to call refresh() as many times as you want.  
+```js
+for(var i=0; i<10000; i++) {
+   layer.addPoint([120+i/1000,30]);
+}
+layer.refresh(); // !!! not nessesary at all
+
+```
+
 ## Options
-Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacity, etc), there are plenty of options, to change the appearance and behaviour of the layer. Those can be set on instantiation or (for nearly all) at some later point. 
+Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacity, etc), there are plenty of options, to change the appearance and behaviour of the layer. Those can be set on instantiation or (for nearly all) at some later point. <br>
+
 ```js
 
    // set options on initiation
@@ -294,7 +330,11 @@ Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacit
 <br>
 
 
-## Demos
+## Customisation
+For easy customisation, there are several functions in this plugin, that are meant to be overridden.
+- buildInfo
+- onClick
+- onRest
 
 <br>
 
@@ -320,40 +360,50 @@ This layer was designed to be
 [MIT](https://choosealicense.com/licenses/mit/)
 
 
-## Basic setup
-```js
+## Examples
+
+### Boilerplate
+```html
 <!DOCTYPE html>
-<html>
-   <head>    
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      
-      <!-- Leaflet -->
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
-      <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
-      
-      <!-- Leaflet.hexagonal -->
-      <link rel="stylesheet" href="./leaflet.hexagonal.css" />
-      <script src="./leaflet.hexagonal.js" />
+<html lang="en">
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-   </head>
-   <body>
-      <div id="map" style="width: 600px; height: 400px;"></div>
-      <script type="text/javascript">
+    <!-- Leaflet -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 
-         // init Leaflet map
-         var map = L.map('map').setView([65, -17], 13);
-         var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+    <!-- Leaflet.Hexagonal -->  
+	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
+	<script src="./leaflet.hexagonal.js"></script>
 
-         // init Leaflet.hexagonal layer
-         var layer = L.hexagonal().addTo(map);
+    <!-- styles -->
+	<style type="text/css">
+		html,body { position: absolute;left: 0; top: 0; right: 0; bottom: 0; margin: 0;	}
+		.leaflet-container { height: 100%; width: 100%; opacity: 0.9; }
+	</style>
 
-         // add data to layer
-         layer.addPoint({lng:-17.1, lat:65.1});
+</head>
 
-      </script>
-   </body>
+<body>
+	<div id="map"></div>
+	<script>
+
+		// map
+		var map = L.map('map').setView({ lat: 47.5, lng: 10.5 }, 6);
+		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+
+		// hexagonals
+		var hexagonals = new L.Hexagonal().addTo(map);
+
+		// add single point
+		hexagonals.addPoint({ lat: 47.5, lng: 10.5 });
+
+	</script>
+</body>
 </html>
 ```
+
 
 ## Contents
 - [What is Leaflet.Hexagonal](#what-is-leaflet-hexagonal)

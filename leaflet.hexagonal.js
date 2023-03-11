@@ -169,7 +169,7 @@
 		selection: {},
 
 		groupInfo: {},
-		groupStyle: {},
+		groupColor: {},
 
 		info: false,
 		infoLayer: false,
@@ -814,6 +814,12 @@
 
 			return c;
 		},
+		removeIcon: function removeIcon(id) {
+			return this.removeMarker(id);
+		},
+		removeImage: function removeImage(id) {
+			return this.removeMarker(id);
+		},
 		removeGroup: function removeGroup(group) {
 			if(this.points.length<1) { return false; }
 			if(typeof group != "number" && typeof group != "string") {
@@ -967,7 +973,7 @@
 
 
 					// style
-					style.fill = link?.style?.fill || this.groupStyle[link.group]?.fill || this.options.fillColor;
+					style.fill = link?.style?.fill || this.groupColor[link.group] || this.options.fillColor;
 
 					// if start/end-point is visibly clustered (?!)
 					if(this.options.clusterMode) {
@@ -1019,7 +1025,7 @@
 					if(options.hexagonVisible && hexagonals[hexs[h]].pointIndices.length) {
 
 						var gs = this.points[hexagonals[hexs[h]].pointIndices[0]].group;
-						style.fill = hexagonals[hexs[h]].style0.fill || this.groupStyle[gs]?.fill || this.options.fillColor;
+						style.fill = hexagonals[hexs[h]].style0.fill || this.groupColor[gs] || this.options.fillColor;
 
 						//clusterMode = "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false
 						if(this.options.clusterMode) {
@@ -1455,22 +1461,15 @@
 
 		// #######################################################
 		// #region group/info
-		setGroupStyle: function setGroupStyle(group, style = {}) {
+		setGroupColor: function setGroupColor(group, color = false) {
 			if(typeof group != "string" && typeof group != "number") {
-				console.warn("Leaflet.hexagonal.setGroupStyle: name of group invalid", group);
+				console.warn("Leaflet.hexagonal.setGroupColor: name of group invalid", group);
 				return;
 			}
-			if(typeof style == "string") {
-				style = {fill: style};
+			if(typeof color !== "string") {
+				color = false;
 			}
-			if(typeof style !== "object") {
-				console.warn("Leaflet.hexagonal.setGroupStyle: style invalid", style);
-				return;				
-			}
-			if(typeof style.fill !== "string") {
-				style.fill = this.options.fillColor;
-			}
-			this.groupStyle[group] = style;
+			this.groupColor[group] = color;
 		},
 		setGroupInfo: function setGroupInfo(group, info) {
 			if(typeof group != "string" && typeof group != "number") {
@@ -2328,13 +2327,12 @@
 		},
 		_genHash: function _genHash(str) {
 			str = str.replace(/[\W_]+/g,"_");
-			if(str.length>21) {
-				return str.substring(0,10) + h.substring(h.length-10, h.length);
+			if(str.length>64) {
+				str = str.substring(0,10) + str.substring(str.length-54, str.length);
 			}
 			return str;
 		}
 		// #endregion
-
 
 	});
 
