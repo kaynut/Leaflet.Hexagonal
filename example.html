@@ -16,6 +16,8 @@
 	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
 	<script src="./leaflet.hexagonal.js"></script>
 
+   <!--lil-gui -->
+	<script src="./assets/lil-gui.js"></script>
 
    <!-- styles -->
 	<style type="text/css">
@@ -42,7 +44,7 @@
 
 	<div id="map"></div>
 
-	<script type="module">
+	<script>
 
 
 		// map
@@ -158,8 +160,7 @@
 
 
 		// gui
-		import GUI from './assets/lil-gui.js';
-	   var gui = new GUI();
+	   var gui = new lil.GUI();
 		gui.title("Leaflet.Hexagonal - examplePoints.html");
 
       // add/remove

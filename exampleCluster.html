@@ -5,14 +5,17 @@
 	<title>Leaflet.Hexagonal - examplePoints</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-   <!-- Leaflet -->
+   	<!-- Leaflet -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
 	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
 
 
-   <!-- Leaflet.Hexagonal -->  
+   	<!-- Leaflet.Hexagonal -->  
 	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
 	<script src="./leaflet.hexagonal.js"></script>
+
+	<!--lil-gui -->
+	<script src="./assets/lil-gui.js"></script>
 
 
    <!-- styles -->
@@ -45,7 +48,7 @@
 
 	<div id="map"></div>
 
-	<script type="module">
+	<script>
 
 
 		// ###########################
@@ -85,8 +88,7 @@
 
 		// ###########################
 		// gui
-		import GUI from './assets/lil-gui.js';
-		var gui = new GUI({width:250});
+		var gui = new lil.GUI({width:250});
 		gui.title("Leaflet.Hexagonal");
 		var guiOptions = {
 			altitudes: function() { guiAltitudes(); },

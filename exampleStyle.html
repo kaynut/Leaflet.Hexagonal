@@ -16,6 +16,8 @@
 	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
 	<script src="./leaflet.hexagonal.js"></script>
 
+	<!--lil-gui -->
+	<script src="./assets/lil-gui.js"></script>	
 
    <!-- styles -->
 	<style type="text/css">
@@ -63,7 +65,7 @@
 	<div id="map"></div>
 	<div id="tooltip" class="tooltip"></div>
 
-	<script type="module">
+	<script>
 
 
 		// map
@@ -151,9 +153,7 @@
 
 
 		// gui
-		import GUI from './assets/lil-gui.js';
-
-		var gui = new GUI({width:250});
+		var gui = new lil.GUI({width:250});
 		gui.title("Leaflet.Hexagonal - exampleStyle.html");
 
 		var fStyle = gui.addFolder('Styles');
