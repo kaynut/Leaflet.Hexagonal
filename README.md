@@ -91,6 +91,7 @@ layer.addGeojson("./assets/EUROPE5000.geojson");
 var geojson_obj = {"type": "FeatureCollection", "features": [ { "type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [127, 37] } } ] };
 layer.addGeojson(geojson_obj);
 ```
+[|| click here to see an example ||](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
 
 <br>
 
@@ -113,6 +114,7 @@ layer.addMarker( [131,41] , { image: "data:image/png;base64,..." });
 layer.addMarker( [130,40] , { icon: "home" });
 
 ``` 
+[|| click here to see an example ||](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
 
 <br>
 
