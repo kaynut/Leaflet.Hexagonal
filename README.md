@@ -51,16 +51,16 @@ After the instantiation of leaflet-map you can add the hexagonal-layer like you 
 
 ```js
 // init Leaflet map
-var map = L.map('map').setView([65, -17], 13);
+var map = L.map('map').setView([47.5,10.5], 6);
 var tiles = L.tileLayer(tileUrl, tilesOptions).addTo(map);
 
 // init Leaflet.hexagonal layer
 var layer = L.hexagonal().addTo(map);
 
 // add data to layer
-layer.addPoint({lng:-17.1, lat:65.1});
+layer.addPoint({lng:10.5, lat:47.5});
 ```
-
+[|| click here to see an example ||](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
 
 <br>
 
