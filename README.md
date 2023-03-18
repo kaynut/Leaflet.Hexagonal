@@ -60,7 +60,7 @@ var layer = L.hexagonal().addTo(map);
 // add data to layer
 layer.addPoint({lng:10.5, lat:47.5});
 ```
-[|| click here to see an example ||](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
+[Click here to see an example](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
 
 <br>
 
@@ -91,11 +91,11 @@ layer.addGeojson("./assets/EUROPE5000.geojson");
 var geojson_obj = {"type": "FeatureCollection", "features": [ { "type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [127, 37] } } ] };
 layer.addGeojson(geojson_obj);
 ```
-[|| click here to see an example ||](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
+[Click here to see an example](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
 
 <br>
 
-The functions addMarker(...), addIcon(...), addImage(...) work as the above functions, but will create a Leaflet.divIcon, sitting ontop of the canvas layer, where all the other additions to this layer find there place. 
+The functions addMarker(...), addIcon(...), addImage(...) work just like the above, but will create a Leaflet.divIcon, sitting ontop of the canvas layer, where all the other additions to this layer live. 
 
 ```js
 // add an image: mandatory property 'image' takes a url
@@ -114,7 +114,7 @@ layer.addMarker( [131,41] , { image: "data:image/png;base64,..." });
 layer.addMarker( [130,40] , { icon: "home" });
 
 ``` 
-[|| click here to see an example ||](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
+[Click here to see an example](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
 
 <br>
 
