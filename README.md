@@ -1,14 +1,12 @@
 # Leaflet.Hexagonal
 
 ![image](/assets/demo.jpg)
-[Click here for a quick example](https://kaynut.github.io/Leaflet.Hexagonal/)
-| [Click here to play around with the plugin](https://codepen.io/kaynut/pen/VwGywjB?editors=0010)
-
+[**Click here to see an example**](https://kaynut.github.io/Leaflet.Hexagonal/)
 
 <br>
 
 ## What is Leaflet.Hexagonal
-**Leaflet.Hexagonal** is mainly a **Leaflet-canvas-layer**, that takes 
+Leaflet.Hexagonal is a Leaflet-canvas-layer (composite-layer), that takes 
 - **points** (single, multiple or linked points) 
 - **lines** (array of array, array of latLng-objects)
 - **geojson** (Point, LineString, Feature, FeatureCollection)
@@ -16,7 +14,7 @@
 
 and 
 
-- **clusters** them - based on a hexagonal grid 
+- **locates**, **clusters** them - based on a hexagonal grid 
 - **links** them up - based on supplied identifiers
 - **styles** them - based on supplied metadata
 - makes them **interactive** (highlight, select via click/hover)
@@ -24,43 +22,48 @@ and
 <br>
 
 ## Setup
-Download this repository and add the links to **leaflet.hexagonal.js** and **leaflet.hexagonal.css** to your project - below the links to **leaflet.js** and **leaflet.css**.
-```js
-<!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+Download this repository and add the links to **leaflet.hexagonal.js** and **leaflet.hexagonal.css** to your project - below the links to leaflet.js and leaflet.css.
+```html
+<!DOCTYPE html>
+<html>
+<head>
 
-<!-- Leaflet.hexagonal -->
-<link rel="stylesheet" href="./leaflet.hexagonal.css" />
-<script src="./leaflet.hexagonal.js"></script>
+   <!-- Leaflet -->
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+   
+   <!-- Leaflet.Hexagonal -->
+   <link rel="stylesheet" href="./leaflet.hexagonal.css" />
+   <script src="./leaflet.hexagonal.js"></script>
+
+</head>
+<body>
+
+   <!-- map container -->
+   <div id="map" style="width: 600px; height: 400px;"></div>
+
+   <script>
+      
+      // Leaflet map setup
+      var map = L.map("map").setView({ lat: 47.5, lng: 10.5 }, 5);
+      var tilesUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+      var tilesAttr = `&copy; <a href="https://www.openstreetmap.org/copyright">
+                       OpenStreetMap</a>contributors 
+                       &copy; <a href="https://carto.com/attributions">CARTO</a>`;
+      var tiles = L.tileLayer(tilesUrl, {attribution:tilesAttr} ).addTo(map);
+
+
+      // Leaflet.hexagonal setup
+      var layer = L.hexagonal().addTo(map);
+
+      // add data to layer
+      layer.addPoint({lng:10.5, lat:47.5});  
+      
+   </script>
+</body>
+</html>   
 ```
-
-<br>
-
-If you just want to play with the plugin, you can also link to those files by using jsdelivr.net
-
-```js
-<!-- Leaflet.hexagonal - using jsdelivr.net -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh//kaynut/Leaflet.Hexagonal/leaflet.hexagonal.css" />
-<script src="https://cdn.jsdelivr.net/gh//kaynut/Leaflet.Hexagonal/leaflet.hexagonal.js">
-```
-
-<br>
-
-After the instantiation of leaflet-map you can add the hexagonal-layer like you would do, with every other leaflet-layer.
-
-```js
-// init Leaflet map
-var map = L.map('map').setView([47.5,10.5], 6);
-var tiles = L.tileLayer(tileUrl, tilesOptions).addTo(map);
-
-// init Leaflet.hexagonal layer
-var layer = L.hexagonal().addTo(map);
-
-// add data to layer
-layer.addPoint({lng:10.5, lat:47.5});
-```
-[Click here to see an example](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
+[**Click here to see an example**](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
 
 <br>
 
