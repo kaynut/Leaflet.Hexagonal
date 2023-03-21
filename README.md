@@ -3,6 +3,16 @@
 ![image](/assets/demo.jpg)
 [**Click here to see an example**](https://kaynut.github.io/Leaflet.Hexagonal/)
 
+## Contents
+- [What is Leaflet.Hexagonal](#what-is-leaflet-hexagonal)
+- [Setup](#setup)
+- Adding: [adding data](#adding-data) / [metadata](#metadata) / [removing data](#removing-data)
+- Concepts: [group](#group) / [link](#link) / [refresh](#refresh) / [clustering](#clustering)
+- Options: [hexagon](#hexagon-options) / [style](#style-options) / [data](#data-options) / [marker](#marker-options) / [link](#link-options) / [gutter](#gutter-options) / [cluster](#cluster-options) / [selection](#selection-options) / [info](#info-options) / [layer](#layer-options)
+- [Customisation](#customisation)
+- [Notes and License](#notes)
+
+
 <br>
 
 ## What is Leaflet.Hexagonal
@@ -139,23 +149,22 @@ The second argument is optional. It contains additional data for the supplied po
 
 
 ```js
-      // add point with metadata
-      layer.addPoint( [121,31], {
-         id: "a001",
-         group: "A",
-         info: "Group A",
-         fill: "#a00",   
-         linked: false,
-         // cluster-properties                
-         altitude: 4810,
-         population: 1000000
-      });
+// add point with metadata
+layer.addPoint( [121,31], {
+   id: "a001",
+   group: "A",
+   info: "Group A",
+   fill: "#a00",   
+   linked: false,
+   // custom properties for clustering   
+   altitude: 4810,              
+   population: 1000000
+});
 ```
-
 <br>
 
-## Removing data
-Added data, qualified by 'group' or 'id', can removed as follows: (Removing all points and adding the needed ones back may be a quite good option in some cases.)
+### Removing data
+Added points, qualified by 'group' or 'id', can removed later - at any time. Never the less: Removing all points and adding back the needed ones may be more straight forward - in most cases.
 ```js
       // remove point by id
       layer.removeItem("a00"); // can be point or marker
@@ -175,8 +184,8 @@ Added data, qualified by 'group' or 'id', can removed as follows: (Removing all 
 ## Concepts
 ### group
 - A group ist not set explicitly. If you add a point, declaring a group, then from hereon the group exists. 
-- You can add points to a group at any point in time - and add/remove other points in between. 
-- Only points within a group can be linked.
+- You can add points to a group at any time - and add/remove other points in between. 
+- Only points within a group can be linked ("connected with a line").
 - Removing a group, removes all containing points.
 - You can assign a fillcolor to a group by **setGroupColor(groupName, color)**
 - You can assign an info to a group by **setGroupInfo(groupName, info)** 
@@ -187,21 +196,24 @@ layer.setGroupColor( "A", "#f00" );
 layer.setGroupInfo( "A", "Group A" );
 layer.removeGroup("A");
 ```
+<br>
 
 ### link
-- A link is not set explicitly: If you add a point, declaring an already existing group and setting linked:true, a link will be added.
-- A link reaches from a specific point (with: linked:true) to its group internal predecessor.
+- A link is a connection between two points in the same group, repesentend by a line - of some sort.
+- A link is not set explicitly: If you add a point to a group, that already exists, and pass **linked:true**, a link will be added.
+- A link always reaches from a specific point (with: linked:true) to its group internal predecessor.
 ```js
 layer.addPoint([120,30], { id:"A0", group: "A"});
 layer.addPoint([121,31], { id:"B0", group: "B"});
 layer.addPoint([122,32], { id:"A1", group: "A", linked:true }); // link > A1 back to A0 
 ```
+<br>
 
 ### refresh
-- There should be no cases, where it's nessesary to call **refresh()**.
-- Every change you make to the data/appearance should automatically issue a refresh.
-- Adding thousands of points individually should not be painful: The refreshing of the layer is debounced.
-- If you have issues, where you think, the layer isn't updating properly, feel free to call refresh() as many times as you want.  
+- The function **refresh()** forces the data and layer to be reevaluated and redrawn.
+- If you use the plugin as is, there should be no cases, where it is nessesary to call **refresh()**: Every change you make to the data/appearance should automatically issue a refresh. 
+- **refresh()** is debounced: If triggered repeatedly within a short delay (100ms) it will only run once. 
+
 ```js
 for(var i=0; i<10000; i++) {
    layer.addPoint([120+i/1000,30]);
@@ -209,24 +221,32 @@ for(var i=0; i<10000; i++) {
 layer.refresh(); // !!! not nessesary at all
 
 ```
+<br>
+
+### clustering
+The if and how of the data-clustering is handled by a number of [options](#clustering-options). The best way to get a grip on how clustering is implemented here, is probably to see it in action and to play with the options.
+- [Clustering example](https://codepen.io/kaynut/pen/OJoQRGp?editors=0100)
+- Clustering playground  
+<br>
+
+<br>
 
 ## Options
-Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacity, etc), there are plenty of options, to change the appearance and behaviour of the layer. Those can be set on instantiation or (for nearly all) at some later point. <br>
+Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacity, etc), there are plenty of options, to change the appearance and behaviour of the layer. Those can be set on instantiation or (for nearly all) at some later point. 
+<br>
 
 ```js
+// set options on initiation
+var layer = L.hexagonal({
+   opacity:0.7,
+   hexagonSize:16,
+   hexagonMode:"flatTop"
+}).addTo(map);
 
-   // set options on initiation
-   var layer = L.hexagonal({
-      opacity:0.7,
-      hexagonSize:16,
-      hexagonMode:"flatTop"
-   }).addTo(map);
+//... (e.g. adding data)
 
-   //... (e.g. adding data)
-
-   // set options later on
-   layer.options.hexagonSize = 24;
-
+// set options later on
+layer.options.hexagonSize = 24;
 ```
 <br>
 
@@ -333,6 +353,8 @@ Apart from the default options of a canvas-layer (like: minZoom, maxZoom, opacit
 |zIndex|integer|100| after init to be set by method: layer.setZIndex()|
 
 <br>
+
+
 
 
 ## Customisation
