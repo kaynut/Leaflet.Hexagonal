@@ -2,6 +2,7 @@
 // add: selectionMode > single hexagon, group
 // clusterMode: clusterIndicator (if single or clustered)
 // update marker-clickablility
+// linked: allow array, or maybe make an option like links:[pos0,pos1,...]
 
 /*!
  * Leaflet.Hexagonal.js v0.8.0
