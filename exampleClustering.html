@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Leaflet.Hexagonal</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Leaflet -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+    <!-- Leaflet.Hexagonal -->  
+	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
+	<script src="./leaflet.hexagonal.js"></script>
+
+	<!-- lil-gui -->
+   	<script src="./assets/lil-gui.js"></script>
+   
+	<!-- style -->
+	<style>
+		html,body {
+   			position: absolute;left: 0;top: 0;right: 0;bottom: 0;margin: 0;
+		}
+		.leaflet-container {
+		height: 100%;width: 100%;opacity: 0.9;
+		}
+		.gui-highlight {
+		font-weight:800; color:#2cc9ff;
+		}
+		.lil-gui.autoPlace {
+			right: 0px;
+		}
+		.lil-gui {
+			--background-color: #202224;
+		color:#ddd;
+		}
+		.lil-gui.root>.title {
+			background: #202224;
+			color: #ddd;
+		}
+	</style>
+
+</head>
+<body>
+
+	<div id="map"></div>
+
+	<script>
+		// init map and tiles
+		var map = L.map("map").setView({ lat: 47.5, lng: 10.5 }, 5);
+		var tilesUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+		var tilesAttr = `&copy; <a href="https://www.openstreetmap.org/copyright">
+						OpenStreetMap</a>contributors 
+						&copy; <a href="https://carto.com/attributions">CARTO</a>`;
+		var tiles = L.tileLayer(tilesUrl, {attribution:tilesAttr}).addTo(map);
+
+
+		// init Leaflet.hexagonal layer
+		var layer = L.hexagonal().addTo(map);
+
+		// hexagonals
+		var layers = new L.Hexagonal({hexagonSize:16}).addTo(map);
+
+		layers.clusterProperties = ['alpha', 'beta'];
+
+		layers.addLine([ [2.702637,45.089036],[5.119629,46.073231],[7.536621,47.040182],[9.953613,47.989922],[12.370605,48.922499] ], { group:"A", alpha:1, beta:100, fill:"#820" });
+
+		layers.addLine([ [5.119629,45.089036],[5.119629,46.073231],[7.536621,47.040182],[9.953613,47.989922],[12.370605,48.922499] ], { group:"B", alpha:2, beta:81, fill:"#f80" });
+
+		layers.addLine([ [7.536621,45.089036],[7.536621,46.073231],[7.536621,47.040182],[9.953613,47.989922],[12.370605,48.922499] ], { group:"C", alpha:3, beta:64, fill:"#ff0" });
+
+		layers.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922],[12.370605,48.922499] ], { group:"D", alpha:4, beta:49, fill:"#8f0" });
+
+		layers.addLine([ [12.370605,45.089036],[12.370605,46.073231],[12.370605,47.040182],[12.370605,47.989922],[12.370605,48.922499] ], { group:"E", alpha:5, beta:36, fill:"#20f" });
+
+
+		console.log(layers.options);
+
+	</script>
+
+</body>
+</html>

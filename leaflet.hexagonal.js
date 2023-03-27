@@ -1026,7 +1026,7 @@
 					if(options.hexagonVisible && hexagonals[hexs[h]].pointIndices.length) {
 
 						var gs = this.points[hexagonals[hexs[h]].pointIndices[0]].group;
-						style.fill = hexagonals[hexs[h]].style0.fill || this.groupColor[gs] || this.options.fillColor;
+						style.fill = hexagonals[hexs[h]].style1.fill || this.groupColor[gs] || this.options.fillColor;
 
 						//clusterMode = "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false
 						if(this.options.clusterMode) {
@@ -1671,24 +1671,6 @@
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, zoom);
 					point.cell = h;
 
-					/* 	hexagonals
-					
-						cell:"z-x-y", 
-						idx:idx, idy:idy, 
-						cx:cx, cy:cy, 
-						px:x, py:y, 
-						path:"M0 0 ...", 
-						latlng: {lat:0, lng:0}, 
-						size:size, 
-						pointyTop:false,
-
-						pointIndices:[i0,i1,i2...],
-						markerIndices: [i0,i1,i2, ...]
-						linkIndices: [[i01,i02],[i11,i12], ...]
-						groups:{"groupA:"groupA", "groupB":"groupB", ...},
-						...
-					*/
-
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
 						this.hexagonals[h.cell].pointIndices = [];
@@ -1772,7 +1754,7 @@
 						if(p0.visible && p1.visible) {
 							var path = this.getLinkPath(i0,i1,hexagonSize, hexagonOffset, zoom);
 							if(path) {
-								var style = p0.style || p1.style || false;
+								var style = p1.style || p0.style || false;
 								this.links.push({group: p0.group, start:p0, end:p1, path:path, style:style});
 							}
 						}
