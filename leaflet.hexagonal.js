@@ -75,8 +75,7 @@
 			// groupProperty: false || "meta.propertyName" 
 			groupProperty: "group",
 			// groupDefault: false || "groupName"
-			// if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
-			groupDefault: false,
+			groupDefault: false, // if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
 
 			// clusterMode: "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false (style for hexagon-cluster: depending on point data) 	
 			clusterMode: false,

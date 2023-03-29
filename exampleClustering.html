@@ -62,7 +62,11 @@
 			linkMode:"line",
 			dataProperties: ['alpha', 'beta'],
 			clusterProperty: 'alpha',
-			clusteringMode: false
+			clusteringMode: false,
+			clusterDefaultValue: 0,
+			clusterMinValue: 0,
+			clusterMaxValue: 10,
+			clusterScale: 'log',
 		}).addTo(map);
 
 
@@ -103,8 +107,8 @@
 			clusterMode: false,
 			clusterProperty: 'alpha',
 			clusterDefaultValue: 0,
-			clusterMinValue: false,
-			clusterMaxValue: false,
+			clusterMinValue: 0,
+			clusterMaxValue: 10,
 			clusterScale: 'log',
 		};
 		var guiClustering = gui.addFolder( 'Clustering' );
@@ -120,12 +124,16 @@
 			layer.options.clusterDefaultValue = value;
 			layer.refresh(); 
 		});
-		guiClustering.add( guiOptions, 'clusterDefaultValue', 0,10,1).onChange( value => {
-			layer.options.clusterDefaultValue = value;
+		guiClustering.add( guiOptions, 'clusterMinValue', 0,10,1).onChange( value => {
+			layer.options.clusterMinValue = value;
 			layer.refresh(); 
 		});
-		guiClustering.add( guiOptions, 'clusterDefaultValue', 0,10,1).onChange( value => {
-			layer.options.clusterDefaultValue = value;
+		guiClustering.add( guiOptions, 'clusterMaxValue', 0,10,1).onChange( value => {
+			layer.options.clusterMaxValue = value;
+			layer.refresh(); 
+		});
+		guiClustering.add( guiOptions, 'clusterScale', [ 'log', 'square', 'linear', false ] ).onChange( value => {
+			layer.options.clusterMode = value;
 			layer.refresh(); 
 		});
 
