@@ -3,6 +3,7 @@
 <head>
 	<title>Leaflet.Hexagonal</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="utf-8">
 
     <!-- Leaflet -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
@@ -45,35 +46,88 @@
 	<div id="map"></div>
 
 	<script>
-		// init map and tiles
+
+		// map and base-layer
 		var map = L.map("map").setView({ lat: 47.5, lng: 10.5 }, 5);
-		var tilesUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-		var tilesAttr = `&copy; <a href="https://www.openstreetmap.org/copyright">
+		var baseUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+		var baseAttr = `&copy; <a href="https://www.openstreetmap.org/copyright">
 						OpenStreetMap</a>contributors 
 						&copy; <a href="https://carto.com/attributions">CARTO</a>`;
-		var tiles = L.tileLayer(tilesUrl, {attribution:tilesAttr}).addTo(map);
+		var baseLayer = L.tileLayer(baseUrl,{attribution:baseAttr}).addTo(map);
 
 
-		// init Leaflet.hexagonal layer
-		var layer = L.hexagonal().addTo(map);
-
-		// hexagonals
-		var layers = new L.Hexagonal({hexagonSize:16}).addTo(map);
-
-		layers.clusterProperties = ['alpha', 'beta'];
-
-		layers.addLine([ [2.702637,45.089036],[5.119629,46.073231],[7.536621,47.040182],[9.953613,47.989922],[12.370605,48.922499] ], { group:"A", alpha:1, beta:100, fill:"#820" });
-
-		layers.addLine([ [5.119629,45.089036],[5.119629,46.073231],[7.536621,47.040182],[9.953613,47.989922],[12.370605,48.922499] ], { group:"B", alpha:2, beta:81, fill:"#f80" });
-
-		layers.addLine([ [7.536621,45.089036],[7.536621,46.073231],[7.536621,47.040182],[9.953613,47.989922],[12.370605,48.922499] ], { group:"C", alpha:3, beta:64, fill:"#ff0" });
-
-		layers.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922],[12.370605,48.922499] ], { group:"D", alpha:4, beta:49, fill:"#8f0" });
-
-		layers.addLine([ [12.370605,45.089036],[12.370605,46.073231],[12.370605,47.040182],[12.370605,47.989922],[12.370605,48.922499] ], { group:"E", alpha:5, beta:36, fill:"#20f" });
+		// hexagonal-layer
+		var layer = L.hexagonal({
+			hexagonSize:16, 
+			linkMode:"line",
+			dataProperties: ['alpha', 'beta'],
+			clusterProperty: 'alpha',
+			clusteringMode: false
+		}).addTo(map);
 
 
-		console.log(layers.options);
+		// coordinates
+		var [x0,x1,x2,x3,x4,x5,x6,x7] = [0.285645, 2.702637, 5.119629, 7.536621, 9.952613, 12.370605, 14.787597, 17.204589];
+		var [y0,y1,y2,y3,y4] = [48.922499, 47.989922, 47.040182, 46.073231, 45.089036];
+
+
+		// adding data to layer
+		layer.addLine([ [x0,y1], [x1,y1], [x2,y2], [x3,y2], [x4,y2], [x5,y2], [x6,y3], [x7,y3] ], { group:"A", alpha:1, beta:9, fill:"#f20" });
+		layer.addLine([ [x0,y2], [x1,y2], [x2,y2], [x3,y2], [x4,y2], [x5,y2], [x6,y2], [x7,y2] ], { group:"B", alpha:2, beta:8, fill:"#f80" });
+		layer.addLine([ [x0,y3], [x1,y2], [x2,y2], [x3,y2], [x4,y2], [x5,y2], [x6,y2], [x7,y1] ], { group:"C", alpha:3, beta:7, fill:"#ff0" });
+		layer.addLine([ [x0,y4], [x1,y4], [x2,y3], [x3,y2], [x4,y2], [x5,y1], [x6,y0], [x7,y0] ], { group:"D", alpha:4, beta:6, fill:"#8f0" });
+		layer.addLine([ [x2,y0], [x2,y1], [x3,y2], [x4,y3], [x4,y4] ], { group:"E", fill:"#28f" });
+		layer.addLine([ [x3,y0], [x3,y1], [x4,y2], [x5,y3], [x5,y4] ], { group:"F", fill:"#82f" });
+
+		// gui
+		var GUI = lil.GUI;
+		var gui = new GUI();
+		gui.title("Leaflet.Hexagonal");
+		/*
+			// clusterMode: "count" || "sum" || "avg" || "min" || "max" || "first" || "last" || false (style for hexagon-cluster: depending on point data) 	
+			clusterMode: false,
+			//clusterProperty: "meta.propertyName" 
+			clusterProperty: "data", // current property for data-based coloring (included in meta)
+			//clusterDefaultValue: number 
+			clusterDefaultValue: 0, // default value, when current clusterProperty is not set for datapoint
+			// clusterMinValue: false || number
+			clusterMinValue: false,
+			// clusterMaxValue: false || number
+			clusterMaxValue: false,
+			// clusterScale: false="linear" || "square" || "log"
+			clusterScale: "log",
+			// clusterColors: [ "#color", "rgba(r,g,b)", [r,g,b,a],...] 
+			clusterColors: ["#4d4","#dd4","#d44","#800"],
+		*/
+      	var guiOptions = {
+			clusterMode: false,
+			clusterProperty: 'alpha',
+			clusterDefaultValue: 0,
+			clusterMinValue: false,
+			clusterMaxValue: false,
+			clusterScale: 'log',
+		};
+		var guiClustering = gui.addFolder( 'Clustering' );
+		guiClustering.add( guiOptions, 'clusterMode', [ false, 'count', 'sum', 'avg', 'min', 'max', 'first',' last' ] ).onChange( value => {
+			layer.options.clusterMode = value;
+			layer.refresh(); 
+		});
+		guiClustering.add( guiOptions, 'clusterProperty', [ 'alpha','beta', false ] ).onChange( value => {
+			layer.options.clusterProperty = value;
+			layer.refresh(); 
+		});
+		guiClustering.add( guiOptions, 'clusterDefaultValue', 0,10,1).onChange( value => {
+			layer.options.clusterDefaultValue = value;
+			layer.refresh(); 
+		});
+		guiClustering.add( guiOptions, 'clusterDefaultValue', 0,10,1).onChange( value => {
+			layer.options.clusterDefaultValue = value;
+			layer.refresh(); 
+		});
+		guiClustering.add( guiOptions, 'clusterDefaultValue', 0,10,1).onChange( value => {
+			layer.options.clusterDefaultValue = value;
+			layer.refresh(); 
+		});
 
 	</script>
 

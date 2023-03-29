@@ -315,8 +315,8 @@ layer.options.hexagonSize = 24;
 |clusterMode|"count",<br>"sum","avg",<br>"min","max",<br>"first","last",<br>false|false|Determines the way the fillcolor of hexagons with multiple points is calculated. Clustering relies on a number of options, but mostly on the *dataProperties*, the *clusterProperty* and the *clusterColors*.|
 |clusterProperty|property|"data"|Determines the name of the property, that is being used to calculate the fillcolor of the hexagon. Idealy the property should be present in each added point and must hold a numerical value.|
 |clusterDefaultValue|number|0|If a point does not have the defined clusterProperty, it defaults to this value.|
-|clusterMin|number|false|Defines the lower bound of the clustering-result.|
-|clusterMax|number|false|Defines the upper bound of the clustering-result.|
+|clusterMinValue|number|false|Defines the lower bound of the clustering-result.|
+|clusterMaxValue|number|false|Defines the upper bound of the clustering-result.|
 |clusterScale|"linear",<br>"square",<br>"log"|"log"|Defines the scale used for interpolating colors between min and max. "square" standing for the square root, "log" standing for the natural logarithm.|
 |clusterColors|array|["#4d4","#dd4",<br>"#d44","#800"]|Array of colors defines a color-ramp, which is used for color-interpolation during clustering.|
 

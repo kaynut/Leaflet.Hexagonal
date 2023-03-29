@@ -84,10 +84,10 @@
 			clusterProperty: "data", // current property for data-based coloring (included in meta)
 			//clusterDefaultValue: number 
 			clusterDefaultValue: 0, // default value, when current clusterProperty is not set for datapoint
-			// clusterMin: false || number
-			clusterMin: false,
-			// clusterMax: false || number
-			clusterMax: false,
+			// clusterMinValue: false || number
+			clusterMinValue: false,
+			// clusterMaxValue: false || number
+			clusterMaxValue: false,
 			// clusterScale: false="linear" || "square" || "log"
 			clusterScale: "log",
 			// clusterColors: [ "#color", "rgba(r,g,b)", [r,g,b,a],...] 
@@ -937,12 +937,12 @@
 			// totals
 			var tCount = this.totals.count;
 			var tMin = this.totals.min;
-			if(typeof this.options.clusterMin == "number") {
-				tMin = this.options.clusterMin;
+			if(typeof this.options.clusterMinValue == "number") {
+				tMin = this.options.clusterMinValue;
 			}
 			var tMax = this.totals.max; 
-			if(typeof this.options.clusterMax == "number") {
-				tMax = this.options.clusterMax;
+			if(typeof this.options.clusterMaxValue == "number") {
+				tMax = this.options.clusterMaxValue;
 			} 
 
 			// draw gutter
@@ -1324,10 +1324,10 @@
 				this.options.clusterDefaultValue = options.defaultValue;
 			}
 			if(typeof options.min == "number") {
-				this.options.clusterMin = options.min;
+				this.options.clusterMinValue = options.min;
 			}
 			if(typeof options.max == "number") {
-				this.options.clusterMax = options.max;
+				this.options.clusterMaxValue = options.max;
 			}
 			if(typeof options.mode == "string") {
 				this.options.clusterMode = options.mode;
