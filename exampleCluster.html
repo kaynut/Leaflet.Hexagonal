@@ -4,7 +4,8 @@
 <head>
 	<title>Leaflet.Hexagonal - examplePoints</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-
+	<meta charset="utf-8">
+	
    	<!-- Leaflet -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
 	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
@@ -72,13 +73,13 @@
 		hexagonals.options.clusterColors = ["#4d4","#dd4","#d44","#800"];
 		hexagonals.options.clusterProperty = "dem";
 		
-		hexagonals.options.clusterMin = 0;
-		hexagonals.options.clusterMax = 2000;
+		hexagonals.options.clusterMinValue = 0;
+		hexagonals.options.clusterMaxValue = 2000;
 		hexagonals.options.clusterMode = "max";
 		hexagonals.options.clusterScale = "square";
 
 		// add data
-      	hexagonals.addGeojson("./assets/EUROPE5000.geojson", {group:"EUROPE5000", fill:"#d22"});
+      	hexagonals.addGeojson("./assets/europe5000.geojson", {group:"EUROPE5000", fill:"#d22"});
 
 
 
@@ -96,8 +97,8 @@
 			countries: function() { guiCountries(); },
 
 			clusterProperty:"dem",
-			clusterMin:0,
-			clusterMax:2000,
+			clusterMinValue:0,
+			clusterMaxValue:2000,
 			clusterMode: "max",
 			clusterScale:"log"
 		};
@@ -107,8 +108,8 @@
 			hexagonals.options.clusterColors = ["#4d4","#dd4","#d44","#800"];
 			hexagonals.options.clusterProperty = "dem";
 			hexagonals.options.clusterDefaultValue = 0;
-			hexagonals.options.clusterMin = 0;
-			hexagonals.options.clusterMax = 2000;
+			hexagonals.options.clusterMinValue = 0;
+			hexagonals.options.clusterMaxValue = 2000;
 			hexagonals.options.clusterMode = "max";
 			hexagonals.options.clusterScale = "square";
 			hexagonals.refresh();
@@ -118,11 +119,11 @@
 			cmin.min(-100);
 			cmin.max(3000);
 			cmin.step(100);
-			guiOptions.clusterMin = 0;
+			guiOptions.clusterMinValue = 0;
 			cmax.min(-100);
 			cmax.max(3000);
 			cmax.step(100);
-			guiOptions.clusterMax = 2000;
+			guiOptions.clusterMaxValue = 2000;
 
 			guiOptions.clusterMode = "max";
 			guiOptions.clusterScale = "square";
@@ -135,8 +136,8 @@
 			hexagonals.options.clusterColors = ["#404244","#808284","#c0c2c4","#d00204"];
 			hexagonals.options.clusterProperty = "pop";
 			hexagonals.options.clusterDefaultValue = 0;
-			hexagonals.options.clusterMin = 0;
-			hexagonals.options.clusterMax = 5000000;
+			hexagonals.options.clusterMinValue = 0;
+			hexagonals.options.clusterMaxValue = 5000000;
 			hexagonals.options.clusterMode = "sum";
 			hexagonals.options.clusterScale = "log";
 			hexagonals.refresh();
@@ -146,11 +147,11 @@
 			cmin.min(0);
 			cmin.max(10000000);
 			cmin.step(100000);			
-			guiOptions.clusterMin = 0;
+			guiOptions.clusterMinValue = 0;
 			cmax.min(0);
 			cmax.max(10000000);
 			cmax.step(100000);
-			guiOptions.clusterMax = 5000000;
+			guiOptions.clusterMaxValue = 5000000;
 
 			guiOptions.clusterMode = "sum";
 			guiOptions.clusterScale = "log";
@@ -176,11 +177,11 @@
 			cmin.min(0);
 			cmin.max(50);
 			cmin.step(1);			
-			guiOptions.clusterMin = 0;
+			guiOptions.clusterMinValue = 0;
 			cmax.min(0);
 			cmax.max(50);
 			cmax.step(1);
-			guiOptions.clusterMax = 45;
+			guiOptions.clusterMaxValue = 45;
 
 			guiOptions.clusterMode = "min";
 			guiOptions.clusterScale = "linear";
@@ -209,12 +210,12 @@
 			hexagonals.options.clusterMode = value;
 			hexagonals.refresh();
 		}).listen();
-		var cmin = options.add(guiOptions, 'clusterMin', 0,10000,1000).onChange(value => {
-			hexagonals.options.clusterMin = value;
+		var cmin = options.add(guiOptions, 'clusterMinValue', 0,10000,1000).onChange(value => {
+			hexagonals.options.clusterMinValue = value;
 			hexagonals.refresh();
 		}).listen();
-		var cmax = options.add(guiOptions, 'clusterMax', 0,1000000,100 ).onChange(value => {
-			hexagonals.options.clusterMax = value;
+		var cmax = options.add(guiOptions, 'clusterMaxValue', 0,1000000,100 ).onChange(value => {
+			hexagonals.options.clusterMaxValue = value;
 			hexagonals.refresh();
 		}).listen();
 		var cscale = options.add(guiOptions, 'clusterScale', [ 'linear','square','log' ] ).onChange(value => {

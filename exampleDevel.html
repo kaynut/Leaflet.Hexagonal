@@ -76,17 +76,88 @@
 
 
 		// adding data to layer
-		layer.addLine([ [x0,y1], [x1,y1], [x2,y2], [x3,y2], [x4,y2], [x5,y2], [x6,y3], [x7,y3] ], { group:"A", alpha:1, beta:9, fill:"#f20" });
+		layer.addLine([ [x0,y1], [x1,y1], [x2,y2], [x3,y2], [x4,y2], [x5,y2], [x6,y3], [x7,y3] ], { group:"A", alpha:1, beta:9, fill:"#f20", info:"a" });
 		layer.addLine([ [x0,y2], [x1,y2], [x2,y2], [x3,y2], [x4,y2], [x5,y2], [x6,y2], [x7,y2] ], { group:"B", alpha:2, beta:8, fill:"#f80" });
 		layer.addLine([ [x0,y3], [x1,y2], [x2,y2], [x3,y2], [x4,y2], [x5,y2], [x6,y2], [x7,y1] ], { group:"C", alpha:3, beta:7, fill:"#ff0" });
 		layer.addLine([ [x0,y4], [x1,y4], [x2,y3], [x3,y2], [x4,y2], [x5,y1], [x6,y0], [x7,y0] ], { group:"D", alpha:4, beta:6, fill:"#8f0" });
 		layer.addLine([ [x2,y0], [x2,y1], [x3,y2], [x4,y3], [x4,y4] ], { group:"E", fill:"#28f" });
 		layer.addLine([ [x3,y0], [x3,y1], [x4,y2], [x5,y3], [x5,y4] ], { group:"F", fill:"#82f" });
 
-		layer.addPoint( [x8,y0], { group:"G", fill:"#22f", link:false });
-		layer.addPoint( [x9,y0], { group:"G", fill:"#22f", link:0 });
-		layer.addPoint( [x9,y1], { group:"G", fill:"#22f", link:[1] });
-		layer.addPoint( [x10,y1], { group:"G", fill:"#22f", link:[1,2] });
+		layer.addPoint( [x8,y0], { group:"G", fill:"#22f", link:[1,2,3] });
+		layer.addPoint( [x9,y0], { group:"G", fill:"#22f", link:false });
+		layer.addPoint( [x9,y1], { group:"G", fill:"#22f", link:false });
+		layer.addPoint( [x10,y1], { group:"G", fill:"#22f", link:false });
+
+
+		// adding geojson
+		var f0 = {
+            "type": "Feature",
+            "geometry": { "type": "Point", "coordinates": [x0, 53 ] },
+            "properties": {
+                "id": "fH0",
+                "group": "fH",
+				"d0": 0,
+				"d1": true,
+				"d2": 2,
+				"da": "a"
+            }
+        };
+		layer.addGeojson(f0, { group:"H", fill:"#f2f", link:false } );
+
+
+		var fc = {
+			"type": "FeatureCollection",
+			"features": [
+				{
+					"type": "Feature",
+					"geometry": { "type": "Point", "coordinates": [x0, 54 ] },
+					"properties": {
+						"id": "fI0",
+						"gruppe": "fI",
+						"d0": 0,
+						"d1": true,
+						"d2": 2,
+						"da": "a"
+					}
+				},
+				{
+					"type": "Feature",
+					"geometry": { "type": "Point", "coordinates": [x1, 54 ] },
+					"properties": {
+						"id": "fI1",
+						"gruppe": "fI",
+						"d0": 0,
+						"d1": true,
+						"d2": 2,
+						"da": "a"
+					}
+				},
+				{
+					"type": "Feature",
+					"geometry": { "type": "Point", "coordinates": [x2, 54 ] },
+					"properties": {
+						"id": "fI2",
+						"gruppe": "fI",
+						"d0": 0,
+						"d1": true,
+						"d2": 2,
+						"da": "a"
+					}
+				}
+			],
+			properties: {
+				"id": "fcIall",
+				"group": "fcI",
+				"d0": 0,
+				"d1": true,
+				"d2": 2,
+				"da": "a"	
+			}
+        };	
+	layer.addGeojson(fc, {  group: "II", fill:"#f28", link:true /*, groupProperty:"gruppe"*/ } );	
+
+		console.log(layer.dots);
+
 
 		// gui
 		var GUI = lil.GUI;
