@@ -154,9 +154,9 @@
 				"da": "a"	
 			}
         };	
-	layer.addGeojson(fc, {  group: "II", fill:"#f28", link:true /*, groupProperty:"gruppe"*/ } );	
+		layer.addGeojson(fc, {  group: "II", fill:"#f28", link:true /*, groupProperty:"gruppe"*/ } );	
 
-		console.log(layer.dots);
+		console.log(layer);
 
 
 		// gui
@@ -186,12 +186,33 @@
 			clusterMinValue: 0,
 			clusterMaxValue: 10,
 			clusterScale: 'log',
-			devel: function() {
+			devel_log: function() {
 				console.log("-----");
 				console.log(layer.points);
 				console.log(layer.dots);
 				console.log(layer.groupOrder);
+			},
+			setGroupOrder_reverse: function() {
+				layer.setGroupOrder("reverse");
+				console.log(layer.groupOrder);
+			},
+			setGroupOrder_toTop_D: function() {
+				layer.setGroupOrder("toTop", "D");
+				console.log(layer.groupOrder);
+			},
+			setGroupOrder_toBottom_D: function() {
+				layer.setGroupOrder("toBottom", "D");
+				console.log(layer.groupOrder);
+			},
+			setGroupOrder_scrollUp: function() {
+				layer.setGroupOrder("scrollUp");
+				console.log(layer.groupOrder);
+			},
+			setGroupOrder_scrollDown: function() {
+				layer.setGroupOrder("scrollDown");
+				console.log(layer.groupOrder);
 			}
+
 		};
 		var guiClustering = gui.addFolder( 'Clustering' );
 		guiClustering.add( guiOptions, 'clusterMode', [ false, 'count', 'sum', 'avg', 'min', 'max', 'first',' last' ] ).onChange( value => {
@@ -218,7 +239,15 @@
 			layer.options.clusterMode = value;
 			layer.refresh(); 
 		});
-		guiClustering.add( guiOptions, 'devel' );
+
+		var guiDevel = gui.addFolder( 'Devel' );
+		guiDevel.add( guiOptions, 'devel_log' );
+		guiDevel.add( guiOptions, 'setGroupOrder_reverse' );
+		guiDevel.add( guiOptions, 'setGroupOrder_scrollUp' );
+		guiDevel.add( guiOptions, 'setGroupOrder_scrollDown' );
+		guiDevel.add( guiOptions, 'setGroupOrder_toTop_D' );
+		guiDevel.add( guiOptions, 'setGroupOrder_toBottom_D' );
+
 	</script>
 
 </body>
