@@ -60,14 +60,13 @@
 		}
 
 
-		hexagonals.addIconSvg("person","./assets/person.svg");
+		hexagonals.cacheIcon("token",'./assets/token.svg', 1);
 
 		addPoints(10000, true);
 
 		function addPoints(count) {
 
-			hexagonals.clearPoints();
-			hexagonals.clearMarkers();
+			hexagonals.removeAll();
 
 			var r = Math.floor(Math.random() * 200) + 50;
 			var g = Math.floor(Math.random() * 200) + 50;
@@ -82,10 +81,10 @@
 				var lng = center.lng + Math.cos(i * incr) * i / 1000;
 
 				if (i % 100 == 0) {
-					hexagonals.addMarker({ lat: lat, lng: lng }, { id: "i", marker: { icon: "person", fill: "#ca0" } });
+					hexagonals.addMarker({ lat: lat, lng: lng }, { group:"P", link:true,  icon: "token", fill: randomColor  });
 				}
 				else {
-					hexagonals.addPoint({ lat: lat, lng: lng }, { id: "p", fill: randomColor });
+					hexagonals.addPoint({ lat: lat, lng: lng }, { group:"P", link:true,  fill: randomColor });
 				}
 
 			}

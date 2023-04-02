@@ -64,10 +64,10 @@
 			// whether the hexagons are flat or pointy on the upper part
 			hexagonOrientation: "flatTop",		
 
-			// fillColor: "color" || false
-			fillColor: "#fd1",
-			// strokeColor: "color" || false
-			strokeColor: "#303234", 	
+			// fillDefault: "color" || false
+			fillDefault: "#fd1",
+			// strokeDefault: "color" || false
+			strokeDefault: "#303234", 	
 			// borderWidth: pixels
 			borderWidth: 1,
 			//dataProperties: "meta.propertyName" 
@@ -174,7 +174,7 @@
 		groupOrder:[],
 		groupVisibility:{},
 		groupInfo: {},
-		groupColor: {},
+		groupFill: {},
 
 		info: false,
 		infoLayer: false,
@@ -184,13 +184,14 @@
 
 		gutter: false,
 
-		images: { 
-			fallback: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9TRS0VBzuIOGSoTlZERRy1CkWoEGqFVh1MLv2CJg1Jiouj4Fpw8GOx6uDirKuDqyAIfoC4ujgpukiJ/0sKLWI8OO7Hu3uPu3eAUC8zzeoYBzTdNlOJuJjJropdrwiiByGMQZSZZcxJUhK+4+seAb7exXiW/7k/R6+asxgQEIlnmWHaxBvE05u2wXmfOMKKskp8Tjxq0gWJH7muePzGueCywDMjZjo1TxwhFgttrLQxK5oa8RRxVNV0yhcyHquctzhr5Spr3pO/MJzTV5a5TnMICSxiCRJEKKiihDJsxGjVSbGQov24j3/Q9UvkUshVAiPHAirQILt+8D/43a2Vn5zwksJxoPPFcT6Gga5doFFznO9jx2mcAMFn4Epv+St1YOaT9FpLix4BfdvAxXVLU/aAyx1g4MmQTdmVgjSFfB54P6NvygL9t0BozeutuY/TByBNXSVvgINDYKRA2es+7+5u7+3fM83+fgBrWnKkrQ9hpQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAJhJREFUaN7t1rENhDAQRNHRVbCluP8EdwAd+RIHDg68BJzG4r+IwEgzgJaVAAAAAODliqRNUiTORj9bnApUSU3SPikR/Uzr99gIScekxBj+SL4tmxL24a9KLBP+rMRS4X+VeDT858ES7eR6iac/fjaz6WQdPpIj1jb8nf+EbfglStTktBlLWK0SpQfKLnPVbZkDAAAAgL/7Aqb3P9fcxRkbAAAAAElFTkSuQmCC"
-		},
 		icons: {
 			fallback: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>', size:{width:24, height:24}, scale:1 }
 		},
-		
+
+		view: {
+			zoom:false,
+			center:[]
+		},
 		// #endregion
 
 
@@ -242,12 +243,10 @@
 			this._onZoomVisible();
 			this.fire("layer-mounted");
 			this.markerLayer = L.layerGroup([]).addTo(this._map);
-			this.markerLayer.needsRefresh = true;
 			this.markerLayer.markerLayer = true;
 			this.infoLayer = L.layerGroup([]).addTo(this._map);
-			this.infoLayer.needsRefresh = true;
 			this.infoLayer.infoLayer = true;
-			this._update();
+			this._update("onAdd");
 		},
 		onRemove: function onRemove() {
 			this.fire("layer-beforedestroy"); 
@@ -264,7 +263,14 @@
 			this._updateTransform(this._map.getCenter(), this._map.getZoom());
 		},
 		_onLayerMoveEnd: function _onLayerMoveEnd() {
-			this._isZoomVisible() ? this._update() : this._zoomHide();
+			var zoom = this._map.getZoom();
+			var force = false;
+			if(zoom!==this.view.zoom) { 
+				console.log(zoom, this.view.zoom);
+				this.view.zoom = zoom;
+				force = "onZoom";
+			}
+			this._isZoomVisible() ? this._update(force) : this._zoomHide();
 		},
 		_onLayerZoomEnd: function _onLayerZoomEnd() {
 			this.onZoomEnd();
@@ -302,12 +308,12 @@
 			var h = s.multiplyBy(-o).add(n).add(s).subtract(r);
 			e.Browser.any3d ? e.DomUtil.setTransform(this._container, h, o) : e.DomUtil.setPosition(this._container, h);
 		},
-		_update: function _update() {
+		_update: function _update(force) {
 			if (!this._map._animatingZoom || !this._bounds) {
 				this.__update();
 				var t = this._bounds;
 				var i = this._container;
-				this._onDraw();
+				this._onDraw(force);
 				e.DomUtil.setPosition(i, t.min), this.fire("layer-render");
 			}
 		},
@@ -321,7 +327,7 @@
 			this._zoom = this._map.getZoom();
 		},
 		_reset: function _reset() {
-			this._update();
+			this._update(false);
 			this._updateTransform(this._center, this._zoom);
 		},
 		getContainer: function getContainer() {
@@ -331,7 +337,7 @@
 			var e = this.getContainer(), i = e.parentNode;
 			if (delete this._container, this.options.container = t, this._container || this._initContainer(),this.setOpacity(this.options.opacity), window.isNaN(this.options.zIndex)) { this.setZIndex(100); } 
 			else { this.setZIndex(this.options.zIndex); }
-			return i ? i.replaceChild(t, e) : this.getPane().appendChild(t), this._update(), this;
+			return i ? i.replaceChild(t, e) : this.getPane().appendChild(t), this._update(false), this;
 		},
 		getOpacity: function getOpacity() {
 			return this.options.opacity;
@@ -350,7 +356,7 @@
 				if (this.options.visible = !0, this._isZoomVisible()) {
 					return this._map.on(this.getEvents(), this),
 					this.getContainer().style.display = "", 
-					this._update(), 
+					this._update("onShow"), 
 					this; 
 				}
 				this._zoomHide();
@@ -446,7 +452,7 @@
 				style: {
 					fill: meta.fill || false,
 					stroke: meta.stroke || false,
-					lineWidth: meta.lineWidth || false,
+					borderWidth: meta.borderWidth || false,
 					linkWidth: meta.linkWidth || false,
 					image: meta.image || false,
 					icon: meta.icon || false,
@@ -637,94 +643,76 @@
 
 			// meta
 			meta = meta || {};
-
-			if(typeof meta.marker == "undefined") {
-				meta.marker = true;
-			}
-
-			if(typeof meta.pointless == "undefined") {
-				meta.pointless = true;
-			}
-
+			if(typeof meta.marker == "undefined") {	meta.marker = true; }
+			if(typeof meta.pointless == "undefined") { meta.pointless = true; }
 			meta.scale = meta.scale || 1;
 
-			if(meta.marker) {
-				// image
-				if(meta.image) {
+			// no marker
+			if(!meta.marker) {
+				return 0;
+			}
+
+			// meta.image
+			if(meta.image) {
+				this.addPoint(latlng, meta);
+				return 1;
+			}
+
+			// meta.icon
+			if(meta.icon) {
+
+				// meta.icon pointing to cache directly
+				if(this.icons[meta.icon]) {
 					this.addPoint(latlng, meta);
 					return 1;
 				}
-				// icon
-				if(meta.icon) {
-					// pointing to cache directly
-					if(this.icons[meta.icon]) {
-						this.addPoint(latlng, meta);
-						return 1;
-					}
 
-					// pointing to cache via hash
-					var hash = this._genHash(meta.icon); 
-					if(this.icons[hash]) {
-						meta.icon = hash;
-						this.addPoint(latlng, meta);
-						return 1;						
-					}
-					// new icon
-					var ref = this;
-					this.icons[hash] = { svg: this.icons.fallback.svg, size: { width: this.icons.fallback.size.width, height: this.icons.fallback.size.height}, scale:1 };
-					this.cacheIcon(hash, meta.icon, meta.scale).then(function(res) {
-						if(!res) { 
-							meta.icon = "fallback"; 
-						}
-						else { 
-							meta.icon = res; 
-						}
-						ref.addPoint(latlng, meta);
-						return 1;
-					});
+				// meta.icon pointing to cache via hash
+				var hash = this._genHash(meta.icon); 
+				if(this.icons[hash]) {
+					meta.icon = hash;
+					this.addPoint(latlng, meta);
+					return 1;						
 				}
 
-				else {
-					console.warn("Leaflet.hexagonal.addMarker: a marker has to have a image- or an icon-property");
-				}
-	
+				// meta.icon pointing to new icon
+				var ref = this;
+				this.icons[hash] = { svg: this.icons.fallback.svg, size: { width: this.icons.fallback.size.width, height: this.icons.fallback.size.height}, scale:1 };
+				this.cacheIcon(hash, meta.icon, meta.scale).then(function(res) {
+					if(!res) { 
+						meta.icon = "fallback"; 
+					}
+					else { 
+						meta.icon = res; 
+					}
+					ref.addPoint(latlng, meta);
+					return 1;
+				});
 			}
 
+			// meta.fallback
+			meta.icon = "fallback";
+			this.addPoint(latlng, meta);
+			return 1;
+	
 		},
 		// addIcon
 		addIcon: async function addIcon(latlng, meta) {
-			if(typeof latlng != "object") {
-				console.warn("Leaflet.hexagonal.addIcon: latlng not valid", latlng);
-				return 0;
-			}
-
-			// meta
 			meta = meta || {};
-
-			if(!meta.icon) {
-				meta.icon = "fallback";
+			meta.marker = true;
+			if(!meta.icon) { 
+				meta.icon = "fallback"; 
 			}
-
 			return this.addMarker(latlng, meta);
-
 		},
 		// addImage
 		addImage: async function addImage(latlng, meta) {
-			if(typeof latlng != "object") {
-				console.warn("Leaflet.hexagonal.addImage: latlng not valid", latlng);
-				return 0;
-			}
-
-			// meta
 			meta = meta || {};
-
+			meta.marker = true;
 			if(!meta.image) {
-				meta.image = this.images.fallback;
-				meta.scale = 0.5;
+				meta.icon = "fallback";
 			}
-
 			return this.addMarker(latlng, meta);
-
 		},
 
 		// #endregion
@@ -754,9 +742,6 @@
 
 			}
 
-			// markerLayer
-			this.markerLayer.needsRefresh=true;
-
 			this.refresh();
 
 			return c;
@@ -776,8 +761,6 @@
 				delete this.markers[group];
 			}
 
-			// markerLayer
-			this.markerLayer.needsRefresh=true;
 
 			this.refresh();
 
@@ -790,7 +773,7 @@
 
 		// #######################################################
 		// #region hexagonal
-		hexagonalize: function hexagonalize() { 
+		hexagonalize: function hexagonalize(force) { 
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
 			var size = this._bounds.getSize();
@@ -820,9 +803,10 @@
 
 			// hexagonOffset, hexagonOverhang
 			var nw = this._map.getBounds().getNorthWest();
+			var se = this._map.getBounds().getSouthEast();
 			var hexagonOffset = this._map.project(nw, zoom);
 			hexagonOffset= {x:Math.round(hexagonOffset.x), y: Math.round(hexagonOffset.y) };
-			var hexagonOverhang = (1 + (this.options.linkReach / this.calcHexagonDiameter())) * hexagonSize;
+			var hexagonOverhang = hexagonSize; // todo: ok? //(1 + (this.options.linkReach / this.calcHexagonDiameter())) * hexagonSize;
 
 
 			// hexagonBounds
@@ -837,6 +821,9 @@
 			var tMin = Number.MAX_SAFE_INTEGER;
 			var tMax = Number.MIN_SAFE_INTEGER;
 			
+
+			// todo: force: only recalc all the points, if force
+			// 	otherwise just calc the offset from the first point and shift all others
 
 
 			// cluster points
@@ -857,7 +844,7 @@
 					var p = this.getPixels_from_latlng(point.latlng, w, h, hexagonOverhang);
 					point.visible = p.visible;
 
-					if(p.visible) {
+					//if(p.visible) {
 
 						// hexagon-cell
 						var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, zoom);
@@ -889,6 +876,9 @@
 							this.hexagonals[h.cell].style = { fill:false };
 
 							this.hexagonals[h.cell].pointless = false;
+
+							this.hexagonals[h.cell].visible = p.visible;
+
 						}
 
 						// first point in hex
@@ -919,7 +909,7 @@
 
 						// countMax
 						populationCellMax = Math.max(this.hexagonals[h.cell].cluster.population, populationCellMax);  
-					}
+					//}
 
 					// totals
 					tSum += d;
@@ -948,7 +938,7 @@
 						var m = this.getPixels_from_latlng(marker.latlng, w, h, hexagonOverhang);
 						marker.visible = m.visible;
 
-						if(m.visible) {
+						//if(m.visible) {
 
 							// hexagon-cell
 							var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset, zoom);
@@ -975,6 +965,9 @@
 								this.hexagonals[h.cell].style = { fill:false };
 								
 								this.hexagonals[h.cell].pointless = false;
+
+								this.hexagonals[h.cell].visible = m.visible;
+
 							}
 
 							// new marker in hex
@@ -986,12 +979,13 @@
 								this.hexagonals[h.cell].groups[group] = 1;
 							}
 
-						}
+						//}
 					}
 				}
 			}
 
 			// collect links
+			var develSameCell = 0;
 			this.links = [];
 			if(this.options.linkVisible) { // && this.options.linkMode) {
 				for(var go=0; go<this.groupOrder.length; go++) {
@@ -1010,6 +1004,7 @@
 					for(var i=0; i<pl; i++) {
 						var p1 = this.points[group][i];
 						var i1 = i;
+						var c1 = p1.cell.cell;
 
 						// loop point-links
 						var ll = p1.link.length; 
@@ -1018,7 +1013,14 @@
 							if(p1.link[j]<pl) { // if index is within bounds
 								var p0 = this.points[group][p1.link[j]];
 								var i0 = p1.link[j];
-								if(p0.visible || p1.visible) {
+								var c0 = p0.cell.cell;
+
+								if(c0==c1) { develSameCell++; continue; }
+								
+								// todo:check viewport-collision, instead of p0.visible || p1.visible
+								var visible = p0.visible || p1.visible || this.checkLinkVisible(p0.latlng, p1.latlng, nw, se);
+
+								if(visible) {
 									var path = this.getLinkPath(group,i0,i1,hexagonSize, hexagonOffset, zoom);
 									if(path) {
 										var style = p1.style || p0.style || false;
@@ -1031,6 +1033,9 @@
 					}
 				}
 			}
+
+
+			console.log("develSameCell", develSameCell, this.links.length);
 
 			// gutter
 			if(this.options.gutterFill || this.options.gutterStroke) {	
@@ -1047,6 +1052,8 @@
 			this.totals.min = tMin;
 			this.totals.max = tMax;
 			this.totals.delta = tMax-tMin;
+
+			console.log("cells", this.totals.cells)
 
 		},
 		calcHexagonSize: function calcHexagonSize(zoom) {
@@ -1178,6 +1185,29 @@
 			return cells;
 
 		},
+		checkLinkVisible: function checkLinkVisible(p0,p1,nw,se) {
+			var t = 0;
+			if ((p0.lng >= nw.lng && p0.lng <= se.lng && p0.lat >= nw.lat && p0.lat <= se.lat) || (p1.lng >= nw.lng && p1.lng <= se.lng && p1.lat >= nw.lat && p1.lat <= se.lat)) {
+				return true;
+			}
+			if (p0.lng < nw.lng && p1.lng >= nw.lng) { 
+				t = p0.lat + (p1.lat - p0.lat) * (nw.lng - p0.lng) / (p1.lng - p0.lng);
+				if (t > nw.lat && t <= se.lat) { return true; }
+			}
+			else if (p0.lng > se.lng && p1.lng <= se.lng) { 
+				t = p0.lat + (p1.lat - p0.lat) * (se.lng - p0.lng) / (p1.lng - p0.lng);
+				if (t >= nw.lat && t <= se.lat) { return true; }
+			}
+			if (p0.lat < nw.lat && p1.lat >= nw.lat) { 
+				t = p0.lng + (p1.lng - p0.lng) * (nw.lat - p0.lat) / (p1.lat - p0.lat);
+				if (t >= nw.lng && t <= se.lng) { return true; }
+			} 
+			else if (p0.lat > se.lat && p1.lat <= se.lat) {  //  Bottom edge
+				t = p0.lng + (p1.lng - p0.lng) * (se.lat - p0.lat) / (p1.lat - p0.lat);
+				if (t >= nw.lng && t <= se.lng) { return true;}
+			}
+			return false;
+		},
 		getLinkPath: function getLinkPath(group, index0, index1, size, offset, zoom) {
 
 			var p0 = this.points[group][index0];
@@ -1211,7 +1241,7 @@
 				if(!hs[h.cell]) {
 					hs[h.cell] = h;
 
-					// add hexagonal - just for clickablility: todo: adapt for linkMode=curve 
+					// add hexagonal - just for clickablility: todo: adapt for linkMode=curve - maybe put them in this.hexalinks instead?
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
 
@@ -1349,19 +1379,20 @@
 			var self = this;
 			window.clearTimeout(self._refreshPoints_debounce);
 			self._refreshPoints_debounce = window.setTimeout(function () {
-				self.markerLayer.needsRefresh = true;
-				self._update();
+				self._update("onRefresh");
 			}, 50);
 		},
-		_onDraw: function _onDraw() {
-			var drawTime = performance.now();
-			this.hexagonalize();
+		_onDraw: function _onDraw(force) {
+			var startTime = performance.now();
+			this.view.zoom = this._zoom;
+			this.view.center = this._center;
+			this.hexagonalize(force);
+			this.totals.hexTime = performance.now() - startTime; 
 			this.updateClusterRamp();
-			this.totals.hexTime = performance.now() - drawTime; 
 			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options);
-			this.totals.drawTime = performance.now() - drawTime; 
+			this.totals.drawTime = performance.now() - startTime; 
 
-			//console.log("totals",this.totals.hexTime, this.totals.drawTime, this.totals);
+			console.log("hex: " + this.totals.hexTime, "draw: " + this.totals.drawTime);
 
 		},
 		onDraw: function onDraw(canvas, hexagonals, selection, links, options) {
@@ -1373,15 +1404,13 @@
 			if(selection.groups) { selectionGroups = selection.groups; }
 
 			// layers
-			if(this.markerLayer.needsRefresh) {
-				this.markerLayer.clearLayers();
-			}
+			this.markerLayer.clearLayers();
 
 			// style
 			var style = { 
-				fill: this.options.fillColor || "#f00", 
-				stroke: this.options.strokeColor || "#f00", 
-				lineWidth: this.options.borderWidth || 1,
+				fill: this.options.fillDefault, 
+				stroke: this.options.strokeDefault, 
+				borderWidth: this.options.borderWidth || 1,
 				linkWidth: this.options.linkWidth || 1
 			};
 
@@ -1425,7 +1454,7 @@
 
 
 					// style
-					style.fill = link?.style?.fill || this.groupColor[link.group] || this.options.fillColor;
+					style.fill = link?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
 
 					// if start/end-point is visibly clustered (?!)
 					if(this.options.clusterMode) {
@@ -1467,30 +1496,29 @@
 			if(hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
 
-					// draw hexagonals
-					if(options.hexagonVisible && hexagonals[hexs[h]].point) {
-
-						style.fill = hexagonals[hexs[h]].style.fill || this.options.fillColor;
-
-						//clusterMode = "population" || "sum" || "avg" || "min" || "max" || false
-						if(this.options.clusterMode) {
-							if(this.options.clusterMode=="population") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.population, 1, tPopulation);
-							}
-							else if(this.options.clusterMode=="sum") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
-							}
-							else if(this.options.clusterMode=="avg") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
-							}
-							else if(this.options.clusterMode=="min") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
-							}
-							else if(this.options.clusterMode=="max") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
-							}
+					// style hexagonals
+					style.fill = hexagonals[hexs[h]].style.fill || this.groupFill[hexagonals[hexs[h]].group] || this.options.fillDefault;
+					if(this.options.clusterMode) {
+						if(this.options.clusterMode=="population") {
+							style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.population, 1, tPopulation);
 						}
+						else if(this.options.clusterMode=="sum") {
+							style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
+						}
+						else if(this.options.clusterMode=="avg") {
+							style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
+						}
+						else if(this.options.clusterMode=="min") {
+							style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
+						}
+						else if(this.options.clusterMode=="max") {
+							style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
+						}
+					}
 
+
+					// draw hexagonals
+					if(options.hexagonVisible && hexagonals[hexs[h]].point) {	
 						if(hexagonals[hexs[h]].pointless==false) {
 							this.drawHexagon(ctx, hexagonals[hexs[h]], style);
 						}
@@ -1503,21 +1531,15 @@
 								}
 							}
 						}
-
 					}
 
 
 					// draw marker
-					if(this.markerLayer.needsRefresh) {
-						if(options.markerVisible) {
-							this.drawMarker(hexagonals[hexs[h]]);
-						}
+					if(options.markerVisible) {
+						this.drawMarker(hexagonals[hexs[h]], style);
 					}
 				}
-
 			}
-
-			this.markerLayer.needsRefresh = false;
 
 			this.afterDraw();
 
@@ -1526,6 +1548,7 @@
 
 		},
 		drawHexagon: function drawHexagon(ctx, hexagon, style) {
+			if(!hexagon.visible) { return; }
 			var hPath = new Path2D(hexagon.path);
 			if(style.fill) {
 				ctx.fillStyle = style.fill;
@@ -1533,11 +1556,11 @@
 			}
 			if(style.stroke) {
 				ctx.strokeStyle = style.stroke;
-				ctx.lineWidth = style.lineWidth;
+				ctx.lineWidth = style.borderWidth;
 				ctx.stroke(hPath);
 			}
 		},
-		drawMarker: function drawMarker(hexagon) {
+		drawMarker: function drawMarker(hexagon, styleHexagon={}) {
 			var mi = hexagon.marker;
 			if(!mi) { return; }
 
@@ -1548,9 +1571,8 @@
 
 
 			// style
-			var size = style.size || hexagon.size;
-			var fill = style.fill || this.options.fillColor || "#ff0000";
-
+			var size = style.size || hexagon.size; 
+			var fill = style.fill || styleHexagon.fill || this.options.fillDefault;
 
 			// calc path
 			var w,h;
@@ -1567,7 +1589,40 @@
 				poly = `0 ${size*0.289},${size*0.5} 0,${size*1} ${size*0.289},${size*1} ${size*0.866},${size*0.5} ${size*1.155},0 ${size*0.866}`;
 			}
 
+
+			// drawIcon
+			if(typeof style.icon == "string" && this.icons[style.icon]) {
+				var micon = this.icons[style.icon]; 
+				var mw = micon.size.width || 1;
+				var mh = micon.size.height || 1;
+				var s = micon.scale;
+				var ms = (w*s)/(mw*2);
+				var ox = (w - mw*ms) / 2; 
+				var oy = (h - mh*ms) / 2;
+
+				var svg = `<g transform="matrix(${ms},0,0,${ms},${ox},${oy})" opacity="0.75">${micon.svg}</g>`;
+
+				var icon = L.divIcon({
+					className: 'leaflet-hexagonal-marker',
+					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
+						<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
+						<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${this.options.borderWidth}" /></mask>
+						<use href="#hexa${m0.id}" fill="${fill}" stroke="${this.options.strokeDefault}" stroke-width="${this.options.borderWidth}" shape-rendering="geometricPrecision" />
+						${svg}
+						</svg>`,
+					className: "",
+					iconSize: [w,h],
+					iconAnchor: [w/2,h/2],
+				}); 
+				var lm = L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer);
+				L.DomEvent.on(lm, 'click', function(e) { 
+					L.DomEvent.stopPropagation;
+					ref._onClick(e);
+				});
+				return; 
+			}	
 			
+
 			// image
 			if(typeof style.image == "string") {
 
@@ -1579,7 +1634,7 @@
 						html: `<svg width="${w}" height="${h}" opacity="${ref.options.markerOpacity}" >
 							<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
 							<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${ref.options.borderWidth+1}" /></mask>
-							<use href="#hexa${m0.id}" fill="${ref.options.strokeColor}" shape-rendering="geometricPrecision" />
+							<use href="#hexa${m0.id}" fill="${ref.options.strokeDefault}" shape-rendering="geometricPrecision" />
 							<image preserveAspectRatio="xMidYMid slice" href="${style.image}" mask="url(#mask${m0.id})" width="${w}" height="${h}" ></image>
 							</svg>`,
 						className: "",
@@ -1598,96 +1653,18 @@
 					console.warn("Leaflet.hexagonal.drawMarker: image-url invalid", style.image);
 
 					// fallback
-					ref.drawMarkerFallback(hexagon, size);
+					style.icon = "fallback";
+					ref.drawMarker(hexagon,styleHexagon);
 					
 				};
 				ii.src = style.image;
 				return;
 			}
 
-			// icon
-			if(typeof style.icon == "string" && this.icons[style.icon]) {
 
-				var micon = this.icons[style.icon]; 
-				var mw = micon.size.width || 1;
-				var mh = micon.size.height || 1;
-				var s = micon.scale;
-				var ms = (w*s)/(mw*2);
-				var ox = (w - mw*ms) / 2; 
-				var oy = (h - mh*ms) / 2;
-
-				var svg = `<g transform="matrix(${ms},0,0,${ms},${ox},${oy})" opacity="0.75">${micon.svg}</g>`;
-
-				var icon = L.divIcon({
-					className: 'leaflet-hexagonal-marker',
-					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
-						<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
-						<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${this.options.borderWidth}" /></mask>
-						<use href="#hexa${m0.id}" fill="${fill}" stroke="${this.options.strokeColor}" stroke-width="${this.options.borderWidth}" shape-rendering="geometricPrecision" />
-						${svg}
-						</svg>`,
-					className: "",
-					iconSize: [w,h],
-					iconAnchor: [w/2,h/2],
-				}); 
-				var lm = L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer);
-				L.DomEvent.on(lm, 'click', function(e) { 
-					L.DomEvent.stopPropagation;
-					ref._onClick(e);
-				});
-				return; 
-			}	
 
 			console.warn("Leaflet.hexagonal.drawMarker: parameters invalid");
 
-		},
-		drawMarkerFallback: function drawMarkerFallback(hexagon, size) {
-			var mi = hexagon.marker;
-			if(!mi) { return; }
-			
-			var marker = this.markers[mi[0]][mi[1]];
-			var ref = this;
-
-			// calc path
-			var w,h;
-			var poly = false;
-			if(!hexagon.pointyTop) {
-				w = size*1.155;
-				h = size;
-				poly = `0 ${size*0.5},${size*0.289} 0,${size*0.866} 0,${size*1.155} ${size*0.5},${size*0.866} ${size},${size*0.289} ${size}`;
-			}
-
-			else {
-				w = size;
-				h = size*1.155;
-				poly = `0 ${size*0.289},${size*0.5} 0,${size*1} ${size*0.289},${size*1} ${size*0.866},${size*0.5} ${size*1.155},0 ${size*0.866}`;
-			}
-
-			var micon = this.icons["fallback"];
-			var mw = micon.size.width || 1;
-			var mh = micon.size.height || 1;
-			var s = micon.scale;
-			var ms = (w*s)/(mw*2);
-			var ox = (w - mw*ms) / 2; 
-			var oy = (h - mh*ms) / 2;
-			var svg = `<g transform="matrix(${ms},0,0,${ms},${ox},${oy})" opacity="0.75">${micon.svg}</g>`;
-			var icon = L.divIcon({
-				className: 'leaflet-hexagonal-marker',
-				html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
-					<symbol id="hexa${marker.id}"><polygon points="${poly}"></polygon></symbol>
-					<mask id="mask${marker.id}"><use href="#hexa${marker.id}" fill="#fff" stroke="#000" stroke-width="${this.options.borderWidth}" /></mask>
-					<use href="#hexa${marker.id}" fill="${this.options.fillColor}" stroke="${this.options.strokeColor}" stroke-width="${this.options.borderWidth}" shape-rendering="geometricPrecision" />
-					${svg}
-					</svg>`,
-				className: "",
-				iconSize: [w,h],
-				iconAnchor: [w/2,h/2],
-			}); 
-			var lm = L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer); 
-			L.DomEvent.on(lm, 'click', function(e) { 
-				L.DomEvent.stopPropagation;
-				ref._onClick(e);
-			});
 		},
 		drawHexagonSelected: function drawHexagonSelected(ctx, hexagon) {
 			var hPath = new Path2D(hexagon.path);
@@ -1704,10 +1681,10 @@
 		},
 		drawLink: function drawLink(ctx, link, style) {
 			var path = new Path2D(link.path);
-			if(this.options.strokeColor) {
+			if(this.options.strokeDefault) {
 				ctx.lineJoin = "round";
 				ctx.strokeStyle = style.stroke;
-				ctx.lineWidth = style.linkWidth + style.lineWidth*2;
+				ctx.lineWidth = style.linkWidth + style.borderWidth*2;
 				ctx.stroke(path);
 			}
 
@@ -1726,7 +1703,7 @@
 		},
 		drawLinkSelected: function drawLinkSelected(ctx, link) {
 			var path = new Path2D(link.path);
-			if(this.options.strokeColor && this.options.selectionStrokeColor) {
+			if(this.options.strokeDefault && this.options.selectionStrokeColor) {
 				ctx.lineJoin = "round";
 				ctx.strokeStyle = this.options.selectionStrokeColor;
 				ctx.lineWidth = this.options.linkWidth + this.options.borderWidth*2;
@@ -1891,8 +1868,6 @@
 		},
 		onZoomEnd: function onZoomEnd() {
 
-			this.markerLayer.needsRefresh = true;
-
 			if(this.selection) { 
 				this.setInfo(false);
 			}
@@ -1977,15 +1952,15 @@
 			}
 
 		},
-		setGroupColor: function setGroupColor(group, color = false) {
+		setGroupFill: function setGroupFill(group, color = false) {
 			if(typeof group != "string" && typeof group != "number") {
-				console.warn("Leaflet.hexagonal.setGroupColor: name of group invalid", group);
+				console.warn("Leaflet.hexagonal.setGroupFill: name of group invalid", group);
 				return;
 			}
 			if(typeof color !== "string") {
 				color = false;
 			}
-			this.groupColor[group] = color;
+			this.groupFill[group] = color;
 		},
 		setGroupInfo: function setGroupInfo(group, info) {
 			if(typeof group != "string" && typeof group != "number") {
@@ -2101,7 +2076,7 @@
 			var wh = this._map.getSize();
 			var zoom = this._map.getZoom();
 			var size = this.calcHexagonSize(zoom);
-			var overhang = (1 + (this.options.linkReach / this.calcHexagonDiameter()))*size;
+			var overhang = size; // todo: ok? //(1 + (this.options.linkReach / this.calcHexagonDiameter()))*size;
 			var nw = this._map.getBounds().getNorthWest();
 			var offset = this._map.project(nw, zoom);
 			offset = {x:Math.round(offset.x), y: Math.round(offset.y) };
@@ -2207,49 +2182,6 @@
 			});
 		},
 
-		getBbox_from_tile15: function getBbox_from_tile15(t15) {
-			t15 = t15 + "AAAAA";
-			var z = 15;
-			var z3 = Math.floor(z / 3);
-			// t64 > quad
-			var q = "";
-			var ks = "ABIJCDKLQRYZSTabEFMNGHOPUVcdWXefghopijqrwx45yz67klstmnuv018923-_";
-			var j, k;
-			for (var i = 0; i < z3; i++) {
-				j = ks.indexOf(t15[i]);
-				k = j.toString(4);
-				while (k.length < 3) { k = "0" + k; }
-				q += k;
-			}
-			// quad > tile
-			var tx = 0;
-			var ty = 0;
-			var b, m;
-			for (var i = 0; i < z; i++) {
-				b = z - i;
-				m = 1 << (b - 1);
-				if (q[z - b] === "1") { tx |= m; }
-				else if (q[z - b] === "2") { ty |= m; }
-				else if (q[z - b] === "3") { tx |= m; ty |= m; }
-			}
-			// tile > mxyz
-			var f = 360 / Math.pow(2, z);
-			var e = 0.0000000001;
-			var x0 = ((tx + e) * f) - 180;
-			var y0 = 180 - (ty + e) * f;
-			var x1 = ((tx + 1 + e) * f) - 180;
-			var y1 = 180 - (ty + 1 + e) * f;
-			// mxyz > latlng
-			var r = 360 / Math.PI;
-			return [x0, r * Math.atan(Math.exp((y1 * Math.PI) / 180)) - 90, x1, r * Math.atan(Math.exp((y0 * Math.PI) / 180)) - 90];
-		},
-		getPixels_from_bbox: function getPixels_from_bbox(bbox, w, h) {
-			var p0 = this._map.latLngToContainerPoint([bbox[1], bbox[0]]);
-			var p1 = this._map.latLngToContainerPoint([bbox[3], bbox[2]]);
-			var visible = true;
-			if (p1.x < 0 || p1.y < 0 || p0.x > w || p0.y > h) { visible = false; }
-			return { x0: p0.x, y0: p1.y, x1: p1.x, y1: p0.y, visible: visible };
-		},
 		getPixels_from_latlng: function getPixels_from_latlng(latlng, w, h, overhang=50) {
 			var p = this._map.latLngToContainerPoint([latlng.lat, latlng.lng]);
 			if (p.x < -overhang || p.y < -overhang || p.x > w+overhang || p.y > h+overhang) { return { x: p.x, y: p.y, visible: false }; }

@@ -56,21 +56,34 @@
 		// hexagonals
 		var hexagonals = new L.Hexagonal({hexagonSize:32}).addTo(map);
 
+      
+      // group "undefined"
       // add single point
       hexagonals.addPoint({ lat: 45.089036, lng: 2.702637 });
 
+
+      // group B
+      hexagonals.setGroupFill("B","#f00");
       // add single point with style to group B
       hexagonals.addPoint({ lat: 45.089036, lng: 5.119629 }, { group:"B", fill:"#f00", info:"Group B" });
-
       // add another single point with style to group B
       hexagonals.addPoint({ lat: 46.073231, lng: 5.119629 }, { group:"B", fill:"#f00", line:"#ff0" });
 
+
+      // group C
+      hexagonals.setGroupFill("C","#8d0");      
       // add three points with style to group C
       hexagonals.addPoints([[7.536621,45.089036],[7.536621,46.073231],[7.536621,47.040182]], { group:"C", fill:"#8d0" } );
 
+
+      // group D
+      hexagonals.setGroupFill("D","#ff0");      
       // add line (four linked points) with style
       hexagonals.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922] ], { group:"D", fill:"#ff0" });
 
+
+      // group E
+      hexagonals.setGroupFill("E","#d80");      
       // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
       var gj = {
          "type": "FeatureCollection",
@@ -117,28 +130,33 @@
             }
          ]
       }
-      hexagonals.addGeojson(gj, {group:"E", fill:"#d22"});
+      hexagonals.addGeojson(gj, {group:"E" });
+  
 
+      // group F
+      hexagonals.setGroupFill("F","#8d0");
+      hexagonals.addPoint({ lat: 47.089036, lng: 14.787597 }, {group:"F" });
+      hexagonals.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true });
       // add a image-marker 
-      hexagonals.addImage({ lat: 45.089036, lng: 14.787597 }, {group:"F" });
-
-      // add another icon-marker 
-      hexagonals.addIcon({ lat: 45.089036, lng: 17.204589 }, {group:"G" });
-
+      hexagonals.addImage({ lat: 45.089036, lng: 14.787597 }, {group:"F",image:"unknown.jpg", size:48 });
       // add a image-marker with a size
       hexagonals.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", image:"./assets/image0.jpg", size:48 });
 
+
+      // groupG
+      hexagonals.setGroupFill("G","#ff0");
+      // add another icon-marker 
+      hexagonals.addIcon({ lat: 45.089036, lng: 17.204589 }, {group:"G" });
       // add an icon-marker 
       hexagonals.cacheIcon("token",'./assets/token.svg', 1);
-      hexagonals.addMarker({ lat: 47.040182, lng: 17.204589 }, {group:"G", icon:"token", fill:"#999" });
-
+      hexagonals.addMarker({ lat: 47.040182, lng: 17.204589 }, {group:"G", icon:"token", fill:"#fff" });
       // add another icon-marker 
-      hexagonals.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token", fill:"#bbb", size:48 });
+      hexagonals.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token", size:48 });
 
 
 
-
-
+console.log(hexagonals.points);
+console.log(hexagonals.markers);
 
 		// gui
 	   var gui = new lil.GUI();
