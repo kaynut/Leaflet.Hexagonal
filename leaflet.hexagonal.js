@@ -3,6 +3,7 @@
 // clusterMode: clusterIndicator (if single or clustered)
 // update marker-clickablility
 // Visibility _> to MinMaxZoom
+// adapt selection etc
 
 
 
@@ -109,8 +110,6 @@
 			linkFill: true,			
 			// linkMode: "spline" || "line" || "aligned" || "hexagonal" || false
 			linkMode: "spline",
-			// linkReach: meters (longest distance to be linked. controls how large of an area will be evaluated - for performance issues)
-			linkReach: 50000,
 			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
 			linkJoin: 1,  
 
@@ -266,7 +265,6 @@
 			var zoom = this._map.getZoom();
 			var force = false;
 			if(zoom!==this.view.zoom) { 
-				console.log(zoom, this.view.zoom);
 				this.view.zoom = zoom;
 				force = "onZoom";
 			}
@@ -414,6 +412,7 @@
 			
 			// latlng
 			latlng = this._valLatLng(latlng);
+			var mxy = this._getMxy(latlng);
 			
 			// meta
 			meta = meta || {};
@@ -436,6 +435,7 @@
 			// point 
 			var point = {
 				latlng: latlng,	
+				mxy: mxy,
 				cell: false,	
 				
 				id: id,
@@ -801,12 +801,17 @@
 			this.hexagonSize = hexagonSize;
 
 
-			// hexagonOffset, hexagonOverhang
-			var nw = this._map.getBounds().getNorthWest();
+			// hexagonOffset, hexagonOverhang 
+			var nw = this._map.getBounds().getNorthWest(); 
 			var se = this._map.getBounds().getSouthEast();
 			var hexagonOffset = this._map.project(nw, zoom);
 			hexagonOffset= {x:Math.round(hexagonOffset.x), y: Math.round(hexagonOffset.y) };
-			var hexagonOverhang = hexagonSize; // todo: ok? //(1 + (this.options.linkReach / this.calcHexagonDiameter())) * hexagonSize;
+			var hexagonOverhang = hexagonSize*2; 
+
+
+			// pixelOrigin, pixelPane
+			var pixelOrigin = this._map.getPixelOrigin();
+			var pixelPane = this._map._getMapPanePos(); //L.DomUtil.getPosition(this._map._mapPane);
 
 
 			// hexagonBounds
@@ -817,13 +822,17 @@
 
 			// totals
 			var tSum = 0;
-			var populationCellMax = 1;
+			var tPopulationCellMax = 1;
+			var tPoints = 0;
+			var tMarkers = 0;
+			var tLinks = 0;
 			var tMin = Number.MAX_SAFE_INTEGER;
 			var tMax = Number.MIN_SAFE_INTEGER;
 			
 
-			// todo: force: only recalc all the points, if force
-			// 	otherwise just calc the offset from the first point and shift all others
+			// todo: optimisation: force=false => no significant change: simple move, no change in data/visualisation
+			// console.log("recalc needed", force);
+			// todo: put code below into webworker?
 
 
 			// cluster points
@@ -841,75 +850,82 @@
 
 					// point-pixels/visible
 					var point = this.points[group][i];
-					var p = this.getPixels_from_latlng(point.latlng, w, h, hexagonOverhang);
+					//var p = this.getPixels_from_latlng(point.latlng, w, h, hexagonOverhang);
+					var p = this.getPixels_from_mxy(point.mxy, w,h, hexagonOverhang=0, zoom, pixelOrigin, pixelPane);
 					point.visible = p.visible;
 
-					//if(p.visible) {
-
-						// hexagon-cell
-						var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, zoom);
-						point.cell = h;
-
-						// data
-						var d = point.data[this.options.clusterProperty];
-						if(isNaN(d)) { d = this.options.clusterDefaultValue || 0; }
-
-
-						// create hex
-						if(!this.hexagonals[h.cell]) {
-							this.hexagonals[h.cell] = h;
-
-							this.hexagonals[h.cell].point = false;
-							this.hexagonals[h.cell].points = [];
-
-							this.hexagonals[h.cell].group = false;
-							this.hexagonals[h.cell].groups = {};
-							
-							this.hexagonals[h.cell].marker = false;
-							this.hexagonals[h.cell].markers = [];
-
-							this.hexagonals[h.cell].link = false;
-							this.hexagonals[h.cell].links = [];
-
-							this.hexagonals[h.cell].cluster = { population:0, sum:0, avg:0, min:0, max:0 }; 
-							
-							this.hexagonals[h.cell].style = { fill:false };
-
-							this.hexagonals[h.cell].pointless = false;
-
-							this.hexagonals[h.cell].visible = p.visible;
-
+					// skip if point not visible or not linked
+					if(!p.visible) {
+						if(!this.options.linkVisible || !point.link.length) {
+							continue;
 						}
+					}
+					tPoints++;
 
-						// first point in hex
-						if(!this.hexagonals[h.cell].point) {
-							this.hexagonals[h.cell].cluster.min = d;
-							this.hexagonals[h.cell].cluster.max = d;
-						}
+					// hexagon-cell
+					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, zoom);
+					point.cell = h;
 
-						// new point in hex
-						this.hexagonals[h.cell].point = [group,i];
-						this.hexagonals[h.cell].points.push([group, i]);
+					// data
+					var d = point.data[this.options.clusterProperty];
+					if(isNaN(d)) { d = this.options.clusterDefaultValue || 0; }
+
+
+					// create hex
+					if(!this.hexagonals[h.cell]) {
+						this.hexagonals[h.cell] = h;
+
+						this.hexagonals[h.cell].point = false;
+						this.hexagonals[h.cell].points = [];
+
+						this.hexagonals[h.cell].group = false;
+						this.hexagonals[h.cell].groups = {};
 						
-						// new group in hex
-						if(!this.hexagonals[h.cell].group) {
-							this.hexagonals[h.cell].groups[group] = 0;
-						}
-						this.hexagonals[h.cell].group = group;
-						this.hexagonals[h.cell].groups[group]++;
+						this.hexagonals[h.cell].marker = false;
+						this.hexagonals[h.cell].markers = [];
 
-						// cluster data
-						this.hexagonals[h.cell].cluster.population++;
-						this.hexagonals[h.cell].cluster.sum += d;
-						this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.population || 0; 
-						this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, d);
-						this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, d);
-						this.hexagonals[h.cell].style = { fill: (point.style.fill || false) };
-						this.hexagonals[h.cell].pointless = point.pointless || this.hexagonals[h.cell].pointless;
+						this.hexagonals[h.cell].link = false;
+						this.hexagonals[h.cell].links = [];
 
-						// countMax
-						populationCellMax = Math.max(this.hexagonals[h.cell].cluster.population, populationCellMax);  
-					//}
+						this.hexagonals[h.cell].cluster = { population:0, sum:0, avg:0, min:0, max:0 }; 
+						
+						this.hexagonals[h.cell].style = { fill:false };
+
+						this.hexagonals[h.cell].pointless = false;
+
+						this.hexagonals[h.cell].visible = p.visible;
+
+					}
+
+					// first point in hex
+					if(!this.hexagonals[h.cell].point) {
+						this.hexagonals[h.cell].cluster.min = d;
+						this.hexagonals[h.cell].cluster.max = d;
+					}
+
+					// new point in hex
+					this.hexagonals[h.cell].point = [group,i];
+					this.hexagonals[h.cell].points.push([group, i]);
+					
+					// new group in hex
+					if(!this.hexagonals[h.cell].group) {
+						this.hexagonals[h.cell].groups[group] = 0;
+					}
+					this.hexagonals[h.cell].group = group;
+					this.hexagonals[h.cell].groups[group]++;
+
+					// cluster data
+					this.hexagonals[h.cell].cluster.population++;
+					this.hexagonals[h.cell].cluster.sum += d;
+					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.population || 0; 
+					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, d);
+					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, d);
+					this.hexagonals[h.cell].style = { fill: (point.style.fill || false) };
+					this.hexagonals[h.cell].pointless = point.pointless || this.hexagonals[h.cell].pointless;
+
+					// countMax
+					tPopulationCellMax = Math.max(this.hexagonals[h.cell].cluster.population, tPopulationCellMax);  
+
 
 					// totals
 					tSum += d;
@@ -935,51 +951,51 @@
 
 						// marker-pixels/visible
 						var marker = this.markers[group][i];
-						var m = this.getPixels_from_latlng(marker.latlng, w, h, hexagonOverhang);
+						// var m = this.getPixels_from_latlng(marker.latlng, w, h, hexagonOverhang);
+						var m = this.getPixels_from_mxy(marker.mxy, w,h, hexagonOverhang=0, zoom, pixelOrigin, pixelPane);
 						marker.visible = m.visible;
 
-						//if(m.visible) {
+						tMarkers++;
 
-							// hexagon-cell
-							var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset, zoom);
-							marker.cell = h;
+						// hexagon-cell
+						var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset, zoom);
+						marker.cell = h;
 
-							// create hex
-							if(!this.hexagonals[h.cell]) {
-								this.hexagonals[h.cell] = h;
+						// create hex
+						if(!this.hexagonals[h.cell]) {
+							this.hexagonals[h.cell] = h;
 
-								this.hexagonals[h.cell].point = false;
-								this.hexagonals[h.cell].points = [];
+							this.hexagonals[h.cell].point = false;
+							this.hexagonals[h.cell].points = [];
 
-								this.hexagonals[h.cell].group = group;
-								this.hexagonals[h.cell].groups = {};
-								
-								this.hexagonals[h.cell].marker = false;
-								this.hexagonals[h.cell].markers = [];
+							this.hexagonals[h.cell].group = group;
+							this.hexagonals[h.cell].groups = {};
+							
+							this.hexagonals[h.cell].marker = false;
+							this.hexagonals[h.cell].markers = [];
 
-								this.hexagonals[h.cell].link = false;
-								this.hexagonals[h.cell].links = [];
+							this.hexagonals[h.cell].link = false;
+							this.hexagonals[h.cell].links = [];
 
-								this.hexagonals[h.cell].cluster = { population:0, sum:0, avg:0, min:0, max:0 }; 
-								
-								this.hexagonals[h.cell].style = { fill:false };
-								
-								this.hexagonals[h.cell].pointless = false;
+							this.hexagonals[h.cell].cluster = { population:0, sum:0, avg:0, min:0, max:0 }; 
+							
+							this.hexagonals[h.cell].style = { fill:false };
+							
+							this.hexagonals[h.cell].pointless = false;
 
-								this.hexagonals[h.cell].visible = m.visible;
+							this.hexagonals[h.cell].visible = m.visible;
 
-							}
+						}
 
-							// new marker in hex
-							this.hexagonals[h.cell].marker = [group,i];
-							this.hexagonals[h.cell].markers.push([group, i]);
+						// new marker in hex
+						this.hexagonals[h.cell].marker = [group,i];
+						this.hexagonals[h.cell].markers.push([group, i]);
 
-							// new group in hex
-							if(!this.hexagonals[h.cell].groups[group]) {
-								this.hexagonals[h.cell].groups[group] = 1;
-							}
+						// new group in hex
+						if(!this.hexagonals[h.cell].groups[group]) {
+							this.hexagonals[h.cell].groups[group] = 1;
+						}
 
-						//}
 					}
 				}
 			}
@@ -1025,6 +1041,7 @@
 									if(path) {
 										var style = p1.style || p0.style || false;
 										this.links.push({group: p0.group, start:p0, end:p1, path:path, style:style});
+										tLinks++;
 									}
 								}
 							}	
@@ -1035,25 +1052,24 @@
 			}
 
 
-			console.log("develSameCell", develSameCell, this.links.length);
-
 			// gutter
 			if(this.options.gutterFill || this.options.gutterStroke) {	
 				this.gutter = this.calcGutterCells(hexagonBounds, hexagonSize, hexagonOffset);
 			}
 
-			this.totals.cells = Object.keys(this.hexagonals).length; 
-			//this.totals.markers = this.markers.length;
-			this.totals.links = this.links.length;
-			this.totals.population = pl;
-			this.totals.populationCellMax = populationCellMax;
+			this.totals.hexagons = Object.keys(this.hexagonals).length; 
+			this.totals.markers = tMarkers; 
+			this.totals.links = tLinks;
+			this.totals.points = tPoints;
+			this.totals.population = tPoints;
+			this.totals.populationCellMax = tPopulationCellMax;
 			this.totals.sum = tSum;
-			this.totals.avg = tSum/pl || 0;
+			this.totals.avg = tSum/tPoints || 0;
 			this.totals.min = tMin;
 			this.totals.max = tMax;
 			this.totals.delta = tMax-tMin;
 
-			console.log("cells", this.totals.cells)
+			console.log("totals", this.totals)
 
 		},
 		calcHexagonSize: function calcHexagonSize(zoom) {
@@ -1389,13 +1405,10 @@
 			this.hexagonalize(force);
 			this.totals.hexTime = performance.now() - startTime; 
 			this.updateClusterRamp();
-			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options);
+			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options, force);
 			this.totals.drawTime = performance.now() - startTime; 
-
-			console.log("hex: " + this.totals.hexTime, "draw: " + this.totals.drawTime);
-
 		},
-		onDraw: function onDraw(canvas, hexagonals, selection, links, options) {
+		onDraw: function onDraw(canvas, hexagonals, selection, links, options, force) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
@@ -1404,7 +1417,9 @@
 			if(selection.groups) { selectionGroups = selection.groups; }
 
 			// layers
-			this.markerLayer.clearLayers();
+			if(force) {
+				this.markerLayer.clearLayers();
+			}
 
 			// style
 			var style = { 
@@ -1424,6 +1439,11 @@
 			if(typeof this.options.clusterMaxValue == "number") {
 				tMax = this.options.clusterMaxValue;
 			} 
+
+			var tHexagonsDrawn = 0;
+			var tLinksDrawn = 0;
+			var tMarkersDrawn = 0;
+
 
 			// draw gutter
 			if(this.options.gutterFill || this.options.gutterStroke) {
@@ -1481,7 +1501,7 @@
 					}
 
 
-					this.drawLink(ctx, links[i], style);
+					tLinksDrawn += this.drawLink(ctx, links[i], style);
 					if(selectionGroups[links[i].group] && options.selectionVisible) {
 						this.drawLinkSelected(ctx, links[i]);
 					}
@@ -1520,7 +1540,7 @@
 					// draw hexagonals
 					if(options.hexagonVisible && hexagonals[hexs[h]].point) {	
 						if(hexagonals[hexs[h]].pointless==false) {
-							this.drawHexagon(ctx, hexagonals[hexs[h]], style);
+							tHexagonsDrawn += this.drawHexagon(ctx, hexagonals[hexs[h]], style);
 						}
 						if(options.selectionVisible) {
 							var hgs = Object.keys(hexagonals[hexs[h]].groups);
@@ -1536,10 +1556,16 @@
 
 					// draw marker
 					if(options.markerVisible) {
-						this.drawMarker(hexagonals[hexs[h]], style);
+						if(force) {
+							tMarkersDrawn += this.drawMarker(hexagonals[hexs[h]], style);
+						}
 					}
 				}
 			}
+
+			this.totals.hexagonsDrawn = tHexagonsDrawn;
+			this.totals.markersDrawn = tMarkersDrawn;
+			this.totals.linksDrawn = tLinksDrawn;
 
 			this.afterDraw();
 
@@ -1548,7 +1574,7 @@
 
 		},
 		drawHexagon: function drawHexagon(ctx, hexagon, style) {
-			if(!hexagon.visible) { return; }
+			if(!hexagon.visible) { return 0; }
 			var hPath = new Path2D(hexagon.path);
 			if(style.fill) {
 				ctx.fillStyle = style.fill;
@@ -1559,15 +1585,16 @@
 				ctx.lineWidth = style.borderWidth;
 				ctx.stroke(hPath);
 			}
+			return 1;
 		},
 		drawMarker: function drawMarker(hexagon, styleHexagon={}) {
 			var mi = hexagon.marker;
-			if(!mi) { return; }
+			if(!mi) { return 0; }
 
 			var m0 = this.markers[mi[0]][mi[1]];
 			var style = m0.style;
 			var ref = this;
-			if(typeof style != "object") { return; }
+			if(typeof style != "object") { return 0; }
 
 
 			// style
@@ -1619,7 +1646,7 @@
 					L.DomEvent.stopPropagation;
 					ref._onClick(e);
 				});
-				return; 
+				return 1; 
 			}	
 			
 
@@ -1658,7 +1685,7 @@
 					
 				};
 				ii.src = style.image;
-				return;
+				return 1;
 			}
 
 
@@ -1688,7 +1715,7 @@
 				ctx.stroke(path);
 			}
 
-			if(!this.options.linkFill) { return; }
+			if(!this.options.linkFill) { return 1; }
 			
 			if(this.options.linkFill===true) {
 				ctx.strokeStyle = style.fill;
@@ -1699,6 +1726,7 @@
 			ctx.lineWidth = style.linkWidth;
 			ctx.stroke(path);
 
+			return 1;
 			
 		},
 		drawLinkSelected: function drawLinkSelected(ctx, link) {
@@ -2076,7 +2104,7 @@
 			var wh = this._map.getSize();
 			var zoom = this._map.getZoom();
 			var size = this.calcHexagonSize(zoom);
-			var overhang = size; // todo: ok? //(1 + (this.options.linkReach / this.calcHexagonDiameter()))*size;
+			var overhang = size*2; 
 			var nw = this._map.getBounds().getNorthWest();
 			var offset = this._map.project(nw, zoom);
 			offset = {x:Math.round(offset.x), y: Math.round(offset.y) };
@@ -2182,8 +2210,17 @@
 			});
 		},
 
-		getPixels_from_latlng: function getPixels_from_latlng(latlng, w, h, overhang=50) {
-			var p = this._map.latLngToContainerPoint([latlng.lat, latlng.lng]);
+
+		getPixels_from_mxy: function getPixels_from_mxy(mxy, w,h, overhang=0, zoom, pixelOrigin, pixelPane) {
+			var f = Math.pow(2,zoom)*256;
+			var x = Math.round(mxy.x*f - pixelOrigin.x + pixelPane.x);
+			var y = Math.round(mxy.y*f - pixelOrigin.y + pixelPane.y);
+			if (x < -overhang || y < -overhang || x > w+overhang || y > h+overhang) { return { x: x, y: y, visible: false }; }
+			return { x: x, y: y, visible: true };
+		},
+
+		getPixels_from_latlng: function getPixels_from_latlng(latlng, w, h, overhang=0) {
+			var p = this._map.latLngToContainerPoint(latlng); 
 			if (p.x < -overhang || p.y < -overhang || p.x > w+overhang || p.y > h+overhang) { return { x: p.x, y: p.y, visible: false }; }
 			return { x: p.x, y: p.y, visible: true };
 		},
@@ -2286,6 +2323,10 @@
 			}
 			console.warn("Leaflet.hexagonal.latlng: unknown format", latlng);
 			return { lat:0, lng:0, nullIsland:true };
+		},
+		_getMxy: function _getMxy(latlng) {
+			var m = this._map.project(latlng,0);
+			return {x:m.x/256, y:m.y/256};
 		},
 		_valGroup: function _valGroup(meta) {
 			var prop = meta.groupProperty || "group";

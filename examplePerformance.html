@@ -4,6 +4,7 @@
 <head>
 	<title>Leaflet.Hexagonal - examplePerformance</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="utf-8">
 
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
 		integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
@@ -52,10 +53,13 @@
 		// hexagonals
 		var hexagonals = new L.Hexagonal().addTo(map);
 		hexagonals.afterDraw = function () {
-			oPerf.hexagons = this.totals.cells;
-			oPerf.points = this.totals.count;
+			oPerf.hexagons = this.totals.hexagons;
+			oPerf.hexagonsDrawn = this.totals.hexagonsDrawn;
+			oPerf.points = this.totals.population;
 			oPerf.markers = this.totals.markers;
+			oPerf.markersDrawn = this.totals.markersDrawn;
 			oPerf.links = this.totals.links;
+			oPerf.linksDrawn = this.totals.linksDrawn;
 			oPerf.draw_milliSeconds = Math.round(this.totals.drawTime);
 		}
 
@@ -101,9 +105,8 @@
 		window.oOptions = {
 			points: 10000,
 			hexagonSize: 32,
-			drawLinks: true,
-			drawMarkers: true,
-			linkReach: 50000
+			linkVisible: true,
+			markerVisible: true
 		};
 		fOptions.add(oOptions, 'points', 1000, 50000, 1000).onFinishChange(value => {
 			addPoints(value);
@@ -113,32 +116,33 @@
 			hexagonals.options.hexagonSize = value;
 			hexagonals.refresh();
 		});
-		fOptions.add(oOptions, 'drawLinks').onChange(value => {
+		fOptions.add(oOptions, 'linkVisible').onChange(value => {
 			hexagonals.options.linkVisible = value;
 			hexagonals.refresh();
 		});
-		fOptions.add(oOptions, 'drawMarkers').onChange(value => {
+		fOptions.add(oOptions, 'markerVisible').onChange(value => {
 			hexagonals.options.markerVisible = value;
 			hexagonals.refresh();
 		});
-		fOptions.add(oOptions, 'linkReach', 0, 100000, 10000).onFinishChange(value => {
-			hexagonals.options.linkReach = value;
-			hexagonals.refresh();
-		});
+
 
 
 		var fPerf = gui.addFolder('Performance');
 		window.oPerf = {
 			hexagons: 0,
-			points: 0,
+			hexagonsDrawn: 0,
 			markers: 0,
+			markersDrawn: 0,
 			links: 0,
+			linksDrawn: 0,
 			draw_milliSeconds: 0
 		};
 		fPerf.add(oPerf, 'hexagons').listen().disable();
-		fPerf.add(oPerf, 'points').listen().disable();
+		fPerf.add(oPerf, 'hexagonsDrawn').listen().disable();
 		fPerf.add(oPerf, 'markers').listen().disable();
+		fPerf.add(oPerf, 'markersDrawn').listen().disable();
 		fPerf.add(oPerf, 'links').listen().disable();
+		fPerf.add(oPerf, 'linksDrawn').listen().disable();
 		fPerf.add(oPerf, 'draw_milliSeconds').listen().disable();
 
 
