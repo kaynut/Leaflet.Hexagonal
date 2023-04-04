@@ -71,14 +71,10 @@
 			strokeDefault: "#303234", 	
 			// borderWidth: pixels
 			borderWidth: 1,
-			//dataProperties: "meta.propertyName" 
-			dataProperties: [], // properties for data-based coloring (included in meta)
-			// idProperty: false || "meta.propertyName" 
-			idProperty: "id",
-			// groupProperty: false || "meta.propertyName" 
-			groupProperty: "group",
 			// groupDefault: false || "groupName"
 			groupDefault: "_group", // if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
+			// tagDefault: "" || string
+			tagDefault: "",
 
 			// clusterMode: "population" || "sum" || "avg" || "min" || "max" || false (style for hexagon-cluster: depending on point data) 	
 			clusterMode: false,
@@ -175,6 +171,9 @@
 		groupInfo: {},
 		groupFill: {},
 
+		filters: [],
+		filterActive: true,
+
 		info: false,
 		infoLayer: false,
 
@@ -243,6 +242,7 @@
 			this.fire("layer-mounted");
 			this.markerLayer = L.layerGroup([]).addTo(this._map);
 			this.markerLayer.markerLayer = true;
+			this.markerLayer.needsUpdate = true;
 			this.infoLayer = L.layerGroup([]).addTo(this._map);
 			this.infoLayer.infoLayer = true;
 			this._update("onAdd");
@@ -263,12 +263,12 @@
 		},
 		_onLayerMoveEnd: function _onLayerMoveEnd() {
 			var zoom = this._map.getZoom();
-			var force = false;
+			var major = false;
 			if(zoom!==this.view.zoom) { 
 				this.view.zoom = zoom;
-				force = "onZoom";
+				major = "onZoom";
 			}
-			this._isZoomVisible() ? this._update(force) : this._zoomHide();
+			this._isZoomVisible() ? this._update(major) : this._zoomHide();
 		},
 		_onLayerZoomEnd: function _onLayerZoomEnd() {
 			this.onZoomEnd();
@@ -306,12 +306,12 @@
 			var h = s.multiplyBy(-o).add(n).add(s).subtract(r);
 			e.Browser.any3d ? e.DomUtil.setTransform(this._container, h, o) : e.DomUtil.setPosition(this._container, h);
 		},
-		_update: function _update(force) {
+		_update: function _update(major) {
 			if (!this._map._animatingZoom || !this._bounds) {
 				this.__update();
 				var t = this._bounds;
 				var i = this._container;
-				this._onDraw(force);
+				this._onDraw(major);
 				e.DomUtil.setPosition(i, t.min), this.fire("layer-render");
 			}
 		},
@@ -432,6 +432,9 @@
 			// data
 			var data = this._valData(meta);
 
+			// tags
+			var tags = this._valTags(meta);
+
 			// point 
 			var point = {
 				latlng: latlng,	
@@ -447,6 +450,7 @@
 				pointless: (meta.pointless || false),	
 
 				data: data,
+				tags: tags,
 				info: info,
 
 				style: {
@@ -773,7 +777,7 @@
 
 		// #######################################################
 		// #region hexagonal
-		hexagonalize: function hexagonalize(force) { 
+		hexagonalize: function hexagonalize(major) { 
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
 			var size = this._bounds.getSize();
@@ -830,8 +834,8 @@
 			var tMax = Number.MIN_SAFE_INTEGER;
 			
 
-			// todo: optimisation: force=false => no significant change: simple move, no change in data/visualisation
-			// console.log("recalc needed", force);
+			// todo: optimisation: major=false => no significant change: simple move, no change in data/visualisation
+			// console.log("recalc needed", major);
 			// todo: put code below into webworker?
 
 
@@ -848,19 +852,27 @@
 				var pl = this.points[group].length;
 				for (var i = 0; i < pl; i++) {
 
-					// point-pixels/visible
+					// point
 					var point = this.points[group][i];
-					//var p = this.getPixels_from_latlng(point.latlng, w, h, hexagonOverhang);
+
+					// position/visibility/filter
 					var p = this.getPixels_from_mxy(point.mxy, w,h, hexagonOverhang=0, zoom, pixelOrigin, pixelPane);
 					point.visible = p.visible;
+					point.position = [p.x,p.y];
+					point.filter = this.checkFilter(point);
 
-					// skip if point not visible or not linked
-					if(!p.visible) {
+					// skip filtered
+					if(!point.filter) {
+						continue;
+					}
+
+					// skip invisible+unlinked
+					if(!point.visible) {
 						if(!this.options.linkVisible || !point.link.length) {
 							continue;
 						}
 					}
-					tPoints++;
+					
 
 					// hexagon-cell
 					var h = this.calcHexagonCell(p.x,p.y,hexagonSize, hexagonOffset, zoom);
@@ -931,6 +943,7 @@
 					tSum += d;
 					tMin = Math.min(tMin, d); 
 					tMax = Math.max(tMax, d); 
+					tPoints++;
 
 				}
 			}
@@ -951,11 +964,10 @@
 
 						// marker-pixels/visible
 						var marker = this.markers[group][i];
-						// var m = this.getPixels_from_latlng(marker.latlng, w, h, hexagonOverhang);
 						var m = this.getPixels_from_mxy(marker.mxy, w,h, hexagonOverhang=0, zoom, pixelOrigin, pixelPane);
 						marker.visible = m.visible;
 
-						tMarkers++;
+						// todo: filter (like in points)
 
 						// hexagon-cell
 						var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset, zoom);
@@ -996,12 +1008,13 @@
 							this.hexagonals[h.cell].groups[group] = 1;
 						}
 
+						tMarkers++;
+
 					}
 				}
 			}
 
 			// collect links
-			var develSameCell = 0;
 			this.links = [];
 			if(this.options.linkVisible) { // && this.options.linkMode) {
 				for(var go=0; go<this.groupOrder.length; go++) {
@@ -1022,6 +1035,9 @@
 						var i1 = i;
 						var c1 = p1.cell.cell;
 
+						// filter
+						if(!p1.filter) { continue; }
+
 						// loop point-links
 						var ll = p1.link.length; 
 						for(var j=0; j<ll; j++) { 
@@ -1031,11 +1047,14 @@
 								var i0 = p1.link[j];
 								var c0 = p0.cell.cell;
 
-								if(c0==c1) { develSameCell++; continue; }
-								
-								// todo:check viewport-collision, instead of p0.visible || p1.visible
-								var visible = p0.visible || p1.visible || this.checkLinkVisible(p0.latlng, p1.latlng, nw, se);
+								// filter
+								if(!p0.filter) { continue; }
 
+								// same cell  > no link
+								if(c0==c1) { continue; } 
+								
+								// at least one point visible OR link intersects viewport
+								var visible = p0.visible || p1.visible || this.checkLinkVisible(p0.latlng, p1.latlng, nw, se);
 								if(visible) {
 									var path = this.getLinkPath(group,i0,i1,hexagonSize, hexagonOffset, zoom);
 									if(path) {
@@ -1386,8 +1405,251 @@
 			var ll1 = this._map.containerPointToLatLng([size*1.0501,0]); // 1.0501 avg diameter, based on hexagonal-circular-area comp
 			return this.getDistance(ll0.lng,ll0.lat,ll1.lng,ll1.lat);
 		},
+
 		// #endregion
 
+
+		// #######################################################
+		// #region filter
+		checkFilter: function checkFilter(point) {
+			if(!this.filterActive  || !this.filters.length) { return true; }
+
+			// filters are always linked with the logical operator AND
+			var checks = 0;
+			var filters = this.filters.length;
+			for(var i=0; i<filters;i++) {
+				var f = this.filters[i];
+
+				if(f.operator=="=") {
+					if(point.data[f.property] === f.value) { checks++; }
+					continue;
+				}
+				if(f.operator=="!=") {
+					if(point.data[f.property] !== f.value) { checks++; }
+					continue;
+				}
+				if(f.operator==">") {
+					if(point.data[f.property] > f.value) { checks++; }
+					continue;
+				}
+				if(f.operator==">=") {
+					if(point.data[f.property] >= f.value) { checks++; }
+					continue;
+				}
+				if(f.operator=="<") {
+					if(point.data[f.property] < f.value) { checks++; }
+					continue;
+				}
+				if(f.operator=="<=") {
+					if(point.data[f.property] <= f.value) { checks++; }
+					continue;
+				}
+				if(f.operator=="><") {
+					if(point.data[f.property] >= f.value0 && point.data[f.property] <= f.value1) { checks++; }
+					continue;
+				}
+				if(f.operator=="<>") {
+					if(point.data[f.property] <= f.value0 && point.data[f.property] >= f.value1) { checks++; }
+					continue;
+				}
+
+				var t = point.info.toLowerCase();
+				if(f.operator=="contains") {
+					if(t.indexOf(f.value)>=0) { checks++; }
+					continue;
+				}
+				if(f.operator=="startswith") {
+					if(t.startsWith(f.value)) { checks++; }
+					continue;
+				}
+				if(f.operator=="endswith") {
+					if(t.endsWith(f.value)) { checks++; }
+					continue;
+				}
+
+			}
+
+			return (checks==filters);
+		},
+		getFilter: function getFilter() {
+			return this.filters;
+		},
+		setFilter: function setFilter(param) {
+
+			// boolean param => set filterActive
+			if(typeof param == "boolean") {
+				if(param == this.filterActive) { return; }
+				this.filterActive = param;
+				this.refresh();
+				return;
+			}
+
+			// none-object param
+			if(typeof param != "object") { return; 	}
+
+			// object param.active
+			if(typeof param.active == "boolean") {
+				if(param.active!=this.filterActive) {
+					this.filterActive = param.active;
+					this.refresh();
+				}
+			}
+			// object param.filter
+			if(typeof param.filter == "object") {
+				param.filters = param.filter;
+			}
+			// object param.filters
+			if(typeof param.filters == "object") {
+				if(!Array.isArray(param.filters)) {
+					param.filters = [param.filters];
+				}
+				for(var i=0; i<param.filters.length; i++) {
+					this.addFilter(param.filters[i]);
+				}
+			}
+
+		},
+		toggleFilter: function toggleFilter() {
+			this.filterActive = !this.filterActive;
+			this.refresh();
+			return;
+		},
+		addFilter: function addFilter(filter) {
+			if(typeof filter != "object") { return 0; }
+			if(typeof filter.property != "string") { return 0; }
+			if(typeof filter.operator != "string") { return 0; }
+			filter.operator = filter.operator.toLowerCase();
+
+			// number equal: = 
+			if(filter.operator=="=") {
+				if(isNaN(filter.value*1)) { return 0; }
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// number not equal: != 
+			if(filter.operator== "not" || filter.operator=="!=") {
+				filter.operator = "!=";
+				if(isNaN(filter.value*1)) { return 0; }
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// number greater: >
+			if(filter.operator== "greater" || filter.operator==">") {
+				filter.operator = ">";
+				if(isNaN(filter.value*1)) { return 0; }
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// number greaterequal: >=
+			if(filter.operator== "greaterequal" || filter.operator==">=") {
+				filter.operator = ">=";
+				if(isNaN(filter.value*1)) { return 0; }
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// number less: <
+			if(filter.operator== "less" || filter.operator== "smaller" || filter.operator=="<") {
+				filter.operator = "<";
+				if(isNaN(filter.value*1)) { return 0; }
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// number lessequal: <=
+			if(filter.operator== "lessequal" || filter.operator== "smallerequal" || filter.operator=="<=") {
+				filter.operator = "<=";
+				if(isNaN(filter.value*1)) { return 0; }
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// number between: >< 
+			if(filter.operator== "between" || filter.operator=="><") {
+				filter.operator = "><";
+				if(isNaN(filter.value0*1)) { return 0; }
+				if(isNaN(filter.value1*1)) { return 0; }
+				if(filter.value0>filter.value1) {
+					var v1 = filter.value0;
+					filter.value0 = filter.value1;
+					filter.value1 = v1;
+				}
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// number apart: <> 
+			if(filter.operator== "apart" || filter.operator=="<>") {
+				filter.operator = "<>";
+				if(isNaN(filter.value0*1)) { return 0; }
+				if(isNaN(filter.value1*1)) { return 0; }
+				if(filter.value0>filter.value1) {
+					var v1 = filter.value0;
+					filter.value0 = filter.value1;
+					filter.value1 = v1;
+				}
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// string contains
+			if(filter.operator== "contains") {
+				filter.value = filter.value+"";
+				if(typeof filter.value != "string") { return 0; }
+				filter.value = filter.value.toLowerCase();
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// string startswith
+			if(filter.operator== "startswith") {
+				filter.value += "";
+				if(typeof filter.value != "string") { return 0; }
+				filter.value = filter.value.toLowerCase();
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			// string endswith
+			if(filter.operator== "endswith") {
+				filter.value += "";
+				if(typeof filter.value != "string") { return 0; }
+				filter.value = filter.value.toLowerCase();
+				this.filters.push(filter);
+				this.refresh();
+				return 1;
+			}
+
+			return 0;
+
+		},
+		clearFilter: function clearFilter(index=-1) {
+			if(this.filters.length<1) { return; }
+			if(index==-1) { 
+				this.filters = [];
+				this.refresh();
+				return;
+			}
+			if(index>=0 && index<=this.filters.length) {
+				this.filters.splice(index, 1);
+				this.refresh();
+				return;
+			}
+		},
+		// #endregion
 
 		// #######################################################
 		// #region draw
@@ -1398,17 +1660,17 @@
 				self._update("onRefresh");
 			}, 50);
 		},
-		_onDraw: function _onDraw(force) {
+		_onDraw: function _onDraw(major) {
 			var startTime = performance.now();
 			this.view.zoom = this._zoom;
 			this.view.center = this._center;
-			this.hexagonalize(force);
+			this.hexagonalize(major);
 			this.totals.hexTime = performance.now() - startTime; 
 			this.updateClusterRamp();
-			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options, force);
+			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options, major);
 			this.totals.drawTime = performance.now() - startTime; 
 		},
-		onDraw: function onDraw(canvas, hexagonals, selection, links, options, force) {
+		onDraw: function onDraw(canvas, hexagonals, selection, links, options, major) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
@@ -1417,8 +1679,10 @@
 			if(selection.groups) { selectionGroups = selection.groups; }
 
 			// layers
-			if(force) {
+			var markerLayer
+			if(major) {
 				this.markerLayer.clearLayers();
+				this.markerLayer.needsUpdate = true;
 			}
 
 			// style
@@ -1556,17 +1820,24 @@
 
 					// draw marker
 					if(options.markerVisible) {
-						if(force) {
+						if(major || this.markerLayer.needsUpdate) {
 							tMarkersDrawn += this.drawMarker(hexagonals[hexs[h]], style);
 						}
 					}
 				}
 			}
 
+			// reset this.markerLayer.needsUpdate
+			if(options.markerVisible) {
+				this.markerLayer.needsUpdate = false;
+			}
+
+			// totals
 			this.totals.hexagonsDrawn = tHexagonsDrawn;
 			this.totals.markersDrawn = tMarkersDrawn;
 			this.totals.linksDrawn = tLinksDrawn;
 
+			// afterDraw
 			this.afterDraw();
 
 		},
@@ -1997,6 +2268,8 @@
 			}
 			this.groupInfo[group] = info;
 		},
+
+
 		setInfo: function setInfo(info) {
 
 			if(this.info) {
@@ -2398,6 +2671,12 @@
 				}
 			}
 			return data;
+		},
+		_valTags: function _valTags(meta) {
+			var prop = meta.tagProperty || "tags";
+			var tags = meta[prop] + "";
+			if(tags=="undefined" || tags=="false") { tags = this.options.tagDefault; }
+			return tags;
 		}
 
 		// #endregion
