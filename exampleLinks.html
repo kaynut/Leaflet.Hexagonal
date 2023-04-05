@@ -4,6 +4,7 @@
 <head>
 	<title>Leaflet.Hexagonal - examplePoints</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="utf-8">
 
    <!-- Leaflet -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
@@ -53,11 +54,11 @@
 		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 
 
-		// hexagonals
-		var hexagonals = new L.Hexagonal().addTo(map);
-		hexagonals.options.linkMode = "curve";
-		hexagonals.options.linkMode = "curve";
-		hexagonals.options.hexagonSize = 12;
+		// layer
+		var layer = new L.Hexagonal().addTo(map);
+		layer.options.linkMode = "curve";
+		layer.options.linkMode = "curve";
+		layer.options.hexagonSize = 12;
 
 
 
@@ -74,50 +75,86 @@
 			linkWidth: 4,
 			linkFill: true,
 			linkJoin: 0.5,
-			linkReach: 50000,
 			refresh_A: function() { redraw("A"); },
 			refresh_B: function() { redraw("B"); },
 			refresh_C: function() { redraw("C"); }
 		};
-		gui.add(oLinks, 'linkVisible').onChange(value => {
-			hexagonals.options.linkVisible = value;
-			hexagonals.refresh();
+		var fLinks = gui.addFolder('links');
+		fLinks.add(oLinks, 'linkVisible').onChange(value => {
+			layer.options.linkVisible = value;
+			layer.refresh();
 		});
-		gui.add(oLinks, 'linkMode', [ 'aligned', 'line','spline','curve','hexagonal' ] ).onChange(value => {
-			hexagonals.options.linkMode = value;
-			hexagonals.refresh();
+		fLinks.add(oLinks, 'linkMode', [ 'aligned', 'line','spline','curve','hexagonal' ] ).onChange(value => {
+			layer.options.linkMode = value;
+			layer.refresh();
 		});
-		gui.add(oLinks, 'linkFill', [ false, true, '#222222',"#999999","#eeeeee" ] ).onChange(value => {
-			hexagonals.options.linkFill = value;
-			hexagonals.refresh();
+		fLinks.add(oLinks, 'linkFill', [ false, true, '#222222',"#999999","#eeeeee" ] ).onChange(value => {
+			layer.options.linkFill = value;
+			layer.refresh();
 		});
-		gui.add(oLinks, 'linkWidth', 1, 12, 1 ).onChange(value => {
-			hexagonals.options.linkWidth = value;
-			hexagonals.refresh();
+		fLinks.add(oLinks, 'linkWidth', 1, 12, 1 ).onChange(value => {
+			layer.options.linkWidth = value;
+			layer.refresh();
 		});
-		gui.add(oLinks, 'linkJoin', 0, 1, 0.1 ).onChange(value => {
-			hexagonals.options.linkJoin = value;
-			hexagonals.refresh();
+		fLinks.add(oLinks, 'linkJoin', 0, 1, 0.1 ).onChange(value => {
+			layer.options.linkJoin = value;
+			layer.refresh();
 		});
-		gui.add(oLinks, 'linkReach', 0, 100000, 10000 ).onChange(value => {
-			hexagonals.options.linkReach = value;
-			hexagonals.refresh();
-		});
-		gui.add( oLinks, 'refresh_A' );
-		gui.add( oLinks, 'refresh_B' );
-		gui.add( oLinks, 'refresh_C' );
+		fLinks.add( oLinks, 'refresh_A' );
+		fLinks.add( oLinks, 'refresh_B' );
+		fLinks.add( oLinks, 'refresh_C' );
+
+
+		var oCluster = {
+			cluster_false: function() { 
+				layer.options.clusterMode=false; 
+				layer.refresh(); 
+			},
+			cluster_d0_population: function() { 
+				layer.options.clusterProperty="d0"; 
+				layer.options.clusterMode="population"; 
+				layer.refresh(); 
+			},
+			cluster_d0_sum: function() { 
+				layer.options.clusterProperty="d0"; 
+				layer.options.clusterMode="sum"; 
+				layer.refresh(); 
+			},
+			cluster_d0_avg: function() { 
+				layer.options.clusterProperty="d0"; 
+				layer.options.clusterMode="avg"; 
+				layer.refresh(); 
+			},
+			cluster_d0_min: function() { 
+				layer.options.clusterProperty="d0"; 
+				layer.options.clusterMode="min"; 
+				layer.refresh(); 
+			},
+			cluster_d0_max: function() { 
+				layer.options.clusterProperty="d0"; 
+				layer.options.clusterMode="max"; 
+				layer.refresh(); 
+			}
+		};
+		var fCluster = gui.addFolder('links');
+		fCluster.add( oCluster, 'cluster_false' );
+		fCluster.add( oCluster, 'cluster_d0_population' );
+		fCluster.add( oCluster, 'cluster_d0_sum' );
+		fCluster.add( oCluster, 'cluster_d0_avg' );
+		fCluster.add( oCluster, 'cluster_d0_min' );
+		fCluster.add( oCluster, 'cluster_d0_max' );
 
 
 		function redraw(group="all") {
 				// remove groups
 				if(group=="all" || group=="A") {
-					hexagonals.removeGroup("A");
+					layer.removeGroup("A");
 				}
 				if(group=="all" || group=="B") {
-					hexagonals.removeGroup("B");
+					layer.removeGroup("B");
 				}
 				if(group=="all" || group=="C") {
-					hexagonals.removeGroup("C");
+					layer.removeGroup("C");
 				}
 
 
@@ -135,21 +172,36 @@
 					if(group=="all" || group=="A") {
 						a.lng += (Math.random()-0.51) * lngMax;
 						a.lat += (Math.random()-0.49) * latMax;
-						hexagonals.addPoint( a , { group:"A", fill:"#a00", linked:true });
+						var d0 = a.lng + a.lat;// + Math.random();
+						var d1 = Math.round(Math.random());
+						layer.addPoint( a , { group:"A", fill:"#a00", link:true, d0:d0, d1:d1 });
 					}
 					if(group=="all" || group=="B") {
 						b.lng += (Math.random()-0.49) * lngMax;
 						b.lat += (Math.random()-0.51) * latMax;
-						hexagonals.addPoint( b , { group:"B", fill:"#aa0", linked:true });
+						var d0 = b.lng + b.lat;// + Math.random();
+						var d1 = Math.round(Math.random());
+						layer.addPoint( b , { group:"B", fill:"#aa0", link:true, d0:d0, d1:d1 });
 					}
 					if(group=="all" || group=="C") {
 						c.lng += (Math.random()-0.51) * lngMax;
 						c.lat += (Math.random()-0.51) * latMax;
-						hexagonals.addPoint( c , { group:"C", fill:"#0a0", linked:true });
+						var d0 = c.lng + c.lat;// + Math.random();
+						var d1 = Math.round(Math.random());
+						layer.addPoint( c , { group:"C", fill:"#0a0", link:true, d0:d0, d1:d1 });
 					}
 				}
 
-				hexagonals.refresh(); 
+/*
+				layer.addPoint( [0,50] , { group:"D", fill:"#0aa", link:true, d0:1, d1:1 });
+				layer.addPoint( [2,50] , { group:"D", fill:"#0aa", link:true, d0:2, d1:1 });
+				layer.addPoint( [2,52] , { group:"D", fill:"#0aa", link:true, d0:3, d1:1 });
+				layer.addPoint( [0,52] , { group:"D", fill:"#0aa", link:true, d0:4, d1:1 });
+
+				layer.addPoint( [0,50] , { group:"E", fill:"#00a", link:true, d0:10, d1:1 });
+				layer.addPoint( [2,50] , { group:"E", fill:"#00a", link:true, d0:20, d1:1 });
+*/
+				layer.refresh(); 
 
 		}
 		redraw();

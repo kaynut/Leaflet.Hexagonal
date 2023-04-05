@@ -1,9 +1,11 @@
 // todo:
+// selection rework
 // add: selectionMode > single hexagon, group
 // clusterMode: clusterIndicator (if single or clustered)
 // update marker-clickablility
 // Visibility _> to MinMaxZoom
 // adapt selection etc
+// DONE: check again if links are colored the right way in clustering
 
 
 
@@ -51,16 +53,13 @@
 			// hexagonVisible: boolean 
 			// > whether or not hexagons will be visible
 			hexagonVisible: true,
-
 			// hexagonSize: integer || function
 			// size of hexagonal grid
 			hexagonSize: 16, 
 			hexagonSize: function(zoom) { return Math.max(16,Math.pow(2, zoom-6)); }, 
-
 			// hexagonGap: pixels 
 			// gap between the cells of the hexagonal grid 
 			hexagonGap: 0, 	
-
 			// hexagonOrientation: "flatTop" || "pointyTop",
 			// whether the hexagons are flat or pointy on the upper part
 			hexagonOrientation: "flatTop",		
@@ -71,15 +70,15 @@
 			strokeDefault: "#303234", 	
 			// borderWidth: pixels
 			borderWidth: 1,
+
 			// groupDefault: false || "groupName"
 			groupDefault: "_group", // if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
-			// tagDefault: "" || string
-			tagDefault: "",
+
 
 			// clusterMode: "population" || "sum" || "avg" || "min" || "max" || false (style for hexagon-cluster: depending on point data) 	
 			clusterMode: false,
 			//clusterProperty: "meta.propertyName" 
-			clusterProperty: "data", // current property for data-based coloring (included in meta)
+			clusterProperty: "_", // current property for data-based coloring (included in meta)
 			//clusterDefaultValue: number 
 			clusterDefaultValue: 0, // default value, when current clusterProperty is not set for datapoint
 			// clusterMinValue: false || number
@@ -130,8 +129,6 @@
 			infoVisible: true,
 			// infoOpacity: true || false
 			infoOpacity: 0.9,
-			// infoProperty: "propertyName" || false
-			infoProperty: "info",
 			// infoClassName: class || ""
 			infoClassName: "leaflet-hexagonal-info-container"
 
@@ -263,12 +260,12 @@
 		},
 		_onLayerMoveEnd: function _onLayerMoveEnd() {
 			var zoom = this._map.getZoom();
-			var major = false;
+			var majorChange = false;
 			if(zoom!==this.view.zoom) { 
 				this.view.zoom = zoom;
-				major = "onZoom";
+				majorChange = "onZoom";
 			}
-			this._isZoomVisible() ? this._update(major) : this._zoomHide();
+			this._isZoomVisible() ? this._update(majorChange) : this._zoomHide();
 		},
 		_onLayerZoomEnd: function _onLayerZoomEnd() {
 			this.onZoomEnd();
@@ -306,12 +303,12 @@
 			var h = s.multiplyBy(-o).add(n).add(s).subtract(r);
 			e.Browser.any3d ? e.DomUtil.setTransform(this._container, h, o) : e.DomUtil.setPosition(this._container, h);
 		},
-		_update: function _update(major) {
+		_update: function _update(majorChange) {
 			if (!this._map._animatingZoom || !this._bounds) {
 				this.__update();
 				var t = this._bounds;
 				var i = this._container;
-				this._onDraw(major);
+				this._onDraw(majorChange);
 				e.DomUtil.setPosition(i, t.min), this.fire("layer-render");
 			}
 		},
@@ -426,8 +423,8 @@
 			// link
 			var link = this._valLink(meta, group);
 
-			// info
-			var info = this._valInfo(meta);
+			// name
+			var name = this._valName(meta);
 
 			// data
 			var data = this._valData(meta);
@@ -443,15 +440,15 @@
 				
 				id: id,
 				group: group,
+				name: name,					
+				tags: tags,
+			
+				data: data,
 
 				marker: meta.marker || false,
 				link:link,
 
 				pointless: (meta.pointless || false),	
-
-				data: data,
-				tags: tags,
-				info: info,
 
 				style: {
 					fill: meta.fill || false,
@@ -777,7 +774,7 @@
 
 		// #######################################################
 		// #region hexagonal
-		hexagonalize: function hexagonalize(major) { 
+		hexagonalize: function hexagonalize(majorChange) { 
 			// map/layer
 			var dpr = L.Browser.retina ? 2 : 1;
 			var size = this._bounds.getSize();
@@ -827,15 +824,13 @@
 			// totals
 			var tSum = 0;
 			var tPopulationCellMax = 1;
-			var tPoints = 0;
+			var tPopulation = 0;
 			var tMarkers = 0;
 			var tLinks = 0;
 			var tMin = Number.MAX_SAFE_INTEGER;
 			var tMax = Number.MIN_SAFE_INTEGER;
 			
 
-			// todo: optimisation: major=false => no significant change: simple move, no change in data/visualisation
-			// console.log("recalc needed", major);
 			// todo: put code below into webworker?
 
 
@@ -938,12 +933,14 @@
 					// countMax
 					tPopulationCellMax = Math.max(this.hexagonals[h.cell].cluster.population, tPopulationCellMax);  
 
+					// devel
+					point.cell.cluster = this.hexagonals[h.cell].cluster;
 
 					// totals
 					tSum += d;
 					tMin = Math.min(tMin, d); 
 					tMax = Math.max(tMax, d); 
-					tPoints++;
+					tPopulation++;
 
 				}
 			}
@@ -966,8 +963,13 @@
 						var marker = this.markers[group][i];
 						var m = this.getPixels_from_mxy(marker.mxy, w,h, hexagonOverhang=0, zoom, pixelOrigin, pixelPane);
 						marker.visible = m.visible;
+						marker.position = [m.x,m.y];
+						marker.filter = this.checkFilter(marker);
 
-						// todo: filter (like in points)
+						// skip filtered
+						if(!marker.filter) {
+							continue;
+						}
 
 						// hexagon-cell
 						var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset, zoom);
@@ -1079,11 +1081,11 @@
 			this.totals.hexagons = Object.keys(this.hexagonals).length; 
 			this.totals.markers = tMarkers; 
 			this.totals.links = tLinks;
-			this.totals.points = tPoints;
-			this.totals.population = tPoints;
+			this.totals.points = tPopulation;
+			this.totals.population = tPopulation;
 			this.totals.populationCellMax = tPopulationCellMax;
 			this.totals.sum = tSum;
-			this.totals.avg = tSum/tPoints || 0;
+			this.totals.avg = tSum/tPopulation || 0;
 			this.totals.min = tMin;
 			this.totals.max = tMax;
 			this.totals.delta = tMax-tMin;
@@ -1453,18 +1455,20 @@
 					continue;
 				}
 
-				var t = point.info.toLowerCase();
-				if(f.operator=="contains") {
-					if(t.indexOf(f.value)>=0) { checks++; }
-					continue;
-				}
-				if(f.operator=="startswith") {
-					if(t.startsWith(f.value)) { checks++; }
-					continue;
-				}
-				if(f.operator=="endswith") {
-					if(t.endsWith(f.value)) { checks++; }
-					continue;
+				if(f.property=="name" || f.property=="tags" || f.property=="group" || f.property=="id") {
+					var t = point[f.property].toLowerCase();
+					if(f.operator=="contains") {
+						if(t.indexOf(f.value)>=0) { checks++; }
+						continue;
+					}
+					if(f.operator=="startswith") {
+						if(t.startsWith(f.value)) { checks++; }
+						continue;
+					}
+					if(f.operator=="endswith") {
+						if(t.endsWith(f.value)) { checks++; }
+						continue;
+					}
 				}
 
 			}
@@ -1660,17 +1664,17 @@
 				self._update("onRefresh");
 			}, 50);
 		},
-		_onDraw: function _onDraw(major) {
+		_onDraw: function _onDraw(majorChange) {
 			var startTime = performance.now();
 			this.view.zoom = this._zoom;
 			this.view.center = this._center;
-			this.hexagonalize(major);
+			this.hexagonalize(majorChange);
 			this.totals.hexTime = performance.now() - startTime; 
 			this.updateClusterRamp();
-			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options, major);
+			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options, majorChange);
 			this.totals.drawTime = performance.now() - startTime; 
 		},
-		onDraw: function onDraw(canvas, hexagonals, selection, links, options, major) {
+		onDraw: function onDraw(canvas, hexagonals, selection, links, options, majorChange) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
@@ -1680,7 +1684,7 @@
 
 			// layers
 			var markerLayer
-			if(major) {
+			if(majorChange) {
 				this.markerLayer.clearLayers();
 				this.markerLayer.needsUpdate = true;
 			}
@@ -1720,34 +1724,15 @@
 				for(var i=0; i<links.length; i++) {
 
 					var cluster = false;
-					var link = false;
-
-					// todo: avg out start/end or make a gradient-link?
-
-					if(links[i].end.cell.cluster) {
-						cluster = links[i].end.cell.cluster;
-						link = links[i].end;
-					}
-					else if(links[i].start.cell.cluster) {
-						cluster = links[i].start.cell.cluster;
-						link = links[i].start;
-					}
-					else if(links[i].style) {
-						link = links[i];
-					}
-
+					var link = links[i].start;
+					var cluster = link.cell.cluster;
 
 					// style
 					style.fill = link?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
 
-					// if start/end-point is visibly clustered (?!)
+					// cluster style
 					if(this.options.clusterMode) {
-
-						//clusterMode = "population" || "sum" || "avg" || "min" || "max" || false
-						if(!cluster) {
-							style.fill = this.calcClusterColor(0,0,1);
-						}
-						else if(this.options.clusterMode=="population") {
+						if(this.options.clusterMode=="population") {
 							style.fill = this.calcClusterColor(cluster.population, 1, tPopulation);
 						}
 						else if(this.options.clusterMode=="sum") {
@@ -1763,7 +1748,7 @@
 							style.fill = this.calcClusterColor(cluster.max,  tMin, tMax);
 						}
 					}
-
+					
 
 					tLinksDrawn += this.drawLink(ctx, links[i], style);
 					if(selectionGroups[links[i].group] && options.selectionVisible) {
@@ -1776,7 +1761,7 @@
 
 
 			// draw points and marker
-			var hexs = Object.keys(hexagonals);
+			var hexs = Object.keys(hexagonals); 
 			if(hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
 
@@ -1820,7 +1805,7 @@
 
 					// draw marker
 					if(options.markerVisible) {
-						if(major || this.markerLayer.needsUpdate) {
+						if(majorChange || this.markerLayer.needsUpdate) {
 							tMarkersDrawn += this.drawMarker(hexagonals[hexs[h]], style);
 						}
 					}
@@ -2622,6 +2607,13 @@
 			if(typeof id == "number") { return id+""; }
 			return this._genId();
 		},
+		_valName: function _valName(meta) {
+			var prop = meta.nameProperty || "name";
+			var name = meta[prop];
+			if(typeof name == "string") { return name;  }
+			if(typeof name == "number") { return name+""; }
+			return "";
+		},
 		_valLink: function _valLink(meta,group) {
 			var prop = meta.linkProperty || "link";
 			var link = meta[prop];
@@ -2657,11 +2649,6 @@
 			// else => []
 			return [];
 		},
-		_valInfo: function _valInfo(meta) {
-			var prop = meta.infoProperty || "info";
-			var info = meta[prop] || "";
-			return info;
-		},
 		_valData: function _valData(meta) {
 			var mks = Object.keys(meta);
 			var data = {};
@@ -2675,7 +2662,7 @@
 		_valTags: function _valTags(meta) {
 			var prop = meta.tagProperty || "tags";
 			var tags = meta[prop] + "";
-			if(tags=="undefined" || tags=="false") { tags = this.options.tagDefault; }
+			if(tags=="undefined" || tags=="false") { tags = ""; }
 			return tags;
 		}
 
