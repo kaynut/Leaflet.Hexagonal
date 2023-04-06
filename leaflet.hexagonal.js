@@ -1,13 +1,14 @@
 // todo:
 // selection rework
 // add: selectionMode > single hexagon, group
-// clusterMode: clusterIndicator (if single or clustered)
 // update marker-clickablility
-// Visibility _> to MinMaxZoom
-// adapt selection etc
+// DONE: options.thingVisible >> options.thingDisplay >> this.display.thing && _checkDisplay 
 // DONE: check again if links are colored the right way in clustering
 
-
+// updates
+// special treatment for linkMode=curve clickability?
+// put part of hexagonalize in webworker?
+// clusterMode: clusterIndicator (if single or clustered)
 
 /*!
  * Leaflet.Hexagonal.js v0.8.0
@@ -50,9 +51,9 @@
 
 
 
-			// hexagonVisible: boolean 
-			// > whether or not hexagons will be visible
-			hexagonVisible: true,
+			// hexagonDisplay: boolean || {minZoom,maxZoom}
+			// > whether or not / at what zoomlevels hexagons will be visible
+			hexagonDisplay: true,
 			// hexagonSize: integer || function
 			// size of hexagonal grid
 			hexagonSize: 16, 
@@ -91,14 +92,14 @@
 			clusterColors: ["#4d4","#dd4","#d44","#800"],
 
 
-			// markerVisible: boolean
-			markerVisible: true,
+			// markerDisplay: boolean || {minZoom,maxZoom}
+			markerDisplay: true,
 			//markerOpacity: number (0-1)
 			markerOpacity: 0.9,
 
 
-			// linkVisible: boolean
-			linkVisible: true,	
+			// linkDisplay: boolean || {minZoom,maxZoom}
+			linkDisplay: true,	
 			// linkWidth: pixels
 			linkWidth: 2,
 			// linkFill: false || true || "#color"
@@ -109,14 +110,16 @@
 			linkJoin: 1,  
 
 
+			//  gutterDisplay: boolean || {minZoom,maxZoom}
+			gutterDisplay: false,
 			// gutterFill: false || "#color"
 			gutterFill: false, //"#101214",
 			// gutterStroke: false || "#color"
-			gutterStroke: false, //"#202224",
+			gutterStroke: "#202224",
 
 
-			// selectionVisible: true || false
-			selectionVisible: true,
+			// selectionDisplay: boolean || {minZoom,maxZoom}
+			selectionDisplay: true,
 			// selectionFillColor: "color" || false
 			selectionFillColor: "rgba(255,255,255,0.2)", 	
 			// selectionStrokeColor: "color" || false
@@ -125,8 +128,8 @@
 			selectionBorderWidth: 2,	
 			
 
-			// infoVisible: true || false
-			infoVisible: true,
+			// infoDisplay: boolean || {minZoom,maxZoom}
+			infoDisplay: true,
 			// infoOpacity: true || false
 			infoOpacity: 0.9,
 			// infoClassName: class || ""
@@ -178,6 +181,8 @@
 		clusterRampHash: false,
 
 		gutter: false,
+
+		display: {},
 
 		icons: {
 			fallback: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>', size:{width:24, height:24}, scale:1 }
@@ -821,6 +826,15 @@
 			var hexagonBounds = [hnw.idx, hnw.idy, hse.idx, hse.idy];
 
 
+			// display
+			this.display.hexagons = this._checkDisplay(this.options.hexagonDisplay,zoom);
+			this.display.markers = this._checkDisplay(this.options.markerDisplay,zoom);
+			this.display.links = this._checkDisplay(this.options.linkDisplay,zoom);
+			this.display.gutter = this._checkDisplay(this.options.gutterDisplay,zoom);
+			this.display.selection = this._checkDisplay(this.options.selectionDisplay,zoom);
+			this.display.info = this._checkDisplay(this.options.infoDisplay,zoom);
+
+
 			// totals
 			var tSum = 0;
 			var tPopulationCellMax = 1;
@@ -829,9 +843,6 @@
 			var tLinks = 0;
 			var tMin = Number.MAX_SAFE_INTEGER;
 			var tMax = Number.MIN_SAFE_INTEGER;
-			
-
-			// todo: put code below into webworker?
 
 
 			// cluster points
@@ -863,7 +874,7 @@
 
 					// skip invisible+unlinked
 					if(!point.visible) {
-						if(!this.options.linkVisible || !point.link.length) {
+						if(!this.display.links || !point.link.length) {
 							continue;
 						}
 					}
@@ -933,7 +944,7 @@
 					// countMax
 					tPopulationCellMax = Math.max(this.hexagonals[h.cell].cluster.population, tPopulationCellMax);  
 
-					// devel
+					// point cluster
 					point.cell.cluster = this.hexagonals[h.cell].cluster;
 
 					// totals
@@ -945,7 +956,7 @@
 				}
 			}
 			// cluster markers 
-			if(this.options.markerVisible) {
+			if(this.display.markers) {
 
 				for(var go=0; go<this.groupOrder.length; go++) {
 					var group = this.groupOrder[go];
@@ -1018,7 +1029,7 @@
 
 			// collect links
 			this.links = [];
-			if(this.options.linkVisible) { // && this.options.linkMode) {
+			if(this.display.links) { 
 				for(var go=0; go<this.groupOrder.length; go++) {
 					var group = this.groupOrder[go];
 
@@ -1074,7 +1085,7 @@
 
 
 			// gutter
-			if(this.options.gutterFill || this.options.gutterStroke) {	
+			if(this.display.gutter) {	
 				this.gutter = this.calcGutterCells(hexagonBounds, hexagonSize, hexagonOffset);
 			}
 
@@ -1278,7 +1289,7 @@
 				if(!hs[h.cell]) {
 					hs[h.cell] = h;
 
-					// add hexagonal - just for clickablility: todo: adapt for linkMode=curve - maybe put them in this.hexalinks instead?
+					
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
 
@@ -1671,10 +1682,10 @@
 			this.hexagonalize(majorChange);
 			this.totals.hexTime = performance.now() - startTime; 
 			this.updateClusterRamp();
-			this.onDraw(this._container, this.hexagonals, this.selection, this.links, this.options, majorChange);
+			this.onDraw(this._container, this.hexagonals, this.selection, this.links, majorChange);
 			this.totals.drawTime = performance.now() - startTime; 
 		},
-		onDraw: function onDraw(canvas, hexagonals, selection, links, options, majorChange) {
+		onDraw: function onDraw(canvas, hexagonals, selection, links, majorChange) {
 
 			// canvasContext
 			var ctx = canvas.getContext("2d");
@@ -1683,7 +1694,6 @@
 			if(selection.groups) { selectionGroups = selection.groups; }
 
 			// layers
-			var markerLayer
 			if(majorChange) {
 				this.markerLayer.clearLayers();
 				this.markerLayer.needsUpdate = true;
@@ -1714,13 +1724,13 @@
 
 
 			// draw gutter
-			if(this.options.gutterFill || this.options.gutterStroke) {
+			if(this.display.gutter) {
 				this.drawGutter(ctx);
 			}
 			
 
 			// draw links
-			if(links.length && options.linkVisible) {
+			if(links.length && this.display.links) {
 				for(var i=0; i<links.length; i++) {
 
 					var cluster = false;
@@ -1751,7 +1761,7 @@
 					
 
 					tLinksDrawn += this.drawLink(ctx, links[i], style);
-					if(selectionGroups[links[i].group] && options.selectionVisible) {
+					if(selectionGroups[links[i].group] && this.display.selection) {
 						this.drawLinkSelected(ctx, links[i]);
 					}
 
@@ -1787,11 +1797,11 @@
 
 
 					// draw hexagonals
-					if(options.hexagonVisible && hexagonals[hexs[h]].point) {	
+					if(this.display.hexagons && hexagonals[hexs[h]].point) {	
 						if(hexagonals[hexs[h]].pointless==false) {
 							tHexagonsDrawn += this.drawHexagon(ctx, hexagonals[hexs[h]], style);
 						}
-						if(options.selectionVisible) {
+						if(this.display.selection) {
 							var hgs = Object.keys(hexagonals[hexs[h]].groups);
 							for(var i=0;i<hgs.length;i++) {
 								var hid = hexagonals[hexs[h]].groups[hgs[i]];
@@ -1804,7 +1814,7 @@
 
 
 					// draw marker
-					if(options.markerVisible) {
+					if(this.display.markers) {
 						if(majorChange || this.markerLayer.needsUpdate) {
 							tMarkersDrawn += this.drawMarker(hexagonals[hexs[h]], style);
 						}
@@ -1813,7 +1823,7 @@
 			}
 
 			// reset this.markerLayer.needsUpdate
-			if(options.markerVisible) {
+			if(this.display.markers) {
 				this.markerLayer.needsUpdate = false;
 			}
 
@@ -2261,7 +2271,7 @@
 				this.infoLayer.clearLayers();
 			} 
 
-			if(!info || !this.options.infoVisible) {
+			if(!info || !this.display.info) {
 				return;
 			}
 
@@ -2664,8 +2674,22 @@
 			var tags = meta[prop] + "";
 			if(tags=="undefined" || tags=="false") { tags = ""; }
 			return tags;
+		},
+		_checkDisplay: function _checkDisplay(val,zoom=0) {
+			if(typeof val == "boolean") {
+				return val;
+			}
+			if(typeof val.minZoom == "number") {
+				if(typeof val.maxZoom == "number") {
+					return (zoom>=val.minZoom && zoom<=val.maxZoom); 
+				}
+				return zoom>=val.minZoom;
+			}
+			if(typeof val.maxZoom == "number") {
+				return zoom<=val.maxZoom;
+			}
+			return true;
 		}
-
 		// #endregion
 
 	});

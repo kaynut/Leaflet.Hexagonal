@@ -59,7 +59,7 @@
 		layer.options.linkMode = "curve";
 		layer.options.linkMode = "curve";
 		layer.options.hexagonSize = 12;
-
+		layer.options.gutterVisible = true;
 
 
 
@@ -195,8 +195,10 @@
 /*
 				layer.addPoint( [0,50] , { group:"D", fill:"#0aa", link:true, d0:1, d1:1 });
 				layer.addPoint( [2,50] , { group:"D", fill:"#0aa", link:true, d0:2, d1:1 });
-				layer.addPoint( [2,52] , { group:"D", fill:"#0aa", link:true, d0:3, d1:1 });
+				layer.addPoint( [2,52] , { group:"D",  link:true, d0:3, d1:1 });
 				layer.addPoint( [0,52] , { group:"D", fill:"#0aa", link:true, d0:4, d1:1 });
+
+				layer.setGroupFill("D","#ddd");
 
 				layer.addPoint( [0,50] , { group:"E", fill:"#00a", link:true, d0:10, d1:1 });
 				layer.addPoint( [2,50] , { group:"E", fill:"#00a", link:true, d0:20, d1:1 });
