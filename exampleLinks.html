@@ -57,17 +57,15 @@
 		// layer
 		var layer = new L.Hexagonal().addTo(map);
 		layer.options.linkMode = "curve";
-		layer.options.linkMode = "curve";
 		layer.options.hexagonSize = 12;
-		layer.options.gutterVisible = true;
-
+		layer.options.linkDisplay = {minZoom:4, maxZoom:8};
 
 
 		// gui
 	    var gui = new lil.GUI();
 		gui.title("Leaflet.Hexagonal");
 
-
+		
 		// links
 		var oLinks = {
 			linkVisible: true,
