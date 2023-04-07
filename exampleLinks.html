@@ -143,6 +143,23 @@
 		fCluster.add( oCluster, 'cluster_d0_max' );
 
 
+		var oSelection = {
+			'clear': function() {
+				layer.setSelection();
+			},
+			'group A': function() { 
+				layer.setSelection({group:"A"}) 
+			},
+			'group BC': function() { 
+				layer.setSelection({group:["B","C"]}) 
+			}
+		};
+		var fSelection = gui.addFolder('selection');
+		fSelection.add( oSelection, 'clear' );
+		fSelection.add( oSelection, 'group A' );
+		fSelection.add( oSelection, 'group BC' );
+
+
 		function redraw(group="all") {
 				// remove groups
 				if(group=="all" || group=="A") {
