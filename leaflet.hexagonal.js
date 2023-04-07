@@ -1824,7 +1824,6 @@
 							var gs = Object.keys(selGroups);
 							for(var g=0; g<gs.length; g++) {
 								if(hexagonals[hexs[h]].groups[gs[g]]) {
-									console.log("haha");
 									this.drawHexagonSelected(ctx, hexagonals[hexs[h]]);
 								}
 							}
