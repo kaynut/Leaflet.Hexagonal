@@ -1,13 +1,13 @@
 // todo:
-// selection rework
-// add: selectionMode > single hexagon, group > selectionMode: "group" || "point" || "hexagon"
-// update marker-clickablility
+// DONE: selection rework
+// DONE: add: selectionMode > single hexagon, group > selectionMode: "group" || "id"
+// DONE: update marker-clickablility
 // DONE: options.thingVisible >> options.thingDisplay >> this.display.thing && _checkDisplay 
 // DONE: check again if links are colored the right way in clustering
 
 // updates
-// special treatment for linkMode=curve clickability?
-// put part of hexagonalize in webworker?
+// SKIP: special treatment for linkMode=curve clickability?
+// SKIPput part of hexagonalize in webworker?
 // clusterMode: clusterIndicator (if single or clustered)
 
 /*!
@@ -120,7 +120,7 @@
 
 			// selectionDisplay: boolean || {minZoom,maxZoom}
 			selectionDisplay: true,
-			// selectionMode: "group" || "point" || "hexagon"
+			// selectionMode: "group" || "id"
 			selectionMode: "group",
 			// selectionFillColor: "color" || false
 			selectionFillColor: "rgba(0,0,0,0)", //"rgba(255,255,255,0.2)", 	
@@ -166,7 +166,11 @@
 
 		markerLayer: false,
 
-		selection: {},
+		selection: {
+			selected:false,
+			selector:false,
+			highlighted: false
+		},
 
 		groupOrder:[],
 		groupVisibility:{},
@@ -900,6 +904,8 @@
 
 						this.hexagonals[h.cell].group = false;
 						this.hexagonals[h.cell].groups = {};
+
+						this.hexagonals[h.cell].ids = {};
 						
 						this.hexagonals[h.cell].marker = false;
 						this.hexagonals[h.cell].markers = [];
@@ -934,6 +940,9 @@
 					}
 					this.hexagonals[h.cell].group = group;
 					this.hexagonals[h.cell].groups[group]++;
+
+					// ids
+					this.hexagonals[h.cell].ids[point.id]=true;
 
 					// cluster data
 					this.hexagonals[h.cell].cluster.population++;
@@ -999,6 +1008,8 @@
 							this.hexagonals[h.cell].group = group;
 							this.hexagonals[h.cell].groups = {};
 							
+							this.hexagonals[h.cell].ids = {};
+
 							this.hexagonals[h.cell].marker = false;
 							this.hexagonals[h.cell].markers = [];
 
@@ -1304,6 +1315,8 @@
 
 						this.hexagonals[h.cell].group = group;
 						this.hexagonals[h.cell].groups = {};
+
+						this.hexagonals[h.cell].ids = {};
 						
 						this.hexagonals[h.cell].marker = false;
 						this.hexagonals[h.cell].markers = [];
@@ -1323,6 +1336,15 @@
 					this.hexagonals[h.cell].link = [group, index0, index1];
 					this.hexagonals[h.cell].links.push([group, index0, index1]);
 
+					// link clickability
+					// if hexagon only contains links > add group/groups //// and not curve-mode
+					if(this.hexagonals[h.cell].linkOnly===true) { //// && this.options.linkMode!="curve") {
+						if(typeof this.hexagonals[h.cell].groups[group] != "number") {
+							this.hexagonals[h.cell].groups[group] = 0;
+						}
+						this.hexagonals[h.cell].group = group;
+						this.hexagonals[h.cell].groups[group]++;
+					}
 					
 				}
 			}
@@ -1714,8 +1736,12 @@
 
 			// selection
 			var selGroups = false;
-			if(this.display.selection && this.options.selectionMode=="group" && selection.groups) {
-				selGroups = selection.groups;
+			if(this.display.selection && this.options.selectionMode=="group" && selection.selected.groups) {
+				selGroups = selection.selected.groups;
+			}
+			var selIds = false;
+			if(this.display.selection && this.options.selectionMode=="id" && selection.selected.ids) {
+				selIds = selection.selected.ids;
 			}
 
 
@@ -1779,6 +1805,7 @@
 					if(selGroups) {
 						if(selGroups[links[i].group]) {
 							this.drawLinkSelected(ctx, links[i]);
+							selection.highlighted.push(links[i]);
 						}
 					}
 
@@ -1825,6 +1852,16 @@
 							for(var g=0; g<gs.length; g++) {
 								if(hexagonals[hexs[h]].groups[gs[g]]) {
 									this.drawHexagonSelected(ctx, hexagonals[hexs[h]]);
+									selection.highlighted.push(hexagonals[hexs[h]]);
+								}
+							}
+						}
+						else if(selIds) {
+							var gs = Object.keys(selIds);
+							for(var g=0; g<gs.length; g++) {
+								if(hexagonals[hexs[h]].ids[gs[g]]) {
+									this.drawHexagonSelected(ctx, hexagonals[hexs[h]]);
+									selection.highlighted.push(hexagonals[hexs[h]]);
 								}
 							}
 						}
@@ -1872,7 +1909,7 @@
 			return 1;
 		},
 		drawMarker: function drawMarker(hexagon, styleHexagon={}) {
-			var mi = hexagon.marker;
+			var mi = hexagon.marker; 
 			if(!mi) { return 0; }
 
 			var m0 = this.markers[mi[0]][mi[1]];
@@ -1928,7 +1965,7 @@
 				var lm = L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer);
 				L.DomEvent.on(lm, 'click', function(e) { 
 					L.DomEvent.stopPropagation;
-					ref._onClick(e);
+					ref._onClick(e, {marker:m0});
 				});
 				return 1; 
 			}	
@@ -1955,7 +1992,7 @@
 					var lm = L.marker(hexagon.latlng, {icon: icon, opacity:ref.options.markerOpacity}).addTo(ref.markerLayer); 
 					L.DomEvent.on(lm, 'click', function(e) { 
 						L.DomEvent.stopPropagation;
-						ref._onClick(e);
+						ref._onClick(e, {marker:m0});
 					});
 				};
 
@@ -2150,14 +2187,16 @@
 
 		// #######################################################
 		// #region events
-		_onClick: function _onClick(e) {
+		_onClick: function _onClick(e, target={layer:true}) {
+			console.log(e);
 			var selection = this.setSelection(e.latlng);
-			if(selection) {
+			if(selection.selected) {
 				//this.setInfo(selection);
 			}
-			//this.onClick(e,selection);
+			this.onClick(e,selection, target);
+			console.log(target);
 		},
-		onClick: function onClick(e,selection) {
+		onClick: function onClick(e, selection, target) {
 			if(selection) {
 
  				//console.log("onClick", selection);
@@ -2170,7 +2209,7 @@
 			window.clearTimeout(self._onMouseRestDebounced_Hexagonal);
 			self._onMouseRestDebounced_Hexagonal = window.setTimeout(function () {
 				
-				var selection = self.selectionByLatlng(e.latlng);
+				var selection = self.selectByLatlng(e.latlng);
 				self.onMouseRest(selection);
 
 			}, 250);
@@ -2352,12 +2391,16 @@
 
 		// #######################################################
 		// #region selection
-		setSelection: function setSelection(select) {
-			var selection = false;
+		setSelection: function setSelection(selector) {
+			var selection = { 
+				selected: false,
+				selector:false,
+				highlighted: []
+			};
 
 			// clear
-			if(typeof select != "object") {
-				if(selection != this.selection) {
+			if(typeof selector != "object") {
+				if(this.selection.selected) {
 					this.selection = selection;
 					this.refresh();
 				}
@@ -2365,47 +2408,52 @@
 			}
 
 			// latlng
-			if(Array.isArray(select)) {
-				if(typeof select[0] == "number" && typeof select[1] == "number") {
-					var latlng = { lat:select[1], lng:select[0] }; 
-					select = { latlng: latlng };
+			if(Array.isArray(selector)) {
+				if(typeof selector[0] == "number" && typeof selector[1] == "number") {
+					var latlng = { lat:selector[1], lng:selector[0] }; 
+					selector = { latlng: latlng };
 				}
 			}
-			else if(typeof select.lat == "number" && typeof select.lng == "number") {
-				select.latlng = { lat:select.lat, lng:select.lng }; 
+			else if(typeof selector.lat == "number" && typeof selector.lng == "number") {
+				selector.latlng = { lat:selector.lat, lng:selector.lng }; 
 			}
-			else if(typeof select.lat == "number" && typeof select.lon == "number") {
-				select.latlng = { lat:select.lat, lng:select.lon }; 
+			else if(typeof selector.lat == "number" && typeof selector.lon == "number") {
+				selector.latlng = { lat:selector.lat, lng:selector.lon }; 
 			}
-			if(select.latlng) {
-				var hit = this.selectionByLatlng(select.latlng);
-				if(hit) {
-					selection = JSON.parse(JSON.stringify(hit));
-					selection.selector = { key:"latlng", value:select.latlng };
+			if(selector.latlng) {
+				var sel = this.selectByLatlng(selector.latlng);
+				if(sel) {
+					//this.options.selectionMode = "group";
 				}
+				selection.selected = JSON.parse(JSON.stringify(sel));
+				selection.selector = { mode:"latlng", value:selector.latlng };
+				selection.highlighted = [];
 			}
 
-			// group
-			if(select.group) {
-				selection = this.selectionByGroup(select.group);
-				if(selection) {
-					selection.selector = { key:"group", value:select.group };
+			// group/groups
+			if(selector.group || selector.groups) {
+				if(!selector.groups) { selector.groups = selector.group; }
+				var sel = this.selectByGroups(selector.groups);
+				if(sel) {
+					this.options.selectionMode = "group";
+					selection.selected = sel; // todo
+					selection.selector = { mode:"group", value:sel.groups };
+					selection.highlighted = [];
 				}
 			}
 
 			// id
-			if(select.id) {
-				selection = this.idSelect(select.id);
-				if(selection) {
-					selection.selector = { key:"id", value:select.id };
+			if(selector.id || selector.ids) {
+				if(!selector.ids) { selector.ids = selector.id; }
+				var sel = this.selectByIds(selector.id);
+				if(sel) {
+					this.options.selectionMode = "id";
+					selection.selected = sel; // todo
+					selection.selector = { mode:"id", value:sel.ids };
+					selection.highlighted = [];
 				}
 			}
 
-			// name
-			if(select.name) {
-				selection = this.selectionByName(select.name);
-				selection.selector = { key:"name", value:select.name };
-			}
 
 
 			console.log(selection);
@@ -2420,7 +2468,7 @@
 		clearSelection: function clearSelection() {
 			return this.setSelection();
 		},
-		selectionByLatlng: function selectionByLatlng(latlng) {
+		selectByLatlng: function selectByLatlng(latlng) {
 
 			if(!latlng) {
 				return this.selection;
@@ -2441,97 +2489,59 @@
 				return this.hexagonals[h.cell];
 			}
 
-			// no
 			return false;
 
-
-			/*
-
-			{
-				"cell": "6_834_472",
-				"cellX": 834,
-				"cellY": 472,
-				"cx": 724.1822410746609,
-				"cy": 376,
-				"px": 721,
-				"py": 376,
-				"path": "M717.2540378443854 376 L720.7181394595231 370 L727.6463426897986 370 L731.1104443049363 376 L727.6463426897986 382 L720.7181394595231 382Z",
-				"latlng": {
-					"lat": 48.45835188280866,
-					"lng": 10.437011718750002
-				},
-				"size": 12,
-				"pointyTop": false,
-				"point": [
-					"A",
-					15
-				],
-				"points": [
-					[
-						"A",
-						15
-					]
-				],
-				"group": "A",
-				"groups": {
-					"A": 1
-				},
-				"marker": false,
-				"markers": [],
-				"link": false,
-				"links": [],
-				"linkOnly": false,
-				"cluster": {
-					"population": 1,
-					"sum": 0,
-					"avg": 0,
-					"min": 0,
-					"max": 0
-				},
-				"style": {
-					"fill": "#a00"
-				},
-				"pointless": false,
-				"visible": true,
-				"selector": {
-					"key": "latlng",
-					"value": {
-						"lat": 48.4146186174932,
-						"lng": 10.437011718750002
-					}
-				}
-			}
-			*/
-
-
 		},
-		selectionByGroup: function selectionByGroup(groups) {
-			var selection = false;
+		selectByGroups: function selectByGroups(groups) {
+			var sel = false;
 
-			if(typeof groups == "string") {
+			if(typeof groups == "string" || typeof groups == "number") {
 				groups = [groups];
 			}
 			if(!Array.isArray(groups)) {
-				return selection;
+				return sel;
 			}
 
 			for(var i=0; i<groups.length;i++) {
+				if(typeof groups[i] == "number") {
+					groups[i] += "";
+				}
 				if(typeof groups[i] == "string") {
-					if(!selection) { 
-						selection = { groups: {} };
+					if(!sel) { 
+						sel = { groups: {} };
 					}
-					selection.groups[groups[i]] = true;
+					sel.groups[groups[i]] = true;
 				}
 			}
 
-			return selection;
+			return sel;
 
 		},
-		selectionById: function selectionById(id) {
-			// todo: group select
-			return {id: id};
+		selectByIds: function selectByIds(ids) {
+			var sel = false;
+
+			if(typeof ids == "string" || typeof ids == "number") {
+				ids = [ids];
+			}
+			if(!Array.isArray(ids)) {
+				return sel;
+			}
+
+			for(var i=0; i<ids.length;i++) {
+				if(typeof ids[i] == "number") {
+					ids[i] += "";
+				}
+				if(typeof ids[i] == "string") {
+					if(!sel) { 
+						sel = { ids: {} };
+					}
+					sel.ids[ids[i]] = true;
+				}
+			}
+
+			return sel;
 		},
-		selectionByName: function selectionByName(name) {
+		selectByName: function selectByName(name) {
 			return {name:name};
 		},
 

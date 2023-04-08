@@ -145,19 +145,31 @@
 
 		var oSelection = {
 			'clear': function() {
-				layer.setSelection();
+				layer.setSelection(); console.log(layer.hexagonals);
 			},
 			'group A': function() { 
 				layer.setSelection({group:"A"}) 
 			},
 			'group BC': function() { 
 				layer.setSelection({group:["B","C"]}) 
+			},
+			'id A1': function() { 
+				layer.setSelection({id:"A1"}) 
+			},
+			'id A1 B1 C1': function() { 
+				layer.setSelection({id:["A1","B1","C1"]}) 
+			},
+			'id B1 B2 B3 B4 B5': function() { 
+				layer.setSelection({id:["B1","B2","B3","B4","B5"]}) 
 			}
 		};
 		var fSelection = gui.addFolder('selection');
 		fSelection.add( oSelection, 'clear' );
 		fSelection.add( oSelection, 'group A' );
 		fSelection.add( oSelection, 'group BC' );
+		fSelection.add( oSelection, 'id A1' );
+		fSelection.add( oSelection, 'id A1 B1 C1' );
+		fSelection.add( oSelection, 'id B1 B2 B3 B4 B5' );
 
 
 		function redraw(group="all") {
@@ -189,21 +201,21 @@
 						a.lat += (Math.random()-0.49) * latMax;
 						var d0 = a.lng + a.lat;// + Math.random();
 						var d1 = Math.round(Math.random());
-						layer.addPoint( a , { group:"A", fill:"#a00", link:true, d0:d0, d1:d1 });
+						layer.addPoint( a , { group:"A", id:("A"+i), fill:"#a00", link:true, d0:d0, d1:d1 });
 					}
 					if(group=="all" || group=="B") {
 						b.lng += (Math.random()-0.49) * lngMax;
 						b.lat += (Math.random()-0.51) * latMax;
 						var d0 = b.lng + b.lat;// + Math.random();
 						var d1 = Math.round(Math.random());
-						layer.addPoint( b , { group:"B", fill:"#aa0", link:true, d0:d0, d1:d1 });
+						layer.addPoint( b , { group:"B", id:("B"+i), fill:"#aa0", link:true, d0:d0, d1:d1 });
 					}
 					if(group=="all" || group=="C") {
 						c.lng += (Math.random()-0.51) * lngMax;
 						c.lat += (Math.random()-0.51) * latMax;
 						var d0 = c.lng + c.lat;// + Math.random();
 						var d1 = Math.round(Math.random());
-						layer.addPoint( c , { group:"C", fill:"#0a0", link:true, d0:d0, d1:d1 });
+						layer.addPoint( c , { group:"C", id:("C"+i), fill:"#0a0", link:true, d0:d0, d1:d1 });
 					}
 				}
 
