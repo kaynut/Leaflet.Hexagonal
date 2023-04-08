@@ -4,11 +4,13 @@
 // DONE: update marker-clickablility
 // DONE: options.thingVisible >> options.thingDisplay >> this.display.thing && _checkDisplay 
 // DONE: check again if links are colored the right way in clustering
+// DONE: link:0 does not work , check === true
+// rework setInfo, buildInfo
 
 // updates
 // SKIP: special treatment for linkMode=curve clickability?
-// SKIPput part of hexagonalize in webworker?
-// clusterMode: clusterIndicator (if single or clustered)
+// SKIP: put part of hexagonalize in webworker?
+// SKIP: clusterMode: clusterIndicator (if single or clustered)
 
 /*!
  * Leaflet.Hexagonal.js v0.8.0
@@ -278,8 +280,8 @@
 			}
 			this._isZoomVisible() ? this._update(majorChange) : this._zoomHide();
 		},
-		_onLayerZoomEnd: function _onLayerZoomEnd() {
-			this.onZoomEnd();
+		_onLayerZoomEnd: function _onLayerZoomEnd(e) {
+			this._onZoomEnd(e);
 		},
 		_onZoomVisible: function _onZoomVisible() {
 			this._isZoomVisible() ? this._zoomShow() : this._zoomHide();
@@ -2187,42 +2189,44 @@
 
 		// #######################################################
 		// #region events
+		// click
 		_onClick: function _onClick(e, target={layer:true}) {
-			console.log(e);
 			var selection = this.setSelection(e.latlng);
 			if(selection.selected) {
-				//this.setInfo(selection);
+				this.setInfo(selection);
 			}
 			this.onClick(e,selection, target);
-			console.log(target);
 		},
+		// overwritable
 		onClick: function onClick(e, selection, target) {
-			if(selection) {
-
- 				//console.log("onClick", selection);
-				//console.log("onClick points",this.points);
-			}
-			return selection;
 		},
+
+		// rest
 		_onMouseRest: function _onMouseRest(e) {
 			var self = this;
 			window.clearTimeout(self._onMouseRestDebounced_Hexagonal);
 			self._onMouseRestDebounced_Hexagonal = window.setTimeout(function () {
 				
 				var selection = self.selectByLatlng(e.latlng);
-				self.onMouseRest(selection);
+				self.onMouseRest(e, selection, {layer:true});
 
 			}, 250);
 		},
-		onMouseRest: function onMouseRest(selection) {
-			//console.info("onMouseRest",selection);
+		// overwritable
+		onMouseRest: function onMouseRest(e, selection, target) {
 		},
-		onZoomEnd: function onZoomEnd() {
 
+		// zoomend
+		_onZoomEnd: function _onZoomEnd(e) {
 			if(this.selection) { 
 				this.setInfo(false);
 			}
+			this.onZoomEnd(e);
 		},
+		// overwritable
+		onZoomEnd: function onZoomEnd(e) {
+		},
+
 		// #endregion
 
 
@@ -2326,12 +2330,13 @@
 
 			if(this.info) {
 				this.infoLayer.clearLayers();
+				this.info = false;
 			} 
-
+console.log(info);
 			if(!info || !this.display.info) {
 				return;
 			}
-
+return; // todo
 			// get html for info
 			var html = this.buildInfo(info);
 
@@ -2436,7 +2441,7 @@
 				var sel = this.selectByGroups(selector.groups);
 				if(sel) {
 					this.options.selectionMode = "group";
-					selection.selected = sel; // todo
+					selection.selected = sel; 
 					selection.selector = { mode:"group", value:sel.groups };
 					selection.highlighted = [];
 				}
@@ -2448,15 +2453,12 @@
 				var sel = this.selectByIds(selector.id);
 				if(sel) {
 					this.options.selectionMode = "id";
-					selection.selected = sel; // todo
+					selection.selected = sel; 
 					selection.selector = { mode:"id", value:sel.ids };
 					selection.highlighted = [];
 				}
 			}
 
-
-
-			console.log(selection);
 
 			// update selection
 			this.selection = selection;
@@ -2793,7 +2795,7 @@
 
 			// number => index
 			if(typeof link == "number") { // index-position in group
-				link = Math.floor(link) || -1;
+				link = Math.floor(link);
 				if(link>=0) { 
 					return [link];
 				}
@@ -2804,7 +2806,7 @@
 			if(Array.isArray(link)) { // index-positions in group
 				var ls = [];
 				for(var i=0; i<link.length; i++) {
-					var l = Math.floor(link[i]) || -1;
+					var l = Math.floor(link[i]); 
 					if(l>=0) {
 						ls.push(l);
 					}
