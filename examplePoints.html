@@ -55,8 +55,9 @@
 
 
 		// hexagonals
-		var hexagonals = new L.Hexagonal({hexagonSize:32 /*, hexagonOrientation:"pointyTop"*/}).addTo(map);
+		var hexagonals = new L.Hexagonal({hexagonSize:32}).addTo(map);
 
+      hexagonals.options.hexagonOrientation = "octagon";
       
       // group "undefined"
       // add single point

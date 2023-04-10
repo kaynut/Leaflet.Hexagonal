@@ -63,7 +63,7 @@
 			// hexagonGap: pixels 
 			// gap between the cells of the hexagonal grid 
 			hexagonGap: 0, 	
-			// hexagonOrientation: "flatTop" || "pointyTop",
+			// hexagonOrientation: "flatTop" || "pointyTop"  || "circle"
 			// whether the hexagons are flat or pointy on the upper part
 			hexagonOrientation: "flatTop",		
 
@@ -1138,6 +1138,12 @@
 			if(this.options.hexagonOrientation == "pointyTop") {
 				return this.calcHexagonCell_pointyTop(x,y, size, offset, zoom);
 			}
+			if(this.options.hexagonOrientation == "circle") {
+				return this.calcHexagonCell_circle(x,y, size, offset, zoom);
+			}
+			if(this.options.hexagonOrientation == "octagon") {
+				return this.calcHexagonCell_octagon(x,y, size, offset, zoom);
+			}
 
 			offset = offset || {x:0,y:0};
 			var gap = this.options.hexagonGap || 0;
@@ -1161,8 +1167,8 @@
 
 			var pointyTop=false;
 
-			var path = "M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z";
-
+			//var path = "M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z";
+			var path = `M${cx-s2} ${cy} L${cx-s4} ${cy-h} L${cx+s4} ${cy-h} L${cx+s2} ${cy} L${cx+s4} ${cy+h} L${cx-s4} ${cy+h} Z`;
 			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:pointyTop };
 		},
 		calcHexagonCell_pointyTop: function calcHexagonCell_pointyTop(x,y, size, offset, zoom) { // hexagon top-pointy
@@ -1186,8 +1192,57 @@
 			cellX -= Math.floor(cellY/2); // pointy - offset even-r
 			var cell = zoom + "_" + cellX + "_" + cellY; 
 
-			var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
+			//var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
+			var path = `M${cx} ${cy-s2} L${cx-h} ${cy-s4} L${cx-h} ${cy+s4} L${cx} ${cy+s2} L${cx+h} ${cy+s4} L${cx+h} ${cy-s4} Z`;
+			
+			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
+		},
+		calcHexagonCell_circle: function calcHexagonCell_circle(x,y, size, offset, zoom) { // hexagon circle
+			offset = offset || {x:0,y:0};
+			var gap = this.options.hexagonGap || 0;
+			var xs = (x+offset.x)/size;
+			var ys = (y+offset.y)/size;
+			var sqrt3 = 1.7320508075688772; 
+			var s0 = size - gap;
+			var r = s0/2;
 
+			var t = Math.floor(xs + sqrt3 * ys + 1);
+			var cellX = Math.floor((Math.floor(2 * xs + 1) + t) / 3);
+			var cellY = Math.floor((t + Math.floor(-xs + sqrt3 * ys + 1)) / 3);
+			
+			var cx = (cellX-cellY/2) * size - offset.x;
+			var cy = cellY/2 * sqrt3 * size - offset.y;
+			var clatlng = this._map.containerPointToLatLng([cx,cy]);
+			cellX -= Math.floor(cellY/2); // pointy - offset even-r
+			var cell = zoom + "_" + cellX + "_" + cellY; 
+
+			var path = `M${cx-r} ${cy-r} a ${r},${r} 0 1,0 ${r * 2},0 a ${r},${r} 0 1,0 ${-r * 2},0`;
+			
+			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
+		},
+		calcHexagonCell_octagon: function calcHexagonCell_octagon(x,y, size, offset, zoom) { // hexagon circle
+			offset = offset || {x:0,y:0};
+			var gap = this.options.hexagonGap || 0;
+			var xs = (x+offset.x)/size;
+			var ys = (y+offset.y)/size;
+			var sqrt3 = 1.7320508075688772; 
+			var s0 = size - gap;
+			var r = s0/2;
+			var a0 = r*0.924;
+			var a1 = r*0.3827;
+
+			var t = Math.floor(xs + sqrt3 * ys + 1);
+			var cellX = Math.floor((Math.floor(2 * xs + 1) + t) / 3);
+			var cellY = Math.floor((t + Math.floor(-xs + sqrt3 * ys + 1)) / 3);
+			
+			var cx = (cellX-cellY/2) * size - offset.x;
+			var cy = cellY/2 * sqrt3 * size - offset.y;
+			var clatlng = this._map.containerPointToLatLng([cx,cy]);
+			cellX -= Math.floor(cellY/2); // pointy - offset even-r
+			var cell = zoom + "_" + cellX + "_" + cellY; 
+
+			var path = `M${cx-a0} ${cy+a1} L${cx-a1} ${cy+a0} L${cx+a1} ${cy+a0} L${cx+a0} ${cy+a1}  L${cx+a0} ${cy-a1} L${cx+a1} ${cy-a0} L${cx-a1} ${cy-a0} L${cx-a0} ${cy-a1} Z`;
+			
 			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
 		},
 		calcGutterCells: function calcGutterCells(bounds, size, offset) { // hexagon top-flat
