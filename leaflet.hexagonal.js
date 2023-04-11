@@ -192,6 +192,9 @@
 
 		display: {},
 
+		thumbs:{
+			fallback: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>', size:{width:24, height:24}, scale:1 }
+		},
 		icons: {
 			fallback: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>', size:{width:24, height:24}, scale:1 }
 		},
@@ -480,6 +483,8 @@
 			// add to marker
 			if(point.marker) {
 				this.markers[group].push(point);
+				var thumb = meta.icon || meta.image;
+				point.thumbId = this.fetchThumb(thumb);
 			}	
 
 			// refresh
@@ -489,6 +494,44 @@
 			return 1; 
 
 		},
+
+		// devel
+		fetchThumb: function fetchThumb(source) {
+			if(typeof source != "string") { return false; }
+			var l = source.length;
+			if(l<4) { return false; }
+
+			var id = this._genHash53(source);
+
+			// thumb already exists
+			if(this.thumbs[id]) { return id; }
+
+			// source is dataUrl
+			if(source.startsWith("data:image")) {
+
+			}
+
+			// source is svgString
+			if(source.startsWith("<svg ") || source.startsWith("<?xml")) {
+
+			}
+
+			// source is raster url
+			var endsWith = source.substring(l-4,l).toLowerCase();
+			if(endsWith==".jpg" || endsWith=="jpeg" || endsWith==".png") {
+
+			}
+
+			// source is vector url
+			if(endsWith=="svg") {
+
+			}
+
+			// unknown source
+			return false;
+
+		},
+
 		// addLine: add array of latlngs (all with same metadata), all in the same group and all linked by default
 		addLine: function addLine(latlngs, meta) {  // [ latlng0, latlng1, ... ] , {group,data, marker} 
 			if(!Array.isArray(latlngs)) {
@@ -1140,10 +1183,10 @@
 			}
 			if(this.options.hexagonOrientation == "circle") {
 				return this.calcHexagonCell_circle(x,y, size, offset, zoom);
-			}
+			}/*
 			if(this.options.hexagonOrientation == "octagon") {
 				return this.calcHexagonCell_octagon(x,y, size, offset, zoom);
-			}
+			}*/
 
 			offset = offset || {x:0,y:0};
 			var gap = this.options.hexagonGap || 0;
@@ -1220,6 +1263,7 @@
 			
 			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
 		},
+		/*
 		calcHexagonCell_octagon: function calcHexagonCell_octagon(x,y, size, offset, zoom) { // hexagon circle
 			offset = offset || {x:0,y:0};
 			var gap = this.options.hexagonGap || 0;
@@ -1245,6 +1289,7 @@
 			
 			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
 		},
+		*/
 		calcGutterCells: function calcGutterCells(bounds, size, offset) { // hexagon top-flat
 			if(this.options.hexagonOrientation == "pointyTop") {
 				return this.calcGutterCells_pointyTop(bounds, size, offset);
@@ -2787,6 +2832,34 @@ return; // todo
 			}
 			return str;
 		},
+		_genHash53: function _genHash53(str) {
+			if(typeof str == "number") { str += ""; }
+			if(typeof str != "string") { return false; }
+			var l = str.length;
+			if(l<33) {
+				return str.replace(/[\W_]+/g,"_");
+			}
+
+			var str0 = str.substring(0,3).replace(/[\W_]+/g,"_");
+			var str1 = str.substring(l-3,l).replace(/[\W_]+/g,"_");
+			var hl = Math.min(65536,l);
+			var h1 = 0xdeadbeef, h2 = 0x41c6ce57d;
+
+			for(var i = 1, ch; i < hl; i++) {
+				ch = str.charCodeAt(l-i);
+				h1 = Math.imul(h1 ^ ch, 2654435761);
+				h2 = Math.imul(h2 ^ ch, 1597334677);
+                /*if(i==1 || i+1==hl) {
+                console.log(str.charCodeAt(l-i) + " = " + str[l-i]);
+                }*/
+			}
+			h1  = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+			h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+			h2  = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+			h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+			return str0 + (4294967296 * (2097151 & h2) + (h1 >>> 0)) + str1;
+		},
+		
 		_valLatLng: function _valLatLng(latlng) {
 			if(typeof latlng == "object") {
 				if(typeof latlng.lat == "number") {
