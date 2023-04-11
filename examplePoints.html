@@ -55,7 +55,7 @@
 
 
 		// hexagonals
-		var hexagonals = new L.Hexagonal({hexagonSize:32}).addTo(map);
+		var hexagonals = new L.Hexagonal({hexagonSize:48}).addTo(map);
 
       hexagonals.options.hexagonOrientation = "octagon";
       
@@ -140,11 +140,11 @@
       hexagonals.addPoint({ lat: 47.089036, lng: 14.787597 }, {group:"F" });
       hexagonals.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true });
       // add a image-marker 
-      hexagonals.addImage({ lat: 45.089036, lng: 14.787597 }, {group:"F",image:"unknown.jpg"/*, size:48*/ });
+      hexagonals.addImage({ lat: 45.089036, lng: 14.787597 }, {group:"F",image:"./assets/person.svg"/*, size:48*/ });
       // add a image-marker with a size
       hexagonals.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", image:"./assets/image0.jpg"/*, size:48*/ });
 
-
+/*
       // groupG
       hexagonals.setGroupFill("G","#ff0");
       // add another icon-marker 
@@ -153,8 +153,8 @@
       hexagonals.cacheIcon("token",'./assets/token.svg', 1);
       hexagonals.addMarker({ lat: 47.040182, lng: 17.204589 }, {group:"G", icon:"token", fill:"#fff" });
       // add another icon-marker 
-      hexagonals.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token"/*, size:48*/ });
-
+      hexagonals.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token" });
+*/
 
 
 
@@ -164,6 +164,7 @@
       var guiOptions = {
 			toggle: function() { 
             hexagonals.setVisibility();
+            console.log(hexagonals.thumbs);
             /*
             if(hexagonals.options.visible) {
                hexagonals.hide();

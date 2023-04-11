@@ -119,6 +119,8 @@
 			// gutterStroke: false || "#color"
 			gutterStroke: "#202224",
 
+			// thumbSize: integer
+			thumbSize: 128,
 
 			// selectionDisplay: boolean || {minZoom,maxZoom}
 			selectionDisplay: true,
@@ -193,7 +195,7 @@
 		display: {},
 
 		thumbs:{
-			fallback: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>', size:{width:24, height:24}, scale:1 }
+			error: { loaded:2, size:{width:100, height:100}, scale:1,  image: new Image() } //image:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>' }
 		},
 		icons: {
 			fallback: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>', size:{width:24, height:24}, scale:1 }
@@ -484,7 +486,7 @@
 			if(point.marker) {
 				this.markers[group].push(point);
 				var thumb = meta.icon || meta.image;
-				point.thumbId = this.fetchThumb(thumb);
+				point.thumb = this.fetchThumb(thumb);
 			}	
 
 			// refresh
@@ -501,6 +503,7 @@
 			var l = source.length;
 			if(l<4) { return false; }
 
+			// get hash-id
 			var id = this._genHash53(source);
 
 			// thumb already exists
@@ -508,28 +511,106 @@
 
 			// source is dataUrl
 			if(source.startsWith("data:image")) {
-
+				this.fetchThumbImage(id,source,"dataUrl");
+				this.refresh();
+				return id;
 			}
 
 			// source is svgString
 			if(source.startsWith("<svg ") || source.startsWith("<?xml")) {
-
+				this.fetchThumbSvgString(id,source,"svgString");
+				this.refresh();
+				return id;
 			}
 
 			// source is raster url
 			var endsWith = source.substring(l-4,l).toLowerCase();
 			if(endsWith==".jpg" || endsWith=="jpeg" || endsWith==".png") {
-
+				this.fetchThumbImage(id,source,"imageUrl");
+				this.refresh();
+				return id;
 			}
 
 			// source is vector url
-			if(endsWith=="svg") {
-
+			if(endsWith==".svg") {
+				this.fetchThumbImage(id,source,"svgUrl");
+				this.refresh();
+				return id;
 			}
 
 			// unknown source
 			return false;
 
+		},
+		fetchThumbImage: function fetchThumbImage(id, source, type) {
+			var ref = this;
+			var size = this.options.thumbSize;
+			this.thumbs[id] = {loaded:false, size:size, scale:1,  image:false, type:type} ;
+			this.thumbs[id].image = new Image();
+			this.thumbs[id].image.onload = function() {
+
+				ref.thumbs[id].original = { width:this.width, height:this.height };
+
+				var thumb = document.createElement("CANVAS");
+				thumb.width = size;
+				thumb.height = size;
+				var ctx = thumb.getContext("2d");
+				ctx.drawImage(this, 0,0,size, size);
+				ref.thumbs[id].image = thumb;
+				ref.thumbs[id].size = size;
+				ref.thumbs[id].loaded = 2;
+				console.log(ref.thumbs[id]);
+
+			};
+			// onerror: error-image
+			this.thumbs[id].image.onerror = function() {
+				ref.thumbs[id].loaded = 1;
+				ref.thumbs[id].image = ref.thumbs.error.image;
+				ref.thumbs[id].size = ref.thumbs.error.size;
+			};
+			this.thumbs[id].image.src = source;
+			return id;
+		},
+		fetchThumbSvg: function fetchThumbSvg(id, source) {
+			var ref = this;
+			fetch(source)
+			.then((resp) => resp.text())
+			.then((svg_string) => {
+				var p = new DOMParser();
+				var d = p.parseFromString(svg_string,"text/xml");
+				var e = d.getElementsByTagName("svg");
+				if(e.length) {
+					var maxSize = 100;
+					var width = e[0].getAttribute('width') || maxSize;
+					var height = e[0].getAttribute('height') || maxSize;
+					ref.thumbs[id].loaded = 2;
+					ref.thumbs[id].image = svg_string;
+					ref.thumbs[id].size = { width:width, height:height };				
+				}
+				else {
+					ref.thumbs[id].loaded = 1;
+					ref.thumbs[id].image = ref.thumbs.error.image;
+					ref.thumbs[id].size = ref.thumbs.error.size;
+				}
+			});
+		},
+		fetchThumbSvgString: function fetchThumbSvgString(id, source) {
+			var p = new DOMParser();
+			var d = p.parseFromString(source,"text/xml");
+			var e = d.getElementsByTagName("svg");
+			if(e.length) {
+				var maxSize = 100;
+				var width = e[0].getAttribute('width') || maxSize;
+				var height = e[0].getAttribute('height') || maxSize;
+				ref.thumbs[id].loaded = 2;
+				ref.thumbs[id].image = source;
+				ref.thumbs[id].size = { width:width, height:height };				
+			}
+			else {
+				ref.thumbs[id].loaded = 1;
+				ref.thumbs[id].image = ref.thumbs.error.image;
+				ref.thumbs[id].size = ref.thumbs.error.size;
+			}
 		},
 
 		// addLine: add array of latlngs (all with same metadata), all in the same group and all linked by default
@@ -1974,9 +2055,15 @@
 
 					// draw marker
 					if(this.display.markers) {
+						this.drawIcon(ctx, hexagonals[hexs[h]], style, canvas.width, canvas.height);
+						tMarkersDrawn++;
+
+						// devel
+						/*
 						if(majorChange || this.markerLayer.needsUpdate) {
 							tMarkersDrawn += this.drawMarker(hexagonals[hexs[h]], style);
 						}
+						*/
 					}
 				}
 			}
@@ -2011,6 +2098,56 @@
 				ctx.stroke(hPath);
 			}
 			return 1;
+		},
+		drawIcon: function drawIcon(ctx,hexagon,style,w,h) {
+
+			// devel
+			var m = hexagon.marker; 
+			if(!m) { return 0; }
+			m = this.markers[m[0]][m[1]];
+			var thumb = this.thumbs[m.thumb];
+			if(!thumb.image) { return 0; }
+
+			var size = this.options.thumbSize;
+			
+
+
+			if(!hexagon.visible) { return 0; }
+
+			// fill
+			var hPath = new Path2D(hexagon.path);
+			if(style.fill) {
+				ctx.fillStyle = style.fill;
+				ctx.fill(hPath);
+			}
+
+			// thumb
+			ctx.save();
+			ctx.clip(hPath);
+
+			var sizeH = this.options.hexagonSize;
+
+
+			if(thumb.type=="svgUrl") { sizeH *=0.7;}
+			else { sizeH*=1.15; }
+console.log(thumb.type,sizeH);
+			var ix0 = hexagon.cx - sizeH/2;
+			var iy0 = hexagon.cy - sizeH/2;
+			var iw = sizeH;
+			var ih = sizeH;
+			
+			ctx.drawImage(thumb.image, 0,0,size,size, ix0,iy0, sizeH,sizeH); //sx,sy); //img.width, img.height, 0, 0, canvas.width, canvas.height);
+			ctx.restore();
+
+			// stroke
+			if(style.stroke) {
+				ctx.strokeStyle = style.stroke;
+				ctx.lineWidth = style.borderWidth;
+				ctx.stroke(hPath);
+			}
+			return 1;
+
+
 		},
 		drawMarker: function drawMarker(hexagon, styleHexagon={}) {
 			var mi = hexagon.marker; 
