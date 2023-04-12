@@ -63,8 +63,6 @@
 			oPerf.draw_milliSeconds = Math.round(this.totals.drawTime);
 		}
 
- 
-		hexagonals.cacheIcon("token",'./assets/token.svg', 1);
 
 		addPoints(10000, true);
 
@@ -85,7 +83,7 @@
 				var lng = center.lng + Math.cos(i * incr) * i / 1000;
 
 				if (i % 100 == 0) {
-					hexagonals.addMarker({ lat: lat, lng: lng }, { group:"P", link:true,  icon: "token", fill: randomColor  });
+					hexagonals.addMarker({ lat: lat, lng: lng }, { group:"P", link:true,  marker: "./assets/token.svg",  fill: randomColor  });
 				}
 				else {
 					hexagonals.addPoint({ lat: lat, lng: lng }, { group:"P", link:true,  fill: randomColor });

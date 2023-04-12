@@ -55,7 +55,7 @@
 
 
 		// hexagonals
-		var hexagonals = new L.Hexagonal({hexagonSize:48}).addTo(map);
+		var hexagonals = new L.Hexagonal({hexagonSize:32}).addTo(map);
 
       hexagonals.options.hexagonOrientation = "octagon";
       
@@ -140,9 +140,9 @@
       hexagonals.addPoint({ lat: 47.089036, lng: 14.787597 }, {group:"F" });
       hexagonals.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true });
       // add a image-marker 
-      hexagonals.addImage({ lat: 45.089036, lng: 14.787597 }, {group:"F",image:"./assets/person.svg"/*, size:48*/ });
+      hexagonals.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", marker:"./assets/person.svg", scale:1.5 });
       // add a image-marker with a size
-      hexagonals.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", image:"./assets/image0.jpg"/*, size:48*/ });
+      hexagonals.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"./assets/image0.jpg", scale:1.2 });
 
 /*
       // groupG

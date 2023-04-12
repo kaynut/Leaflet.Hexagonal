@@ -6,6 +6,7 @@
 // DONE: check again if links are colored the right way in clustering
 // DONE: link:0 does not work , check === true
 // rework setInfo, buildInfo
+// move tint and stuff to drawMarker?
 
 // updates
 // SKIP: special treatment for linkMode=curve clickability?
@@ -45,7 +46,7 @@
 			// container, layer
 			container: document.createElement("CANVAS"),
 			zIndex: undefined,
-			opacity: 0.5,
+			opacity: 0.7,
 			visible: true,
 			minZoom: 0,
 			maxZoom: 18,
@@ -73,6 +74,8 @@
 			strokeDefault: "#303234", 	
 			// borderWidth: pixels
 			borderWidth: 1,
+			// opacityDefault: false , number(0.1-1)
+			opacityDefault: 1,
 
 			// groupDefault: false || "groupName"
 			groupDefault: "_group", // if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
@@ -96,8 +99,10 @@
 
 			// markerDisplay: boolean || {minZoom,maxZoom}
 			markerDisplay: true,
-			//markerOpacity: number (0-1)
-			markerOpacity: 0.9,
+			//markerOpacity: false , number(0.1-1)
+			markerOpacity: 1,
+			// markerTint: false || color
+			markerTint:"#222",
 
 
 			// linkDisplay: boolean || {minZoom,maxZoom}
@@ -105,7 +110,9 @@
 			// linkWidth: pixels
 			linkWidth: 2,
 			// linkFill: false || true || "#color"
-			linkFill: true,			
+			linkFill: true,	
+			// linkOpacity: false , number(0.1-1)
+			linkOpacity: false,		
 			// linkMode: "spline" || "line" || "aligned" || "hexagonal" || false
 			linkMode: "spline",
 			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
@@ -168,8 +175,6 @@
 		links: [],
 		markers: {},
 
-		markerLayer: false,
-
 		selection: {
 			selected:false,
 			selector:false,
@@ -194,12 +199,8 @@
 
 		display: {},
 
-		thumbs:{
-			error: { loaded:2, size:{width:100, height:100}, scale:1,  image: new Image() } //image:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>' }
-		},
-		icons: {
-			fallback: { svg:'<svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5l5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6Z"/></svg>', size:{width:24, height:24}, scale:1 }
-		},
+		thumbs:{},
+		thumbsInfo: { called:0, resolved:0, last:0 },
 
 		view: {
 			zoom:false,
@@ -255,11 +256,12 @@
 			this.getPane().appendChild(this._container);
 			this._onZoomVisible();
 			this.fire("layer-mounted");
-			this.markerLayer = L.layerGroup([]).addTo(this._map);
-			this.markerLayer.markerLayer = true;
-			this.markerLayer.needsUpdate = true;
+
+			this.fetchThumb("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20height%3D%2224%22%20width%3D%2224%22%3E%3Cpath%20d%3D%22M6.4%2019%205%2017.6l5.6-5.6L5%206.4%206.4%205l5.6%205.6L17.6%205%2019%206.4%2013.4%2012l5.6%205.6-1.4%201.4-5.6-5.6Z%22%2F%3E%3C%2Fsvg%3E",{id:"error"});	
+
 			this.infoLayer = L.layerGroup([]).addTo(this._map);
 			this.infoLayer.infoLayer = true;
+
 			this._update("onAdd");
 		},
 		onRemove: function onRemove() {
@@ -391,16 +393,12 @@
 			}
 			if(show==this.options.visible) { return; }
 			if(show) {
-				if(!this._map.hasLayer(this.markerLayer)) {
-					this._map.addLayer(this.markerLayer);
-				}
 				if(!this._map.hasLayer(this.infoLayer)) {
 					this._map.addLayer(this.infoLayer);
 				}
 				this.show();
 			}
-			else if(this._map.hasLayer(this.markerLayer) || this._map.hasLayer(this.infoLayer)) {
-				this._map.removeLayer(this.markerLayer);
+			else if(this._map.hasLayer(this.infoLayer)) {
 				this._map.removeLayer(this.infoLayer);
 				this.hide();
 			}
@@ -423,7 +421,7 @@
 		// #######################################################
 		// #region add
 		// addPoint:  add single point with metadata
-		addPoint: function addPoint(latlng, meta) { //  {lng,lat} , {id, group, link, data, marker}
+		addPoint: function addPoint(latlng, meta) { //  {lng,lat} , {id, group, link, ... }
 			
 			// latlng
 			latlng = this._valLatLng(latlng);
@@ -450,6 +448,12 @@
 			// tags
 			var tags = this._valTags(meta);
 
+			// marker
+			var marker = this._valMarker(meta);
+
+			// scale
+			var scale = meta.scale || 1;
+
 			// point 
 			var point = {
 				latlng: latlng,	
@@ -463,7 +467,7 @@
 			
 				data: data,
 
-				marker: meta.marker || false,
+				marker: marker,
 				link:link,
 
 				pointless: (meta.pointless || false),	
@@ -473,20 +477,25 @@
 					stroke: meta.stroke || false,
 					borderWidth: meta.borderWidth || false,
 					linkWidth: meta.linkWidth || false,
-					image: meta.image || false,
-					icon: meta.icon || false,
-					size: meta.size || false
+					scale: scale
 				}
 			};
 
 			// add points
 			this.points[group].push(point);
 
-			// add to marker
-			if(point.marker) {
-				this.markers[group].push(point);
-				var thumb = meta.icon || meta.image;
-				point.thumb = this.fetchThumb(thumb);
+			// add marker
+			if(meta.marker) {
+
+				var thumb = this.fetchThumb(meta.marker);
+				if(thumb !== false) {
+					point.style.thumb = thumb;
+					this.markers[group].push(point);
+				}
+				else {
+					point.marker = false;
+				}
+
 			}	
 
 			// refresh
@@ -497,124 +506,11 @@
 
 		},
 
-		// devel
-		fetchThumb: function fetchThumb(source) {
-			if(typeof source != "string") { return false; }
-			var l = source.length;
-			if(l<4) { return false; }
 
-			// get hash-id
-			var id = this._genHash53(source);
 
-			// thumb already exists
-			if(this.thumbs[id]) { return id; }
-
-			// source is dataUrl
-			if(source.startsWith("data:image")) {
-				this.fetchThumbImage(id,source,"dataUrl");
-				this.refresh();
-				return id;
-			}
-
-			// source is svgString
-			if(source.startsWith("<svg ") || source.startsWith("<?xml")) {
-				this.fetchThumbSvgString(id,source,"svgString");
-				this.refresh();
-				return id;
-			}
-
-			// source is raster url
-			var endsWith = source.substring(l-4,l).toLowerCase();
-			if(endsWith==".jpg" || endsWith=="jpeg" || endsWith==".png") {
-				this.fetchThumbImage(id,source,"imageUrl");
-				this.refresh();
-				return id;
-			}
-
-			// source is vector url
-			if(endsWith==".svg") {
-				this.fetchThumbImage(id,source,"svgUrl");
-				this.refresh();
-				return id;
-			}
-
-			// unknown source
-			return false;
-
-		},
-		fetchThumbImage: function fetchThumbImage(id, source, type) {
-			var ref = this;
-			var size = this.options.thumbSize;
-			this.thumbs[id] = {loaded:false, size:size, scale:1,  image:false, type:type} ;
-			this.thumbs[id].image = new Image();
-			this.thumbs[id].image.onload = function() {
-
-				ref.thumbs[id].original = { width:this.width, height:this.height };
-
-				var thumb = document.createElement("CANVAS");
-				thumb.width = size;
-				thumb.height = size;
-				var ctx = thumb.getContext("2d");
-				ctx.drawImage(this, 0,0,size, size);
-				ref.thumbs[id].image = thumb;
-				ref.thumbs[id].size = size;
-				ref.thumbs[id].loaded = 2;
-				console.log(ref.thumbs[id]);
-
-			};
-			// onerror: error-image
-			this.thumbs[id].image.onerror = function() {
-				ref.thumbs[id].loaded = 1;
-				ref.thumbs[id].image = ref.thumbs.error.image;
-				ref.thumbs[id].size = ref.thumbs.error.size;
-			};
-			this.thumbs[id].image.src = source;
-			return id;
-		},
-		fetchThumbSvg: function fetchThumbSvg(id, source) {
-			var ref = this;
-			fetch(source)
-			.then((resp) => resp.text())
-			.then((svg_string) => {
-				var p = new DOMParser();
-				var d = p.parseFromString(svg_string,"text/xml");
-				var e = d.getElementsByTagName("svg");
-				if(e.length) {
-					var maxSize = 100;
-					var width = e[0].getAttribute('width') || maxSize;
-					var height = e[0].getAttribute('height') || maxSize;
-					ref.thumbs[id].loaded = 2;
-					ref.thumbs[id].image = svg_string;
-					ref.thumbs[id].size = { width:width, height:height };				
-				}
-				else {
-					ref.thumbs[id].loaded = 1;
-					ref.thumbs[id].image = ref.thumbs.error.image;
-					ref.thumbs[id].size = ref.thumbs.error.size;
-				}
-			});
-		},
-		fetchThumbSvgString: function fetchThumbSvgString(id, source) {
-			var p = new DOMParser();
-			var d = p.parseFromString(source,"text/xml");
-			var e = d.getElementsByTagName("svg");
-			if(e.length) {
-				var maxSize = 100;
-				var width = e[0].getAttribute('width') || maxSize;
-				var height = e[0].getAttribute('height') || maxSize;
-				ref.thumbs[id].loaded = 2;
-				ref.thumbs[id].image = source;
-				ref.thumbs[id].size = { width:width, height:height };				
-			}
-			else {
-				ref.thumbs[id].loaded = 1;
-				ref.thumbs[id].image = ref.thumbs.error.image;
-				ref.thumbs[id].size = ref.thumbs.error.size;
-			}
-		},
 
 		// addLine: add array of latlngs (all with same metadata), all in the same group and all linked by default
-		addLine: function addLine(latlngs, meta) {  // [ latlng0, latlng1, ... ] , {group,data, marker} 
+		addLine: function addLine(latlngs, meta) {  // [ latlng0, latlng1, ... ] , {group,data, ...} 
 			if(!Array.isArray(latlngs)) {
 				console.warn("Leaflet.hexagonal.addLine: parameter must be an array", latlngs);
 				return 0;
@@ -708,13 +604,7 @@
 			if(g.type == "Point" && g.coordinates) {
 				var gp = g.properties || {};
 				var m = Object.assign({}, gp, meta);
-				if(m.image || m.icon) {
-					m.marker=true;
-					this.addMarker({lng:g.coordinates[0],lat:g.coordinates[1]}, m);
-				}
-				else {
-					this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]}, m);
-				}
+				this.addPoint({lng:g.coordinates[0],lat:g.coordinates[1]}, m);
 				return 1;
 			}
 
@@ -781,76 +671,15 @@
 
 			// meta
 			meta = meta || {};
-			if(typeof meta.marker == "undefined") {	meta.marker = true; }
-			if(typeof meta.pointless == "undefined") { meta.pointless = true; }
-			meta.scale = meta.scale || 1;
 
-			// no marker
-			if(!meta.marker) {
-				return 0;
+			var marker = this._valMarker(meta);
+			if(!marker) {
+				marker = "error";
 			}
 
-			// meta.image
-			if(meta.image) {
-				this.addPoint(latlng, meta);
-				return 1;
-			}
 
-			// meta.icon
-			if(meta.icon) {
-
-				// meta.icon pointing to cache directly
-				if(this.icons[meta.icon]) {
-					this.addPoint(latlng, meta);
-					return 1;
-				}
-
-				// meta.icon pointing to cache via hash
-				var hash = this._genHash(meta.icon); 
-				if(this.icons[hash]) {
-					meta.icon = hash;
-					this.addPoint(latlng, meta);
-					return 1;						
-				}
-
-				// meta.icon pointing to new icon
-				var ref = this;
-				this.icons[hash] = { svg: this.icons.fallback.svg, size: { width: this.icons.fallback.size.width, height: this.icons.fallback.size.height}, scale:1 };
-				this.cacheIcon(hash, meta.icon, meta.scale).then(function(res) {
-					if(!res) { 
-						meta.icon = "fallback"; 
-					}
-					else { 
-						meta.icon = res; 
-					}
-					ref.addPoint(latlng, meta);
-					return 1;
-				});
-			}
-
-			// meta.fallback
-			meta.icon = "fallback";
-			this.addPoint(latlng, meta);
-			return 1;
+			return this.addPoint(latlng, meta);
 	
-		},
-		// addIcon
-		addIcon: async function addIcon(latlng, meta) {
-			meta = meta || {};
-			meta.marker = true;
-			if(!meta.icon) { 
-				meta.icon = "fallback"; 
-			}
-			return this.addMarker(latlng, meta);
-		},
-		// addImage
-		addImage: async function addImage(latlng, meta) {
-			meta = meta || {};
-			meta.marker = true;
-			if(!meta.image) {
-				meta.icon = "fallback";
-			}
-			return this.addMarker(latlng, meta);
 		},
 
 		// #endregion
@@ -1109,7 +938,7 @@
 					for (var i = 0; i < pl; i++) {
 
 						// marker-pixels/visible
-						var marker = this.markers[group][i];
+						var marker = this.markers[group][i]; 
 						var m = this.getPixels_from_mxy(marker.mxy, w,h, hexagonOverhang, zoom, pixelOrigin, pixelPane);
 						marker.visible = m.visible;
 						marker.position = [m.x,m.y];
@@ -1120,9 +949,14 @@
 							continue;
 						}
 
+						if(!marker.visible) {
+							continue;
+						}
+
 						// hexagon-cell
-						var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset, zoom);
-						marker.cell = h;
+						var scale = marker.style.scale; 
+						var h = this.calcHexagonCell(m.x,m.y,hexagonSize, hexagonOffset, zoom, scale);
+						marker.cell = h; 
 
 						// create hex
 						if(!this.hexagonals[h.cell]) {
@@ -1258,16 +1092,13 @@
 			}
 			return 16;
 		},	
-		calcHexagonCell: function calcHexagonCell(x,y, size, offset, zoom) { // hexagon top-flat
+		calcHexagonCell: function calcHexagonCell(x,y, size, offset, zoom, scale=1) { // hexagon top-flat
 			if(this.options.hexagonOrientation == "pointyTop") {
-				return this.calcHexagonCell_pointyTop(x,y, size, offset, zoom);
+				return this.calcHexagonCell_pointyTop(x,y, size, offset, zoom, scale);
 			}
 			if(this.options.hexagonOrientation == "circle") {
-				return this.calcHexagonCell_circle(x,y, size, offset, zoom);
-			}/*
-			if(this.options.hexagonOrientation == "octagon") {
-				return this.calcHexagonCell_octagon(x,y, size, offset, zoom);
-			}*/
+				return this.calcHexagonCell_circle(x,y, size, offset, zoom, scale);
+			}
 
 			offset = offset || {x:0,y:0};
 			var gap = this.options.hexagonGap || 0;
@@ -1291,11 +1122,14 @@
 
 			var pointyTop=false;
 
-			//var path = "M"+(cx-s2)+" "+(cy) + " L"+(cx-s4)+" "+(cy-h) + " L"+(cx+s4)+" "+(cy-h) + " L"+(cx+s2)+" "+(cy) + " L"+(cx+s4)+" "+(cy+h) + " L"+(cx-s4)+" "+(cy+h) + "Z";
+			s2=s2*scale;
+			s4=s4*scale;
+			h=h*scale;
+
 			var path = `M${cx-s2} ${cy} L${cx-s4} ${cy-h} L${cx+s4} ${cy-h} L${cx+s2} ${cy} L${cx+s4} ${cy+h} L${cx-s4} ${cy+h} Z`;
 			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:pointyTop };
 		},
-		calcHexagonCell_pointyTop: function calcHexagonCell_pointyTop(x,y, size, offset, zoom) { // hexagon top-pointy
+		calcHexagonCell_pointyTop: function calcHexagonCell_pointyTop(x,y, size, offset, zoom, scale) { // hexagon top-pointy
 			offset = offset || {x:0,y:0};
 			var gap = this.options.hexagonGap || 0;
 			var xs = (x+offset.x)/size;
@@ -1316,12 +1150,14 @@
 			cellX -= Math.floor(cellY/2); // pointy - offset even-r
 			var cell = zoom + "_" + cellX + "_" + cellY; 
 
-			//var path = "M"+(cx)+" "+(cy-s2) + " L"+(cx-h)+" "+(cy-s4) + " L"+(cx-h)+" "+(cy+s4) + " L"+(cx)+" "+(cy+s2) + " L"+(cx+h)+" "+(cy+s4) + " L"+(cx+h)+" "+(cy-s4) + "Z";
+			s2=s2*scale;
+			h=h*scale;
+			s4=s4*scale;
 			var path = `M${cx} ${cy-s2} L${cx-h} ${cy-s4} L${cx-h} ${cy+s4} L${cx} ${cy+s2} L${cx+h} ${cy+s4} L${cx+h} ${cy-s4} Z`;
 			
 			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
 		},
-		calcHexagonCell_circle: function calcHexagonCell_circle(x,y, size, offset, zoom) { // hexagon circle
+		calcHexagonCell_circle: function calcHexagonCell_circle(x,y, size, offset, zoom, scale) { // hexagon circle
 			offset = offset || {x:0,y:0};
 			var gap = this.options.hexagonGap || 0;
 			var xs = (x+offset.x)/size;
@@ -1340,37 +1176,11 @@
 			cellX -= Math.floor(cellY/2); // pointy - offset even-r
 			var cell = zoom + "_" + cellX + "_" + cellY; 
 
+			r = r * scale;
 			var path = `M${cx-r} ${cy-r} a ${r},${r} 0 1,0 ${r * 2},0 a ${r},${r} 0 1,0 ${-r * 2},0`;
 			
 			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
 		},
-		/*
-		calcHexagonCell_octagon: function calcHexagonCell_octagon(x,y, size, offset, zoom) { // hexagon circle
-			offset = offset || {x:0,y:0};
-			var gap = this.options.hexagonGap || 0;
-			var xs = (x+offset.x)/size;
-			var ys = (y+offset.y)/size;
-			var sqrt3 = 1.7320508075688772; 
-			var s0 = size - gap;
-			var r = s0/2;
-			var a0 = r*0.924;
-			var a1 = r*0.3827;
-
-			var t = Math.floor(xs + sqrt3 * ys + 1);
-			var cellX = Math.floor((Math.floor(2 * xs + 1) + t) / 3);
-			var cellY = Math.floor((t + Math.floor(-xs + sqrt3 * ys + 1)) / 3);
-			
-			var cx = (cellX-cellY/2) * size - offset.x;
-			var cy = cellY/2 * sqrt3 * size - offset.y;
-			var clatlng = this._map.containerPointToLatLng([cx,cy]);
-			cellX -= Math.floor(cellY/2); // pointy - offset even-r
-			var cell = zoom + "_" + cellX + "_" + cellY; 
-
-			var path = `M${cx-a0} ${cy+a1} L${cx-a1} ${cy+a0} L${cx+a1} ${cy+a0} L${cx+a0} ${cy+a1}  L${cx+a0} ${cy-a1} L${cx+a1} ${cy-a0} L${cx-a1} ${cy-a0} L${cx-a0} ${cy-a1} Z`;
-			
-			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
-		},
-		*/
 		calcGutterCells: function calcGutterCells(bounds, size, offset) { // hexagon top-flat
 			if(this.options.hexagonOrientation == "pointyTop") {
 				return this.calcGutterCells_pointyTop(bounds, size, offset);
@@ -1906,10 +1716,7 @@
 			var ctx = canvas.getContext("2d");
 
 			// layers
-			if(majorChange) {
-				this.markerLayer.clearLayers();
-				this.markerLayer.needsUpdate = true;
-			}
+			if(majorChange) {}
 
 			// style
 			var style = { 
@@ -1953,6 +1760,7 @@
 			
 
 			// draw links
+			ctx.globalAlpha = this.options.linkOpacity || this.options.opacityDefault || 1;
 			if(links.length && this.display.links) {
 				for(var i=0; i<links.length; i++) {
 
@@ -2000,6 +1808,9 @@
 
 
 			// draw points and marker
+			var markerOpacity = this.options.markerOpacity || this.options.opacityDefault || 1;
+			var hexagonOpacity = this.options.opacityDefault || 1;
+			ctx.globalAlpha = hexagonOpacity;
 			var hexs = Object.keys(hexagonals); 
 			if(hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
@@ -2055,23 +1866,14 @@
 
 					// draw marker
 					if(this.display.markers) {
-						this.drawIcon(ctx, hexagonals[hexs[h]], style, canvas.width, canvas.height);
+						ctx.globalAlpha = markerOpacity;
+						this.drawMarker(ctx, hexagonals[hexs[h]], style);
 						tMarkersDrawn++;
-
-						// devel
-						/*
-						if(majorChange || this.markerLayer.needsUpdate) {
-							tMarkersDrawn += this.drawMarker(hexagonals[hexs[h]], style);
-						}
-						*/
+						ctx.globalAlpha = hexagonOpacity;
 					}
 				}
 			}
 
-			// reset this.markerLayer.needsUpdate
-			if(this.display.markers) {
-				this.markerLayer.needsUpdate = false;
-			}
 
 			// totals
 			this.totals.hexagonsDrawn = tHexagonsDrawn;
@@ -2099,23 +1901,24 @@
 			}
 			return 1;
 		},
-		drawIcon: function drawIcon(ctx,hexagon,style,w,h) {
+		drawMarker: function drawMarker(ctx,hexagon,style) {
+			if(!hexagon.visible) { return 0; }
+			if(!hexagon.marker) { return 0; }
 
-			// devel
-			var m = hexagon.marker; 
-			if(!m) { return 0; }
-			m = this.markers[m[0]][m[1]];
-			var thumb = this.thumbs[m.thumb];
-			if(!thumb.image) { return 0; }
+			var marker = this.markers[hexagon.marker[0]][hexagon.marker[1]];
+			var thumb = this.thumbs[marker.style.thumb];
+			if(!thumb.image) { return 0; } 
 
 			var size = this.options.thumbSize;
-			
-
-
-			if(!hexagon.visible) { return 0; }
+			var scale = marker.style.scale;
+			var sizeH = this.hexagonSize * scale;
+			if(thumb.type=="vector") { sizeH *=0.7;}
+			else { sizeH*=1.15; }
+			var ix0 = hexagon.cx - sizeH/2;
+			var iy0 = hexagon.cy - sizeH/2;
 
 			// fill
-			var hPath = new Path2D(hexagon.path);
+			var hPath = new Path2D(marker.cell.path);
 			if(style.fill) {
 				ctx.fillStyle = style.fill;
 				ctx.fill(hPath);
@@ -2124,19 +1927,7 @@
 			// thumb
 			ctx.save();
 			ctx.clip(hPath);
-
-			var sizeH = this.options.hexagonSize;
-
-
-			if(thumb.type=="svgUrl") { sizeH *=0.7;}
-			else { sizeH*=1.15; }
-console.log(thumb.type,sizeH);
-			var ix0 = hexagon.cx - sizeH/2;
-			var iy0 = hexagon.cy - sizeH/2;
-			var iw = sizeH;
-			var ih = sizeH;
-			
-			ctx.drawImage(thumb.image, 0,0,size,size, ix0,iy0, sizeH,sizeH); //sx,sy); //img.width, img.height, 0, 0, canvas.width, canvas.height);
+			ctx.drawImage(thumb.image, 0,0,size,size, ix0,iy0, sizeH,sizeH); 
 			ctx.restore();
 
 			// stroke
@@ -2147,111 +1938,6 @@ console.log(thumb.type,sizeH);
 			}
 			return 1;
 
-
-		},
-		drawMarker: function drawMarker(hexagon, styleHexagon={}) {
-			var mi = hexagon.marker; 
-			if(!mi) { return 0; }
-
-			var m0 = this.markers[mi[0]][mi[1]];
-			var style = m0.style;
-			var ref = this;
-			if(typeof style != "object") { return 0; }
-
-			// style
-			var size = style.size || hexagon.size; 
-			var fill = style.fill || styleHexagon.fill || this.options.fillDefault;
-
-			// calc path
-			var w,h;
-			var poly = false;
-			if(!hexagon.pointyTop) {
-				w = size*1.155;
-				h = size;
-				poly = `0 ${size*0.5},${size*0.289} 0,${size*0.866} 0,${size*1.155} ${size*0.5},${size*0.866} ${size},${size*0.289} ${size}`;
-			}
-
-			else {
-				w = size;
-				h = size*1.155;
-				poly = `0 ${size*0.289},${size*0.5} 0,${size*1} ${size*0.289},${size*1} ${size*0.866},${size*0.5} ${size*1.155},0 ${size*0.866}`;
-			}
-
-
-			// drawIcon
-			if(typeof style.icon == "string" && this.icons[style.icon]) {
-				var micon = this.icons[style.icon]; 
-				var mw = micon.size.width || 1;
-				var mh = micon.size.height || 1;
-				var s = micon.scale;
-				var ms = (w*s)/(mw*2);
-				var ox = (w - mw*ms) / 2; 
-				var oy = (h - mh*ms) / 2;
-
-				var svg = `<g transform="matrix(${ms},0,0,${ms},${ox},${oy})" opacity="0.75">${micon.svg}</g>`;
-
-				var icon = L.divIcon({
-					className: 'leaflet-hexagonal-marker',
-					html: `<svg width="${w}" height="${h}" opacity="${this.options.markerOpacity}" >
-						<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
-						<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${this.options.borderWidth}" /></mask>
-						<use href="#hexa${m0.id}" fill="${fill}" stroke="${this.options.strokeDefault}" stroke-width="${this.options.borderWidth}" shape-rendering="geometricPrecision" />
-						${svg}
-						</svg>`,
-					className: "",
-					iconSize: [w,h],
-					iconAnchor: [w/2,h/2],
-				}); 
-				var lm = L.marker(hexagon.latlng, {icon: icon, opacity:this.options.markerOpacity}).addTo(this.markerLayer);
-				L.DomEvent.on(lm, 'click', function(e) { 
-					L.DomEvent.stopPropagation;
-					ref._onClick(e, {marker:m0});
-				});
-				return 1; 
-			}	
-			
-
-			// image
-			if(typeof style.image == "string") {
-
-				// onload: add image-marker
-				var ii = new Image();
-				ii.onload = function() {
-					var icon = L.divIcon({
-						className: 'leaflet-hexagonal-marker',
-						html: `<svg width="${w}" height="${h}" opacity="${ref.options.markerOpacity}" >
-							<symbol id="hexa${m0.id}"><polygon points="${poly}"></polygon></symbol>
-							<mask id="mask${m0.id}"><use href="#hexa${m0.id}" fill="#fff" stroke="#000" stroke-width="${ref.options.borderWidth+1}" /></mask>
-							<use href="#hexa${m0.id}" fill="${ref.options.strokeDefault}" shape-rendering="geometricPrecision" />
-							<image preserveAspectRatio="xMidYMid slice" href="${style.image}" mask="url(#mask${m0.id})" width="${w}" height="${h}" ></image>
-							</svg>`,
-						className: "",
-						iconSize: [w,h],
-						iconAnchor: [w/2,h/2],
-					}); 
-					var lm = L.marker(hexagon.latlng, {icon: icon, opacity:ref.options.markerOpacity}).addTo(ref.markerLayer); 
-					L.DomEvent.on(lm, 'click', function(e) { 
-						L.DomEvent.stopPropagation;
-						ref._onClick(e, {marker:m0});
-					});
-				};
-
-				// onerror: replace with error-icon-marker
-				ii.onerror = function() {
-					console.warn("Leaflet.hexagonal.drawMarker: image-url invalid", style.image);
-
-					// fallback
-					style.icon = "fallback";
-					ref.drawMarker(hexagon,styleHexagon);
-					
-				};
-				ii.src = style.image;
-				return 1;
-			}
-
-
-
-			console.warn("Leaflet.hexagonal.drawMarker: parameters invalid");
 
 		},
 		drawHexagonSelected: function drawHexagonSelected(ctx, hexagon) {
@@ -2570,11 +2256,13 @@ console.log(thumb.type,sizeH);
 				this.infoLayer.clearLayers();
 				this.info = false;
 			} 
-console.log(info);
+			console.log(info);
+
 			if(!info || !this.display.info) {
 				return;
 			}
-return; // todo
+			return; // todo
+			/*
 			// get html for info
 			var html = this.buildInfo(info);
 
@@ -2593,6 +2281,7 @@ return; // todo
 				L.DomEvent.stopPropagation;
 				console.log('clicked info!',e);
 			});
+			*/
 		},
 		buildInfo: function buildInfo(info) {
 			var html = "";
@@ -2792,86 +2481,161 @@ return; // todo
 
 		// #######################################################
 		// #region helpers
-		cacheIcon: function cacheIcon(iconName, svg, scale=1) {
+		// devel
+		fetchThumb: function fetchThumb(source, meta=false) {
+			if(typeof source != "string") { 
+				console.warn("Leaflet.Hexagonal","fetchThumb(): invalid sourceType", typeof source);
+				return false; 
+			}
+			var l = source.length;
+			if(!l) { 
+				console.warn("Leaflet.Hexagonal","fetchThumb(): lack of source");	
+				return false; 
+			}
+
+			// thumb-soucre is thumb-name
+			if(l<24 && this.thumbs[source]) {
+				return source;
+			}
+
+			// id - hash
+			var id = this._genHash53(source);
+
+			// meta
+			if(typeof meta != "object") { meta = {id:false, tint:false, opacity:false} }
+			var id = meta.id || this._genHash53(source);
+			var tint = meta.tint || this.options.markerTint || false;
+			var opacity = meta.opacity || 1;
+
+			
+
+			// thumb already exists
+			if(this.thumbs[id]) { 
+				return id; 
+			}
+
+
+			var type = false;
+			var start = source.substring(0,14).toLowerCase();
+			var end = source.substring(l-4,l).toLowerCase();
+			
+			// imageUrl
+			if(end==".jpg" || end=="jpeg" || end==".png") {
+				type = "raster";
+			}
+			// svgUrl
+			else if(end==".svg") {
+				type = "vector";
+			}
+			// svgString
+			else if(start.startsWith("<svg ") || start.startsWith("<?xml")) {
+				source = 'data:image/svg+xml,' + encodeURIComponent(source);
+				type = "vector";
+			}
+			// svgData
+			else if(start=='data:image/svg') {
+				type = "vector";
+			}
+			// imageData
+			else if(start.startsWith("data:image")) { 
+				type = "raster"; 
+			}
+
+			// invalid type
+			if(!type) {
+				console.warn("Leaflet.Hexagonal","fetchThumb(): invalid source", source);
+				return false;
+			}
+
+
+			// thumb it
+			this.thumbsInfo.called++;
 			var ref = this;
-			return new Promise((resolve) => {
-				if(typeof iconName != "string" || typeof svg != "string") {
-					console.warn("Leaflet.hexagonal.addIcon: parameter 'iconName' and 'svg' have to be strings");
-					resolve(0);
-				}
+			var size = this.options.thumbSize;
+			this.thumbs[id] = {loaded:false, size:size,  image:false, type:type} ;
+			this.thumbs[id].image = new Image();
+			this.thumbs[id].image.onload = function() {
 
-				if(this.icons[iconName]) {
-					resolve(iconName);
-				}
-				if(this.icons[svg]) {
-					resolve(svg);
-				}
-				var hash = this._genHash(svg);
-				if(this.icons[hash]) {
-					resolve(hash);
-				}
+				ref.thumbs[id].original = { width:this.width, height:this.height };
 
-				// svg is url
-				if(svg.endsWith(".svg")) {
-					fetch(svg)
-					.then((resp) => resp.text())
-					.then((svg_string) => {
+				var thumb = document.createElement("CANVAS");
+				thumb.width = size;
+				thumb.height = size;
+				var ctx = thumb.getContext("2d");
 
-						var size = {width:0, height:0};
-						var p = new DOMParser();
-						var d = p.parseFromString(svg_string,"text/xml");
-						var e = d.getElementsByTagName("svg");
-						if(!e.length) {
-							resolve("fallback");
-						}
-						else {
-							size.width = e[0].getAttribute('width') || 0;
-							size.height = e[0].getAttribute('height') || 0;
-					
-							if(!size.width || !size.height) {
-								console.warn("Leaflet.hexagonal.cacheIcon: svg lacks width and/or height - falls back on default (24,24)");
-								size.width = 24;
-								size.height = 24;
-							} 
-
-							ref.icons[iconName] = {svg:svg_string, size:size, scale:scale};
-							resolve(iconName);
-						}
-
-					});
-				}
-				
-				// svg is svg_string
-				else if(svg.indexOf("<svg")===0) {
-					var size = {width:0, height:0};
-					var p = new DOMParser();
-					var d = p.parseFromString(svg,"text/xml");
-					var e = d.getElementsByTagName("svg");
-					if(!e.length) {
-						resolve("fallback");
-					}
-					else {
-						size.width = d.getElementsByTagName("svg")[0].getAttribute('width') || 0;
-						size.height = d.getElementsByTagName("svg")[0].getAttribute('height') || 0;
-				
-						if(!size.width || !size.height) {
-							console.warn("Leaflet.hexagonal.cacheIcon: svg lacks width and/or height - falls back on default (24,24)");
-							size.width = 24;
-							size.height = 24;
-						} 
-
-						ref.icons[iconName] = {svg:svg, size:size, scale:scale};
-						resolve(iconName);
-					}
-				}
-
-				// svg not valid
+				var r = this.width-this.height;
+				var ix,iy,iwh;
+				if(r>0) {
+					ix= r/2;
+					iy= 0;
+					iwh= this.height;
+			  	}
 				else {
-					//console.warn('Leaflet.hexagonal.addSvg: parameter must be an url, a svg-string or the name of a already cached icon', svg);
-					resolve(false);
+					ix=0;
+					iy = -r/2;
+					iwh = this.width;
+				}
+				
+
+				// todo: move tint and stuff to drawMarker?
+				if(opacity!==1) {
+					ctx.globalAlpha = opacity;
+				}
+				ctx.drawImage(this, ix,iy,iwh,iwh, 0, 0, size,size);
+
+				if(type=="raster" && tint) {
+					ctx.fillStyle = tint;
+					ctx.globalAlpha = 0.25;
+					ctx.fillRect(0,0,size,size);					
 				}
 
-			});
+				if(type=="vector" && tint) {
+					ctx.fillStyle = tint;
+					ctx.globalCompositeOperation = "source-in";
+					ctx.fillRect(0,0,size,size);
+				}
+
+				ref.thumbs[id].image = thumb;
+				ref.thumbs[id].size = size;
+				ref.thumbs[id].loaded = 2;
+
+
+				// check refresh
+				ref.thumbsInfo.resolved++;
+				var ts = Date.now();
+				if(ref.thumbsInfo.called == ref.thumbsInfo.resolved) {
+					ref.thumbsInfo.last = ts; 
+					ref.refresh();
+				}
+				else if(ref.thumbsInfo.last+1000<ts) {
+					ref.thumbsInfo.last = ts; 
+					ref.refresh();		
+				}
+
+			};
+			// onerror: error-image
+			this.thumbs[id].image.onerror = function() {
+				ref.thumbs[id].loaded = 1;
+				ref.thumbs[id].image = ref.thumbs.error.image;
+				ref.thumbs[id].size = ref.thumbs.error.size;
+
+				// check refresh
+				ref.thumbsInfo.resolved++;
+				var ts = Date.now();
+				if(ref.thumbsInfo.called == ref.thumbsInfo.resolved) {
+					ref.thumbsInfo.last = ts; 
+					ref.refresh();
+				}
+				else if(ref.thumbsInfo.last+1000<ts) {
+					ref.thumbsInfo.last = ts; 
+					ref.refresh();		
+				}
+
+			};
+			this.thumbs[id].image.src = source;
+			return id;
+
+
 		},
 
 
@@ -3047,6 +2811,12 @@ return; // todo
 			if(typeof name == "string") { return name;  }
 			if(typeof name == "number") { return name+""; }
 			return "";
+		},
+		_valMarker: function _valMarker(meta) {
+			var prop = meta.markerProperty || "marker";
+			var marker = meta[prop];
+			if(typeof marker == "string") { return marker;  }
+			return false;
 		},
 		_valLink: function _valLink(meta,group) {
 			var prop = meta.linkProperty || "link";
