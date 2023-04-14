@@ -7,15 +7,15 @@
 // DONE: link:0 does not work , check === true
 // rework setInfo, buildInfo
 // move tint and stuff to drawMarker?
-// draw marker ontop of hexagons !!!!
+// DONE: draw marker ontop of hexagons !!!!
 
 // updates
-// SKIP: special treatment for linkMode=curve clickability?
+// DONE: special treatment for linkMode=curve clickability?
 // SKIP: put part of hexagonalize in webworker?
 // SKIP: clusterMode: clusterIndicator (if single or clustered)
 
 /*!
- * Leaflet.Hexagonal.js v0.8.0
+ * Leaflet.Hexagonal.js v0.9.0
  * 
  * Copyright (c) 2023-present Knut Wanzenberg
  * Released under the MIT License - https://choosealicense.com/licenses/mit/
@@ -142,7 +142,9 @@
 			// selectionStrokeColor: "color" || false
 			selectionStrokeColor: "rgba(255,255,255)", 	 	
 			// selectionBorderWidth: pixels
-			selectionBorderWidth: 2,	
+			selectionBorderWidth: 2,
+			// selectionTolerance
+			selectionTolerance:4,	
 			
 
 			// infoDisplay: boolean || {minZoom,maxZoom}
@@ -150,7 +152,10 @@
 			// infoOpacity: true || false
 			infoOpacity: 0.9,
 			// infoClassName: class || ""
-			infoClassName: "leaflet-hexagonal-info-container"
+			infoClassName: "leaflet-hexagonal-info-container",
+
+			// develClicker: boolean (overlay ration)
+			develClicker:false,
 
 		},
 		// #endregion
@@ -211,6 +216,7 @@
 			zoom:false,
 			center:[]
 		},
+
 
 		// #endregion
 
@@ -429,7 +435,7 @@
 		addPoint: function addPoint(latlng, meta) { //  {lng,lat} , {id, group, link, ... }
 			
 			// latlng
-			latlng = this._valLatLng(latlng);
+			latlng = this._valLatlng(latlng);
 			var mxy = this._getMxy(latlng);
 			
 			// meta
@@ -674,7 +680,7 @@
 		// addMarker
 		addMarker: async function addMarker(latlng, meta) {
 			// latlng
-			latlng = this._valLatLng(latlng);
+			latlng = this._valLatlng(latlng);
 
 			// meta
 			meta = meta || {};
@@ -837,7 +843,7 @@
 					var point = this.points[group][i];
 
 					// position/visibility/filter
-					var p = this.getPixels_from_mxy(point.mxy, w,h, hexagonOverhang, zoom, pixelOrigin, pixelPane);
+					var p = this._getPixels_from_mxy(point.mxy, w,h, hexagonOverhang, zoom, pixelOrigin, pixelPane);
 					point.visible = p.visible;
 					point.position = [p.x,p.y];
 					point.filter = this.checkFilter(point);
@@ -955,7 +961,7 @@
 
 						// marker-pixels/visible
 						var marker = this.markers[group][i]; 
-						var m = this.getPixels_from_mxy(marker.mxy, w,h, hexagonOverhang, zoom, pixelOrigin, pixelPane);
+						var m = this._getPixels_from_mxy(marker.mxy, w,h, hexagonOverhang, zoom, pixelOrigin, pixelPane);
 						marker.visible = m.visible;
 						marker.position = [m.x,m.y];
 						marker.filter = this.checkFilter(marker);
@@ -1070,6 +1076,11 @@
 									if(path) {
 										var style = p1.style || p0.style || false;
 										var cid = p1.cid || p0.cid || false;
+										
+										if(p1.marker) {
+											style = p0.style;
+											cid = p0.cid;console.log(p1,p0);
+										}
 										this.links.push({group: p0.group, start:p0, end:p1, path:path, style:style, cid:cid});
 										tLinks++;
 									}
@@ -1970,6 +1981,13 @@
 			// afterDraw
 			this.afterDraw();
 
+			// devel
+			if(this.options.develClicker) {
+				ctx.globalCompositeOperation = "source-over";
+				ctx.drawImage(this._clicker,-this._padding.x,-this._padding.y);
+			}
+			
+
 		},
 
 
@@ -1981,6 +1999,7 @@
 			if(!hexagon.visible) { return 0; }
 			var hPath = new Path2D(hexagon.path);
 
+			// stroke
 			ctx.strokeStyle = style.stroke;
 			ctx.lineWidth = style.borderWidth;
 			if(selected) {
@@ -1989,8 +2008,8 @@
 			}
 			ctx.stroke(hPath);
 
-
-			ctx.fillStyle = hexagon.cid; //devel //style.fill;
+			// fill
+			ctx.fillStyle = style.fill;
 			ctx.fill(hPath);
 
 			// clicker
@@ -2034,7 +2053,7 @@
 			ctx.restore();
 
 			// fill
-			ctx.fillStyle = hexagon.cid; //devel //style.fill;
+			ctx.fillStyle = style.fill;
 			ctx.fill(hPath);
 
 			// clicker
@@ -2048,17 +2067,17 @@
 			var path = new Path2D(link.path);
 			
 
-			// linkFill
+			// fill
 			if(this.options.linkFill) {
 				ctx.strokeStyle = this.options.linkFill;
 				if(this.options.linkFill===true) {
-					ctx.strokeStyle = cid; //devel //style.fill;
+					ctx.strokeStyle = style.fill;
 				}
 				ctx.lineWidth = style.linkWidth;
 				ctx.stroke(path);
 			}
 
-			// linkBorder, linkSelected
+			// stroke linkBorder, linkSelected
 			if(selected) {
 				ctx.strokeStyle = this.options.selectionStrokeColor;
 				ctx.lineWidth = this.options.linkWidth + this.options.selectionBorderWidth*2;
@@ -2071,7 +2090,7 @@
 
 			// clicker
 			clicker.strokeStyle = cid;
-			clicker.lineWidth = style.linkWidth + style.borderWidth*2;
+			clicker.lineWidth = style.linkWidth + style.borderWidth*2 + this.options.selectionTolerance;
 			clicker.stroke(path);
 
 			return 1;
@@ -2144,7 +2163,7 @@
 			this.clusterRamp = [];
 			for(var i=0; i<colorArray.length; i++) {
 				if(typeof colorArray[i] == "string") {
-					colorArray[i] = this.getRGBA(colorArray[i]);
+					colorArray[i] = this._getRGBA(colorArray[i]);
 				}
 				else if(Array.isArray(colorArray[i])) {}
 				else {
@@ -2204,12 +2223,12 @@
 		// #region events
 		// click
 		_onClick: function _onClick(e, target={layer:true}) {
-			var selection = this.setSelection(e.latlng);
+			var selection = this.getSelectionByClick(e); //this.setSelection(e.latlng);
 			if(selection.selected) {
 				this.setInfo(selection);
 			}
 			this.onClick(e,selection, target);
-			this.getSelectionColor(e);
+			
 		},
 		// overwritable
 		onClick: function onClick(e, selection, target) {
@@ -2246,7 +2265,7 @@
 
 
 		// #######################################################
-		// #region group/info
+		// #region group
 		setGroupOrder: function setGroupOrder(mode, group) {
 			var go = this.groupOrder;
 			
@@ -2338,15 +2357,18 @@
 			}
 			this.groupInfo[group] = info;
 		},
+		// #endregion
 
-
+		
+		// #######################################################
+		// #region info
 		setInfo: function setInfo(info) {
 
 			if(this.info) {
 				this.infoLayer.clearLayers();
 				this.info = false;
 			} 
-			console.log(info);
+			console.log("setInfo", info);
 
 			if(!info || !this.display.info) {
 				return;
@@ -2413,22 +2435,24 @@
 
 		// #######################################################
 		// #region selection
-		getSelectionColor: function getSelectionColor(e) {
+		getSelectionByClick: function getSelectionByClick(e) {
 
 			// get click-color
 			var cp = e.containerPoint;
 			var x = cp.x+this._padding.x;
 			var y = cp.y+this._padding.y;
-			var ctx = this._clicker.getContext("2d"); // has to be the clickcontainer!!!!
-			var col = ctx.getImageData(x,y,1,1).data;
+			var ctx = this._clicker.getContext("2d"); 
 
-			// build cid
+			var col = ctx.getImageData(x,y,1,1).data;
 			var cid = (col[0]*65536 + col[1]*256 + col[2]).toString(16);
+			if(!cid) { 
+				return false;
+			}
 			while(cid.length<6) { cid = "0"+cid; }
 			cid = "#"+cid;
-			
-			// find cid - loop points
-			var cidGroup = false, cidIndex = false;
+
+			// find cid in points
+			var cidGroup = false, cidIndex = false, cidLatlng = false;
 			for(var go=0; go<this.groupOrder.length; go++) {
 				var group = this.groupOrder[go];
 				if(!this.groupVisibility[group]) {
@@ -2439,18 +2463,20 @@
 					if(this.points[group][i].cid == cid) {
 						cidGroup = group;
 						cidIndex = i;
+						cidLatlng = [ this.points[group][i].latlng.lng, this.points[group][i].latlng.lat ];
 						break;
 					}
 				}
 
-				if(cidGroup) {
+				if(cidLatlng) {
 					break;
 				}
 			}
 
 
-			console.log("color", x,y, cid, cidGroup, cidIndex);
-	
+
+			//console.log("color", x,y, cid, cidGroup, cidIndex, cidLatlng);
+			return this.setSelection(cidLatlng);
 		},
 		setSelection: function setSelection(selector) {
 			var selection = { 
@@ -2458,6 +2484,8 @@
 				selector:false,
 				highlighted: []
 			};
+
+			//console.log(selector);
 
 			// clear
 			if(typeof selector != "object") {
@@ -2489,6 +2517,14 @@
 				selection.selected = JSON.parse(JSON.stringify(sel));
 				selection.selector = { mode:"latlng", value:selector.latlng };
 				selection.highlighted = [];
+			}
+
+			// cid
+			if(selector.cid || selector.cids) {
+				if(!selector.cids) { selector.cids = selector.cid;}
+				
+				// todo: transform cid into groups or ids
+
 			}
 
 			// group/groups
@@ -2539,7 +2575,7 @@
 			var nw = this._map.getBounds().getNorthWest();
 			var offset = this._map.project(nw, zoom);
 			offset = {x:Math.round(offset.x), y: Math.round(offset.y) };
-			var p = this.getPixels_from_latlng(latlng, wh.w, wh.h, overhang);
+			var p = this._getPixels_from_latlng(latlng, wh.w, wh.h, overhang);
 			var h = this.calcHexagonCell(p.x,p.y,size, offset,zoom);
 
 			// hexagonals
@@ -2599,17 +2635,12 @@
 
 			return sel;
 		},
-		selectByName: function selectByName(name) {
-			return {name:name};
-		},
-
-
 		// #endregion
 
 
 
 		// #######################################################
-		// #region helpers
+		// #region thumb
 		fetchThumb: function fetchThumb(source, meta=false) {
 			if(typeof source != "string") { 
 				console.warn("Leaflet.Hexagonal","fetchThumb(): invalid sourceType", typeof source);
@@ -2627,11 +2658,11 @@
 			}
 
 			// id - hash
-			var id = this._genHash53(source);
+			var id = this._genHash(source);
 
 			// meta
 			if(typeof meta != "object") { meta = {id:false, tint:false, opacity:false} }
-			var id = meta.id || this._genHash53(source);
+			var id = meta.id || this._genHash(source);
 			var imageTint = meta.imageTint || this.options.markerImageTint || false;
 			var iconColor = meta.iconColor || this.options.markerIconColor || false;
 			
@@ -2761,9 +2792,25 @@
 
 
 		},
+		// #endregion
 
 
-		getPixels_from_mxy: function getPixels_from_mxy(mxy, w,h, overhang=0, zoom, pixelOrigin, pixelPane) {
+		// #######################################################
+		// #region helpers
+		getDistance: function (latlng0, latlng1) { 
+			var latlng0 = this._valLatlng(latlng0);
+			if(latlng0.nullIsland) { return 0; }
+			var latlng1 = this._valLatlng(latlng1);
+			if(latlng1.nullIsland) { return 0; }
+			if (latlng0.lat == latlng1.lat && latlng0.lng == latlng1.lng) { return 0; }
+			var lat0 = latlng0.lat * 0.017453293;
+			var lat1 = latlng0.lat * 0.017453293;
+			var dt = (latlng0.lng-latlng1.lng) * 0.017453293;
+			var d = Math.sin(lat0) * Math.sin(lat1) + Math.cos(lat0) * Math.cos(lat1) * Math.cos(dt);
+			d = Math.min(1,d);
+			return Math.round(Math.acos(dist) * 6378136.78);
+		},
+		_getPixels_from_mxy: function _getPixels_from_mxy(mxy, w,h, overhang=0, zoom, pixelOrigin, pixelPane) {
 			var f = Math.pow(2,zoom)*256;
 			var x = Math.round(mxy.x*f - pixelOrigin.x + pixelPane.x);
 			var y = Math.round(mxy.y*f - pixelOrigin.y + pixelPane.y);
@@ -2771,39 +2818,12 @@
 			return { x: x, y: y, visible: true };
 		},
 
-		getPixels_from_latlng: function getPixels_from_latlng(latlng, w, h, overhang=0) {
+		_getPixels_from_latlng: function _getPixels_from_latlng(latlng, w, h, overhang=0) {
 			var p = this._map.latLngToContainerPoint(latlng); 
 			if (p.x < -overhang || p.y < -overhang || p.x > w+overhang || p.y > h+overhang) { return { x: p.x, y: p.y, visible: false }; }
 			return { x: p.x, y: p.y, visible: true };
 		},
-		getDistance: function (lng1, lat1, lng2, lat2) { // lng1, lat1, lng2, lat2 || {lng1, lat1}, {lng2, lat2}
-			if (typeof lng1 == "object" && typeof lat1 == "object") {
-				lat2 = lat1.lat;
-				lng2 = lat1.lng;
-				lat1 = lng1.lat;
-				lng1 = lng1.lng;
-			}
-			if ((lat1 == lat2) && (lng1 == lng2)) {
-				return 0;
-			}
-
-			var d2r = Math.PI / 180;
-			var r2d = 180 / Math.PI;
-
-			var radlat1 = lat1 * d2r;
-			var radlat2 = lat2 * d2r;
-			var theta = lng1 - lng2;
-			var radtheta = theta * d2r;;
-			var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
-			if (dist > 1) {
-				dist = 1;
-			}
-			dist = Math.acos(dist);
-			dist = dist * r2d * 111319.49;
-			return Math.round(dist * 100) / 100;
-
-		},
-		getRGBA: function getRGBA(color) {
+		_getRGBA: function _getRGBA(color) {
 			var r,g,b,a;
 			if(!color.indexOf("#")) {
 				color = color.toUpperCase() + "FF";
@@ -2827,18 +2847,7 @@
 			}
 			return [0,0,0,1];
 		},
-		_toArray: function _toArray(obj) {
-			var arr = [];
-			if(typeof obj !="object") { return arr; }
-			var ks = Object.keys(obj);
-			if(!ks.length) { return arr; }
-			ks.sort();
-			for(var i=0;i<ks.length; i++) {
-				arr.push(obj[ks[i]]);
-			}
-			return arr;
-		},
-		_genUID: function _genUID() {
+		_genUid: function _genUid() {
 			return (Date.now()&16777215) + "_" + Math.floor(Math.random() * 1000000); // string = uses 4.6 days worth of ms and 10^6 random
 		},
 		_genId: function _genId() {
@@ -2851,13 +2860,6 @@
 			return this._incGroup;
 		},
 		_genHash: function _genHash(str) {
-			str = str.replace(/[\W_]+/g,"_");
-			if(str.length>64) {
-				str = str.substring(0,10) + str.substring(str.length-54, str.length);
-			}
-			return str;
-		},
-		_genHash53: function _genHash53(str) {
 			if(typeof str == "number") { str += ""; }
 			if(typeof str != "string") { return false; }
 			var l = str.length;
@@ -2874,9 +2876,6 @@
 				ch = str.charCodeAt(l-i);
 				h1 = Math.imul(h1 ^ ch, 2654435761);
 				h2 = Math.imul(h2 ^ ch, 1597334677);
-                /*if(i==1 || i+1==hl) {
-                console.log(str.charCodeAt(l-i) + " = " + str[l-i]);
-                }*/
 			}
 			h1  = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
 			h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
@@ -2885,7 +2884,7 @@
 			return str0 + (4294967296 * (2097151 & h2) + (h1 >>> 0)) + str1;
 		},
 		
-		_valLatLng: function _valLatLng(latlng) {
+		_valLatlng: function _valLatlng(latlng) {
 			if(typeof latlng == "object") {
 				if(typeof latlng.lat == "number") {
 					if(typeof latlng.lng == "number") {
@@ -2909,7 +2908,7 @@
 			return {x:m.x/256, y:m.y/256};
 		},
 		_getCid: function _getCid(group, groupIndex) {
-			this._incCid = (this._incCid % 16777216) + 4373; //1915741; // for devel : later just 1
+			this._incCid = (this._incCid % 16777216) + 1; //4373; // for devel : later just 1
 			var cid = this._incCid.toString(16);
 			while (cid.length < 6) {
 				cid = "0" + cid;
@@ -3016,19 +3015,6 @@
 				return zoom<=val.maxZoom;
 			}
 			return true;
-		},
-		_hash: function _hash(str,seed=0) {
-			var h1 = 0xdeadbeef^seed, h2 = 0x41c6ce57d^seed;
-			for(var i = 0, ch; i < str.length; i++) {
-				ch = str.charCodeAt(i);
-				h1 = Math.imul(h1 ^ ch, 2654435761);
-				h2 = Math.imul(h2 ^ ch, 1597334677);
-			}
-			h1  = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
-			h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-			h2  = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
-			h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-			return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 		}
 		// #endregion
 
