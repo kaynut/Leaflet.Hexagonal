@@ -7,9 +7,9 @@
 // DONE: link:0 does not work , check === true
 // move tint and stuff to drawMarker?
 // DONE: draw marker ontop of hexagons !!!!
-// linkSelectable
+// Done: linkSelectable
 // rework setInfo, buildInfo
-
+// calc groupDistance, pointDistance, groupDuration, pointDuration
 
 // updates
 // DONE: special treatment for linkMode=curve clickability?
@@ -472,6 +472,12 @@
 			// scale
 			var scale = meta.scale || 1;
 
+			// dist
+			var dist = this._valDist(meta, latlng, group);
+
+			// timespan
+			var timespan = this._valTimeSpan(meta, group);
+
 			// point 
 			var point = {
 				latlng: latlng,	
@@ -483,6 +489,10 @@
 				group: group,
 				name: name,					
 				tags: tags,
+
+				dist:dist,
+				ts:timespan.ts,
+				span:timespan.span,
 			
 				data: data,
 
@@ -1163,7 +1173,7 @@
 			h=h*scale;
 
 			var path = `M${cx-s2} ${cy} L${cx-s4} ${cy-h} L${cx+s4} ${cy-h} L${cx+s2} ${cy} L${cx+s4} ${cy+h} L${cx-s4} ${cy+h} Z`;
-			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:pointyTop };
+			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, path:path, latlng:clatlng, size:size, pointyTop:pointyTop };
 		},
 		calcHexagonCell_pointyTop: function calcHexagonCell_pointyTop(x,y, size, offset, zoom, scale) { // hexagon top-pointy
 			offset = offset || {x:0,y:0};
@@ -1191,7 +1201,7 @@
 			s4=s4*scale;
 			var path = `M${cx} ${cy-s2} L${cx-h} ${cy-s4} L${cx-h} ${cy+s4} L${cx} ${cy+s2} L${cx+h} ${cy+s4} L${cx+h} ${cy-s4} Z`;
 			
-			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
+			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, path:path, latlng:clatlng, size:size, pointyTop:true };
 		},
 		calcHexagonCell_circle: function calcHexagonCell_circle(x,y, size, offset, zoom, scale) { // hexagon circle
 			offset = offset || {x:0,y:0};
@@ -1215,7 +1225,7 @@
 			r = r * scale;
 			var path = `M${cx-r} ${cy-r} a ${r},${r} 0 1,0 ${r * 2},0 a ${r},${r} 0 1,0 ${-r * 2},0`;
 			
-			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, px:x, py:y, path:path, latlng:clatlng, size:size, pointyTop:true };
+			return { cell:cell, cellX:cellX, cellY:cellY, cx:cx, cy:cy, path:path, latlng:clatlng, size:size, pointyTop:true };
 		},
 		calcGutterCells: function calcGutterCells(bounds, size, offset) { // hexagon top-flat
 			if(this.options.hexagonOrientation == "pointyTop") {
@@ -1477,7 +1487,7 @@
 			var ll0 = this._map.containerPointToLatLng([0,0]);
 			//var ll1 = this._map.containerPointToLatLng([size*1.077,0]); // avg between shortest(1) and longest(2/sqrt(3)) hexagon-crosssection
 			var ll1 = this._map.containerPointToLatLng([size*1.0501,0]); // 1.0501 avg diameter, based on hexagonal-circular-area comp
-			return this.getDistance(ll0.lng,ll0.lat,ll1.lng,ll1.lat);
+			return this.getDistance(ll0,ll1);
 		},
 
 		// #endregion
@@ -2804,18 +2814,18 @@
 
 		// #######################################################
 		// #region helpers
-		getDistance: function (latlng0, latlng1) { 
+		getDistance: function getDistance(latlng0, latlng1) { 
 			var latlng0 = this._valLatlng(latlng0);
 			if(latlng0.nullIsland) { return 0; }
 			var latlng1 = this._valLatlng(latlng1);
 			if(latlng1.nullIsland) { return 0; }
 			if (latlng0.lat == latlng1.lat && latlng0.lng == latlng1.lng) { return 0; }
 			var lat0 = latlng0.lat * 0.017453293;
-			var lat1 = latlng0.lat * 0.017453293;
+			var lat1 = latlng1.lat * 0.017453293;
 			var dt = (latlng0.lng-latlng1.lng) * 0.017453293;
 			var d = Math.sin(lat0) * Math.sin(lat1) + Math.cos(lat0) * Math.cos(lat1) * Math.cos(dt);
 			d = Math.min(1,d);
-			return Math.round(Math.acos(dist) * 6378136.78);
+			return Math.round(Math.acos(d) * 6378136.78);
 		},
 		_getPixels_from_mxy: function _getPixels_from_mxy(mxy, w,h, overhang=0, zoom, pixelOrigin, pixelPane) {
 			var f = Math.pow(2,zoom)*256;
@@ -2914,7 +2924,7 @@
 			var m = this._map.project(latlng,0);
 			return {x:m.x/256, y:m.y/256};
 		},
-		_getCid: function _getCid(group, groupIndex) {
+		_getCid: function _getCid() {
 			this._incCid = (this._incCid % 16777216) + 1; //4373; // for devel : later just 1
 			var cid = this._incCid.toString(16);
 			while (cid.length < 6) {
@@ -3008,6 +3018,38 @@
 			if(tags=="undefined" || tags=="false") { tags = ""; }
 			return tags;
 		},
+		_valDist: function _valDist(meta, latlng, group) {
+			var prop = meta.distProperty || "dist";
+			var dist = meta[prop] || false;
+			if(typeof meta[prop]=="number") {
+				return dist;
+			}
+			
+			dist = 0;
+			var l = this.points[group]?.length || 0;
+			// check if linked???
+			if(l) {
+				var p0 = this.points[group][l-1];
+				dist = p0.dist + this.getDistance(p0.latlng, latlng);
+				console.log(p0.latlng, latlng, dist);
+			}
+			return dist;
+		},
+		_valTimeSpan: function _valTimeSpan(meta, group) {
+			var prop = meta.tsProperty || "ts";
+			var ts = meta[prop] || 0;
+			if(typeof ts != "number") { ts=0; }
+			var span = 0;
+
+			var l = this.points[group]?.length || 0;
+			// check if linked???
+			if(l) {
+				var p0 = this.points[group][0];
+				span = Math.abs(p0.ts-ts);
+			}
+			return {ts:ts, span:span };
+		},
+		
 		_checkDisplay: function _checkDisplay(val,zoom=0) {
 			if(typeof val == "boolean") {
 				return val;

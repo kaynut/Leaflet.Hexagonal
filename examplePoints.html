@@ -54,38 +54,38 @@
 		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 
 
-		// hexagonals
-		var hexagonals = new L.Hexagonal({hexagonSize:32}).addTo(map);
+		// layer
+		var layer = new L.Hexagonal({hexagonSize:32}).addTo(map);
 
-      hexagonals.options.hexagonOrientation = "octagon";
+      layer.options.hexagonOrientation = "octagon";
       
       // group "undefined"
       // add single point
-      hexagonals.addPoint({ lat: 45.089036, lng: 2.702637 });
+      layer.addPoint({ lat: 45.089036, lng: 2.702637 });
 
 
       // group B
-      hexagonals.setGroupFill("B","#f00");
+      layer.setGroupFill("B","#f00");
       // add single point with style to group B
-      hexagonals.addPoint({ lat: 45.089036, lng: 5.119629 }, { group:"B", fill:"#f00", info:"Group B" });
+      layer.addPoint({ lat: 45.089036, lng: 5.119629 }, { group:"B", fill:"#f00", info:"Group B" });
       // add another single point with style to group B
-      hexagonals.addPoint({ lat: 46.073231, lng: 5.119629 }, { group:"B", fill:"#f00", line:"#ff0" });
+      layer.addPoint({ lat: 46.073231, lng: 5.119629 }, { group:"B", fill:"#f00", line:"#ff0" });
 
 
       // group C
-      hexagonals.setGroupFill("C","#8d0");      
+      layer.setGroupFill("C","#8d0");      
       // add three points with style to group C
-      hexagonals.addPoints([[7.536621,45.089036],[7.536621,46.073231],[7.536621,47.040182]], { group:"C", fill:"#8d0" } );
+      layer.addPoints([[7.536621,45.089036],[7.536621,46.073231],[7.536621,47.040182]], { group:"C", fill:"#8d0" } );
 
 
       // group D
-      hexagonals.setGroupFill("D","#ff0");      
+      layer.setGroupFill("D","#ff0");      
       // add line (four linked points) with style
-      hexagonals.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922] ], { group:"D", fill:"#ff0" });
+      layer.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922] ], { group:"D", fill:"#ff0" });
 
 
       // group E
-      hexagonals.setGroupFill("E","#d80");      
+      layer.setGroupFill("E","#d80");      
       // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
       var gj = {
          "type": "FeatureCollection",
@@ -132,28 +132,28 @@
             }
          ]
       }
-      hexagonals.addGeojson(gj, {group:"E" });
+      layer.addGeojson(gj, {group:"E" });
   
 
       // group F
-      hexagonals.setGroupFill("F","#8d0");
-      hexagonals.addPoint({ lat: 47.089036, lng: 14.787597 }, {group:"F" });
-      hexagonals.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true });
+      layer.setGroupFill("F","#8d0");
+      layer.addPoint({ lat: 47.089036, lng: 14.787597 }, {group:"F" });
+      layer.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true });
       // add a image-marker 
-      hexagonals.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", marker:"./assets/person.svg", scale:1.5 });
+      layer.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", marker:"./assets/person.svg", scale:1.5 });
       // add a image-marker with a size
-      hexagonals.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"./assets/image0.jpg", scale:1.2 });
+      layer.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"./assets/image0.jpg", scale:1.2 });
 
 /*
       // groupG
-      hexagonals.setGroupFill("G","#ff0");
+      layer.setGroupFill("G","#ff0");
       // add another icon-marker 
-      hexagonals.addIcon({ lat: 45.089036, lng: 17.204589 }, {group:"G" });
+      layer.addIcon({ lat: 45.089036, lng: 17.204589 }, {group:"G" });
       // add an icon-marker 
-      hexagonals.cacheIcon("token",'./assets/token.svg', 1);
-      hexagonals.addMarker({ lat: 47.040182, lng: 17.204589 }, {group:"G", icon:"token", fill:"#fff" });
+      layer.cacheIcon("token",'./assets/token.svg', 1);
+      layer.addMarker({ lat: 47.040182, lng: 17.204589 }, {group:"G", icon:"token", fill:"#fff" });
       // add another icon-marker 
-      hexagonals.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token" });
+      layer.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token" });
 */
 
 
@@ -163,14 +163,16 @@
 		gui.title("Leaflet.Hexagonal - examplePoints.html");
       var guiOptions = {
 			toggle: function() { 
-            hexagonals.setVisibility();
-            console.log(hexagonals.thumbs);
+            layer.setVisibility();
+            console.log(layer.thumbs);
+            console.log(layer.points);
+            console.log(layer.hexagonals);
             /*
-            if(hexagonals.options.visible) {
-               hexagonals.hide();
+            if(layer.options.visible) {
+               layer.hide();
             }
             else {
-               hexagonals.show();
+               layer.show();
             }
             */
          }
