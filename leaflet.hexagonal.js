@@ -5,9 +5,11 @@
 // DONE: options.thingVisible >> options.thingDisplay >> this.display.thing && _checkDisplay 
 // DONE: check again if links are colored the right way in clustering
 // DONE: link:0 does not work , check === true
-// rework setInfo, buildInfo
 // move tint and stuff to drawMarker?
 // DONE: draw marker ontop of hexagons !!!!
+// linkSelectable
+// rework setInfo, buildInfo
+
 
 // updates
 // DONE: special treatment for linkMode=curve clickability?
@@ -121,6 +123,8 @@
 			linkMode: "spline",
 			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
 			linkJoin: 1,  
+			// linkSelectable: boolean
+			linkSelectable: true,
 
 
 			//  gutterDisplay: boolean || {minZoom,maxZoom}
@@ -2089,9 +2093,11 @@
 			ctx.stroke(path);
 
 			// clicker
-			clicker.strokeStyle = cid;
-			clicker.lineWidth = style.linkWidth + style.borderWidth*2 + this.options.selectionTolerance;
-			clicker.stroke(path);
+			if(this.options.linkSelectable) {
+				clicker.strokeStyle = cid;
+				clicker.lineWidth = style.linkWidth + style.borderWidth*2 + this.options.selectionTolerance;
+				clicker.stroke(path);
+			}
 
 			return 1;
 			
@@ -2373,8 +2379,9 @@
 			if(!info || !this.display.info) {
 				return;
 			}
-			return; // todo
-			/*
+
+
+
 			// get html for info
 			var html = this.buildInfo(info);
 
@@ -2387,13 +2394,13 @@
 				className: this.options.infoClassName
 			});
 
-			this.info = L.marker(info.latlng, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
+			this.info = L.marker(info.selected.latlng, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
 			L.DomEvent.on(this.info, 'mousewheel', L.DomEvent.stopPropagation);
 			L.DomEvent.on(this.info, 'click', function(e) { 
 				L.DomEvent.stopPropagation;
 				console.log('clicked info!',e);
 			});
-			*/
+		
 		},
 		buildInfo: function buildInfo(info) {
 			var html = "";
