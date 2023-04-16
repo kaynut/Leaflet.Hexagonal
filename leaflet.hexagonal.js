@@ -122,7 +122,7 @@
 			linkOpacity: false,		
 			// linkMode: "spline" || "line" || "aligned" || "hexagonal" || false
 			linkMode: "spline",
-			// linkJoin: number (0=gap between cell and line / 0.5= cell and line touch / 1=cellcenter and line fully joined)
+			// linkJoin: number (0=gap between hexagon and line / 0.5=hexagon and line touch / 1=hexagon-center and line fully joined)
 			linkJoin: 1,  
 			// linkSelectable: boolean
 			linkSelectable: true,
@@ -1079,10 +1079,11 @@
 								if(visible) {
 									var path = this.getLinkPath(group,i0,i1,hexagonSize, hexagonOffset, zoom);
 									if(path) {
-										var style = p1.style || p0.style || false;
+										var style = p1.style || false;
 										
 										if(p1.marker) {
-											style = p0.style; // todo ????
+											style = p0.style; //{ fill:"#f00" } //p0.style; // todo ????
+											console.log(p0.marker,p1.marker);
 										}
 										this.links.push({group: group, start:p0, end:p1, path:path, style:style, link:[group,i,i0]});
 										tLinks++;
@@ -1330,9 +1331,10 @@
 			   	var x = h0.cx + (h1.cx-h0.cx) * t;
 				var y = h0.cy + (h1.cy-h0.cy) * t;
 
+
 				// hexagon-cell
 				h = this.calcHexagonCell(x,y,size,offset,zoom);
-				
+
 				if(!hs[h.cell]) {
 					hs[h.cell] = h;
 
@@ -1924,7 +1926,7 @@
 					var cluster = link.cell.cluster;
 
 					// style
-					style.fill = link?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
+					style.fill = links[i]?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
 
 
 					// cluster style
@@ -2726,7 +2728,6 @@
 				}
 				
 
-				// todo: move tint and stuff to drawMarker?
 				ctx.drawImage(this, ix,iy,iwh,iwh, 0, 0, size,size);
 
 				if(type=="image" && imageTint) {
