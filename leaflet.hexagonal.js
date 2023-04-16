@@ -9,7 +9,8 @@
 // DONE: draw marker ontop of hexagons !!!!
 // Done: linkSelectable
 // rework setInfo, buildInfo
-// calc groupDistance, pointDistance, groupDuration, pointDuration
+// DONE calc groupDistance, pointDistance, groupDuration, pointDuration
+// clicker: use 
 
 // updates
 // DONE: special treatment for linkMode=curve clickability?
@@ -189,6 +190,9 @@
 		links: [],
 		markers: {},
 
+		clickId: 0x0FFFFF,
+		clicks: [],
+
 		selection: {
 			selected:false,
 			selector:false,
@@ -220,6 +224,7 @@
 			zoom:false,
 			center:[]
 		},
+
 
 
 		// #endregion
@@ -450,9 +455,6 @@
 
 			// id
 			var id = this._valId(meta);
-
-			// cid 
-			var cid = this._getCid(group, this.points[group].length);
 			
 			// link
 			var link = this._valLink(meta, group);
@@ -473,10 +475,10 @@
 			var scale = meta.scale || 1;
 
 			// dist
-			var dist = this._valDist(meta, latlng, group);
+			var dist = this._valDist(meta, latlng, group, link);
 
 			// timespan
-			var timespan = this._valTimeSpan(meta, group);
+			var ts = this._valTimeSpan(meta, group);
 
 			// point 
 			var point = {
@@ -484,15 +486,14 @@
 				mxy: mxy,
 				cell: false,
 
-				cid:cid,
 				id: id,
 				group: group,
 				name: name,					
 				tags: tags,
 
 				dist:dist,
-				ts:timespan.ts,
-				span:timespan.span,
+				time:ts.time,
+				span:ts.span,
 			
 				data: data,
 
@@ -888,8 +889,6 @@
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
 
-						this.hexagonals[h.cell].cid = false;
-
 						this.hexagonals[h.cell].point = false;
 						this.hexagonals[h.cell].points = [];
 
@@ -932,9 +931,6 @@
 
 					// ids
 					this.hexagonals[h.cell].ids[point.id]=true;
-
-					// cid
-					this.hexagonals[h.cell].cid = point.cid;
 
 					// cluster data
 					this.hexagonals[h.cell].cluster.population++;
@@ -998,8 +994,6 @@
 						if(!this.hexagonals[h.cell]) {
 							this.hexagonals[h.cell] = h;
 
-							this.hexagonals[h.cell].cid = false;
-
 							this.hexagonals[h.cell].point = false;
 							this.hexagonals[h.cell].points = [];
 
@@ -1027,9 +1021,6 @@
 						this.hexagonals[h.cell].marker = [group,i];
 						this.hexagonals[h.cell].markers.push([group, i]);
 						this.hexagonals[h.cell].style.marker = marker.style;
-
-						// cid
-						this.hexagonals[h.cell].cid = marker.cid;
 
 						// new group in hex
 						if(typeof this.hexagonals[h.cell].groups[group] != "number") {
@@ -1089,13 +1080,11 @@
 									var path = this.getLinkPath(group,i0,i1,hexagonSize, hexagonOffset, zoom);
 									if(path) {
 										var style = p1.style || p0.style || false;
-										var cid = p1.cid || p0.cid || false;
 										
 										if(p1.marker) {
-											style = p0.style;
-											cid = p0.cid;console.log(p1,p0);
+											style = p0.style; // todo ????
 										}
-										this.links.push({group: p0.group, start:p0, end:p1, path:path, style:style, cid:cid});
+										this.links.push({group: group, start:p0, end:p1, path:path, style:style, link:[group,i,i0]});
 										tLinks++;
 									}
 								}
@@ -1314,7 +1303,7 @@
 			}
 			return false;
 		},
-		getLinkPath: function getLinkPath(group, index0, index1, size, offset, zoom, cid) {
+		getLinkPath: function getLinkPath(group, index0, index1, size, offset, zoom) {
 
 			var p0 = this.points[group][index0];
 			var p1 = this.points[group][index1];
@@ -1350,8 +1339,6 @@
 					
 					if(!this.hexagonals[h.cell]) {
 						this.hexagonals[h.cell] = h;
-
-						this.hexagonals[h.cell].cid = cid;
 
 						this.hexagonals[h.cell].point = false;
 						this.hexagonals[h.cell].points = [];
@@ -1787,6 +1774,8 @@
 				selIds = selection.selected.ids;
 			}
 
+			// clicker
+			this.clickId = 0x0FFFFF;
 
 			// totals
 			var tPopulation = this.totals.population;
@@ -1933,7 +1922,6 @@
 					var cluster = false;
 					var link = links[i].start;
 					var cluster = link.cell.cluster;
-					var cid = link.cid;
 
 					// style
 					style.fill = link?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
@@ -1966,7 +1954,7 @@
 							selection.highlighted.push(links[i]);
 						}
 					}
-					tLinksDrawn += this.drawLink(ctx, links[i], style, sel, clicker, cid);
+					tLinksDrawn += this.drawLink(ctx, links[i], style, sel, clicker);
 
 
 				}
@@ -2027,7 +2015,9 @@
 			ctx.fill(hPath);
 
 			// clicker
-			clicker.fillStyle = hexagon.cid;
+			this.clickId++;
+			this.clicks[this.clickId] = hexagon.point; 
+			clicker.fillStyle = "#" + this.clickId.toString(16);
 			clicker.fill(hPath);
 	
 			return 1;
@@ -2071,15 +2061,16 @@
 			ctx.fill(hPath);
 
 			// clicker
-			clicker.fillStyle = hexagon.cid;
+			this.clickId++;
+			this.clicks[this.clickId] = hexagon.point; 
+			clicker.fillStyle = "#" + this.clickId.toString(16);
 			clicker.fill(hPath);
 
 			return 1;
 
 		},
-		drawLink: function drawLink(ctx, link, style, selected, clicker, cid) {
+		drawLink: function drawLink(ctx, link, style, selected, clicker) {
 			var path = new Path2D(link.path);
-			
 
 			// fill
 			if(this.options.linkFill) {
@@ -2104,7 +2095,9 @@
 
 			// clicker
 			if(this.options.linkSelectable) {
-				clicker.strokeStyle = cid;
+				this.clickId++;
+				this.clicks[this.clickId] = link.link; 
+				clicker.strokeStyle = "#" + this.clickId.toString(16);
 				clicker.lineWidth = style.linkWidth + style.borderWidth*2 + this.options.selectionTolerance;
 				clicker.stroke(path);
 			}
@@ -2239,7 +2232,7 @@
 		// #region events
 		// click
 		_onClick: function _onClick(e, target={layer:true}) {
-			var selection = this.getSelectionByClick(e); //this.setSelection(e.latlng);
+			var selection = this.getSelectionByClick(e); 
 			if(selection.selected) {
 				this.setInfo(selection);
 			}
@@ -2454,6 +2447,12 @@
 		// #region selection
 		getSelectionByClick: function getSelectionByClick(e) {
 
+			var selection = { 
+				selected: false,
+				selector:false,
+				highlighted: []
+			};
+
 			// get click-color
 			var cp = e.containerPoint;
 			var x = cp.x+this._padding.x;
@@ -2461,39 +2460,22 @@
 			var ctx = this._clicker.getContext("2d"); 
 
 			var col = ctx.getImageData(x,y,1,1).data;
-			var cid = (col[0]*65536 + col[1]*256 + col[2]).toString(16);
-			if(!cid) { 
-				return false;
+			var id = (col[0]*65536 + col[1]*256 + col[2]);
+			if(typeof id != "number" || !this.clicks[id]) { 
+				return this.setSelection();
 			}
-			while(cid.length<6) { cid = "0"+cid; }
-			cid = "#"+cid;
+			var cid = this.clicks[id];
 
-			// find cid in points
-			var cidGroup = false, cidIndex = false, cidLatlng = false;
-			for(var go=0; go<this.groupOrder.length; go++) {
-				var group = this.groupOrder[go];
-				if(!this.groupVisibility[group]) {
-					continue;
-				}
-				var pl = this.points[group].length;
-				for (var i = 0; i < pl; i++) {
-					if(this.points[group][i].cid == cid) {
-						cidGroup = group;
-						cidIndex = i;
-						cidLatlng = [ this.points[group][i].latlng.lng, this.points[group][i].latlng.lat ];
-						break;
-					}
-				}
-
-				if(cidLatlng) {
-					break;
-				}
+			var p0 = this.points[cid[0]][cid[1]];
+			if(!p0) {
+				return this.setSelection();
+			}
+			if(id.length>2) { // if link
+				p1 = this.points[cid[0]][cid[2]];
 			}
 
+			return this.setSelection(p0.latlng);
 
-
-			//console.log("color", x,y, cid, cidGroup, cidIndex, cidLatlng);
-			return this.setSelection(cidLatlng);
 		},
 		setSelection: function setSelection(selector) {
 			var selection = { 
@@ -2534,14 +2516,6 @@
 				selection.selected = JSON.parse(JSON.stringify(sel));
 				selection.selector = { mode:"latlng", value:selector.latlng };
 				selection.highlighted = [];
-			}
-
-			// cid
-			if(selector.cid || selector.cids) {
-				if(!selector.cids) { selector.cids = selector.cid;}
-				
-				// todo: transform cid into groups or ids
-
 			}
 
 			// group/groups
@@ -2924,15 +2898,6 @@
 			var m = this._map.project(latlng,0);
 			return {x:m.x/256, y:m.y/256};
 		},
-		_getCid: function _getCid() {
-			this._incCid = (this._incCid % 16777216) + 1; //4373; // for devel : later just 1
-			var cid = this._incCid.toString(16);
-			while (cid.length < 6) {
-				cid = "0" + cid;
-			}
-			cid = "#"+cid;
-			return cid;
-		},
 		_valGroup: function _valGroup(meta) {
 			var prop = meta.groupProperty || "group";
 			var group = meta[prop];
@@ -3018,38 +2983,42 @@
 			if(tags=="undefined" || tags=="false") { tags = ""; }
 			return tags;
 		},
-		_valDist: function _valDist(meta, latlng, group) {
-			var prop = meta.distProperty || "dist";
-			var dist = meta[prop] || false;
-			if(typeof meta[prop]=="number") {
-				return dist;
-			}
-			
-			dist = 0;
-			var l = this.points[group]?.length || 0;
-			// check if linked???
-			if(l) {
-				var p0 = this.points[group][l-1];
-				dist = p0.dist + this.getDistance(p0.latlng, latlng);
-				console.log(p0.latlng, latlng, dist);
+		_valDist: function _valDist(meta, latlng, group, links) {
+			var dist = 0;
+			for(var i=0; i<links.length; i++) {
+				var p0 = this.points[group][links[i]];
+				if(p0) {
+					var d = p0.dist + this.getDistance(p0.latlng, latlng);
+					if(d>dist) { 
+						dist = d; 
+					}
+				}
 			}
 			return dist;
 		},
-		_valTimeSpan: function _valTimeSpan(meta, group) {
-			var prop = meta.tsProperty || "ts";
-			var ts = meta[prop] || 0;
-			if(typeof ts != "number") { ts=0; }
+		_valTimeSpan: function _valTimeSpan(meta,group) {
+			var prop = meta.timeProperty || "time";
+			var time = meta[prop];
 			var span = 0;
-
-			var l = this.points[group]?.length || 0;
-			// check if linked???
-			if(l) {
-				var p0 = this.points[group][0];
-				span = Math.abs(p0.ts-ts);
+			if(typeof time == "number" || !isNaN(time*1)) { 
+				time *= 1;
 			}
-			return {ts:ts, span:span };
+			else if(typeof time == "string") {  
+				try {
+					time = Date.parse(time);
+				} 
+				catch(err) {
+					time = 0;
+				}
+			}
+			else {
+				time = 0;
+			}
+			if(this.points[group][0]){
+				span = Math.max(0, time-this.points[group][0].time);
+			}
+			return { time:time, span:span };
 		},
-		
 		_checkDisplay: function _checkDisplay(val,zoom=0) {
 			if(typeof val == "boolean") {
 				return val;

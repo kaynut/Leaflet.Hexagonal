@@ -67,9 +67,11 @@
       // group B
       layer.setGroupFill("B","#f00");
       // add single point with style to group B
-      layer.addPoint({ lat: 45.089036, lng: 5.119629 }, { group:"B", fill:"#f00", info:"Group B" });
+      layer.addPoint({ lat: 45.089036, lng: 5.119629 }, { group:"B", fill:"#f00", info:"Group B", time:10 });
       // add another single point with style to group B
-      layer.addPoint({ lat: 46.073231, lng: 5.119629 }, { group:"B", fill:"#f00", line:"#ff0" });
+      layer.addPoint({ lat: 46.073231, lng: 5.119629 }, { group:"B", fill:"#f00", line:"#ff0", time:20 });
+      // devel
+      layer.addPoint({ lat: 47.073231, lng: 7.119629 }, { group:"B", fill:"#f00", line:"#ff0", link:[0,1], time:"May 1, 2023" });
 
 
       // group C
@@ -167,6 +169,7 @@
             console.log(layer.thumbs);
             console.log(layer.points);
             console.log(layer.hexagonals);
+            console.log(layer.clicks);
             /*
             if(layer.options.visible) {
                layer.hide();
