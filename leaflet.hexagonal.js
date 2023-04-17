@@ -5,17 +5,17 @@
 // DONE: options.thingVisible >> options.thingDisplay >> this.display.thing && _checkDisplay 
 // DONE: check again if links are colored the right way in clustering
 // DONE: link:0 does not work , check === true
-// move tint and stuff to drawMarker?
 // DONE: draw marker ontop of hexagons !!!!
-// Done: linkSelectable
-// rework setInfo, buildInfo
+// DONE: linkSelectable
+
 // DONE calc groupDistance, pointDistance, groupDuration, pointDuration
-// clicker: use 
+// rework setInfo, buildInfo
 
 // updates
 // DONE: special treatment for linkMode=curve clickability?
 // SKIP: put part of hexagonalize in webworker?
 // SKIP: clusterMode: clusterIndicator (if single or clustered)
+// SKIP: tint and stuff to drawMarker?
 
 /*!
  * Leaflet.Hexagonal.js v0.9.0
@@ -190,7 +190,7 @@
 		links: [],
 		markers: {},
 
-		clickId: 0x0FFFFF,
+		clickId: 0,
 		clicks: [],
 
 		selection: {
@@ -603,11 +603,11 @@
 				// g == geojson-url
 				if(g.endsWith(".json") || g.endsWith(".geojson")) { 
 					meta = meta || {};
-					var ref = this;
+					var that = this;
 					fetch(g)
 						.then((resp) => resp.json())
 						.then((json) => {
-							ref.addGeojson(json,meta);
+							that.addGeojson(json,meta);
 					});
 					return 0;
 				}
@@ -1483,6 +1483,510 @@
 
 
 		// #######################################################
+		// #region draw
+		refresh: function refresh() { 
+			var self = this;
+			window.clearTimeout(self._refreshPoints_debounce);
+			self._refreshPoints_debounce = window.setTimeout(function () {
+				self._update("onRefresh");
+			}, 50);
+		},
+		_onDraw: function _onDraw(majorChange) {
+			var startTime = performance.now();
+			this.view.zoom = this._zoom;
+			this.view.center = this._center;
+			this.hexagonalize(majorChange);
+			this.totals.hexTime = performance.now() - startTime; 
+			this.updateClusterRamp();
+			this.onDraw(this._container, this.hexagonals, this.links, this.selection, majorChange);
+			this.totals.drawTime = performance.now() - startTime; 
+		},
+		onDraw: function onDraw(canvas, hexagonals, links, selection, majorChange) {
+
+			// canvasContext
+			var ctx = canvas.getContext("2d");
+			ctx.globalCompositeOperation = "destination-over";
+			ctx.globalAlpha = 1;
+
+			var clicker = this._clicker.getContext("2d");
+			clicker.globalCompositeOperation = "destination-over";
+
+			// layers
+			if(majorChange) {}
+
+			// style
+			var style = { 
+				fill: this.options.fillDefault, 
+				stroke: this.options.strokeDefault, 
+				borderWidth: this.options.borderWidth || 1,
+				linkWidth: this.options.linkWidth || 1
+			};
+
+			// selection
+			var selGroups = false;
+			if(this.display.selection && this.options.selectionMode=="group" && selection.selected.groups) {
+				selGroups = selection.selected.groups;
+			}
+			var selIds = false;
+			if(this.display.selection && this.options.selectionMode=="id" && selection.selected.ids) {
+				selIds = selection.selected.ids;
+			}
+
+			// clicker
+			this.clickId = -1;
+
+			// totals
+			var tPopulation = this.totals.population;
+			var tMin = this.totals.min;
+			if(typeof this.options.clusterMinValue == "number") {
+				tMin = this.options.clusterMinValue;
+			}
+			var tMax = this.totals.max; 
+			if(typeof this.options.clusterMaxValue == "number") {
+				tMax = this.options.clusterMaxValue;
+			} 
+			var tHexagonsDrawn = 0;
+			var tLinksDrawn = 0;
+			var tMarkersDrawn = 0;
+
+
+			// draw markers, points and links
+			var hexs = Object.keys(hexagonals); 
+			
+			// draw markers
+			if(this.display.markers && hexs.length) {
+				for (var h=0; h<hexs.length; h++) {
+
+					if(hexagonals[hexs[h]].marker) {
+
+						// style 
+						style.fill = hexagonals[hexs[h]].style.marker.fill || hexagonals[hexs[h]].style.fill || this.groupFill[hexagonals[hexs[h]].group] || this.options.fillDefault;
+
+						// cluster style
+						if(this.options.clusterMode) {
+							if(this.options.clusterMode=="population") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.population, 1, tPopulation);
+							}
+							else if(this.options.clusterMode=="sum") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
+							}
+							else if(this.options.clusterMode=="avg") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
+							}
+							else if(this.options.clusterMode=="min") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
+							}
+							else if(this.options.clusterMode=="max") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
+							}
+						}
+					
+						var sel = false;
+						// draw selected
+						if(selGroups) {
+							var gs = Object.keys(selGroups);
+							for(var g=0; g<gs.length; g++) {
+								if(hexagonals[hexs[h]].groups[gs[g]]) {
+									sel = true; 
+									selection.highlighted.push(hexagonals[hexs[h]]);
+								}
+							}
+						}
+						else if(selIds) {
+							var gs = Object.keys(selIds);
+							for(var g=0; g<gs.length; g++) {
+								if(hexagonals[hexs[h]].ids[gs[g]]) {
+									sel = true; 
+									selection.highlighted.push(hexagonals[hexs[h]]);
+								}
+							}
+						}
+
+						// draw
+						tMarkersDrawn += this.drawMarker(ctx, hexagonals[hexs[h]], style, sel, clicker);
+
+					}
+				}
+			}
+
+
+			// draw points
+			if(this.display.hexagons && hexs.length) {
+				for (var h=0; h<hexs.length; h++) {
+
+					// draw hexagonal points
+					if(hexagonals[hexs[h]].point && !hexagonals[hexs[h]].marker) {	
+
+						// style hexagonals
+						style.fill = hexagonals[hexs[h]].style.fill || this.groupFill[hexagonals[hexs[h]].group] || this.options.fillDefault;
+						if(this.options.clusterMode) {
+							if(this.options.clusterMode=="population") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.population, 1, tPopulation);
+							}
+							else if(this.options.clusterMode=="sum") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
+							}
+							else if(this.options.clusterMode=="avg") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
+							}
+							else if(this.options.clusterMode=="min") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
+							}
+							else if(this.options.clusterMode=="max") {
+								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
+							}
+						}
+
+						// draw hexagon selected
+						var sel = false;
+						if(selGroups) {
+							var gs = Object.keys(selGroups);
+							for(var g=0; g<gs.length; g++) {
+								if(hexagonals[hexs[h]].groups[gs[g]]) {
+									sel=true;
+									selection.highlighted.push(hexagonals[hexs[h]]);
+								}
+							}
+						}
+						else if(selIds) {
+							var gs = Object.keys(selIds);
+							for(var g=0; g<gs.length; g++) {
+								if(hexagonals[hexs[h]].ids[gs[g]]) {
+									sel=true;
+									selection.highlighted.push(hexagonals[hexs[h]]);
+								}
+							}
+						}
+
+
+						tHexagonsDrawn += this.drawPoint(ctx, hexagonals[hexs[h]], style, sel, clicker);
+
+
+					}
+
+				}
+			}
+
+
+
+			// draw links:ok
+			if(links.length && this.display.links) {
+
+				ctx.globalAlpha = this.options.linkOpacity || 1;
+				ctx.lineJoin = "round";
+
+				for(var i=0; i<links.length; i++) {
+
+					var cluster = false;
+					var link = links[i].start;
+					var cluster = link.cell.cluster;
+
+					// style
+					style.fill = links[i]?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
+
+
+					// cluster style
+					if(this.options.clusterMode) {
+						if(this.options.clusterMode=="population") {
+							style.fill = this.calcClusterColor(cluster.population, 1, tPopulation);
+						}
+						else if(this.options.clusterMode=="sum") {
+							style.fill = this.calcClusterColor(cluster.sum, tMin, tMax);
+						}
+						else if(this.options.clusterMode=="avg") {
+							style.fill = this.calcClusterColor(cluster.avg,  tMin, tMax);
+						}
+						else if(this.options.clusterMode=="min") {
+							style.fill = this.calcClusterColor(cluster.min,  tMin, tMax);
+						}
+						else if(this.options.clusterMode=="max") {
+							style.fill = this.calcClusterColor(cluster.max,  tMin, tMax);
+						}
+					}
+					
+					// draw 
+					var sel = false;
+					if(selGroups) {
+						if(selGroups[links[i].group]) {
+							sel = true;
+							selection.highlighted.push(links[i]);
+						}
+					}
+					tLinksDrawn += this.drawLink(ctx, links[i], style, sel, clicker);
+
+
+				}
+
+			}
+
+			// draw gutter
+			if(this.display.gutter) {
+				//this.drawGutter(ctx);
+			}
+			
+
+
+
+
+
+			
+
+	
+
+			// totals
+			this.totals.hexagonsDrawn = tHexagonsDrawn;
+			this.totals.markersDrawn = tMarkersDrawn;
+			this.totals.linksDrawn = tLinksDrawn;
+
+			// afterDraw
+			this.afterDraw();
+
+			// devel
+			if(this.options.develClicker) {
+				ctx.globalCompositeOperation = "source-over";
+				ctx.drawImage(this._clicker,-this._padding.x,-this._padding.y);
+			}
+			
+
+		},
+
+
+
+		afterDraw: function afterDraw() {
+
+		},
+		drawPoint: function drawPoint(ctx, hexagon, style, selected, clicker) {
+			if(!hexagon.visible) { return 0; }
+			var hPath = new Path2D(hexagon.path);
+
+			// stroke
+			ctx.strokeStyle = style.stroke;
+			ctx.lineWidth = style.borderWidth;
+			if(selected) {
+				ctx.strokeStyle = this.options.selectionStrokeColor;
+				ctx.lineWidth = this.options.selectionBorderWidth;
+			}
+			ctx.stroke(hPath);
+
+			// fill
+			ctx.fillStyle = style.fill;
+			ctx.fill(hPath);
+
+			// clicker
+			this.clickId++;
+			this.clicks[this.clickId] = hexagon.point; 
+			clicker.fillStyle = "#" + (this.clickId+1048576).toString(16);
+			clicker.fill(hPath);
+	
+			return 1;
+		},
+		drawMarker: function drawMarker(ctx,hexagon,style, selected, clicker) {
+			if(!hexagon.visible) { return 0; }
+			if(!hexagon.marker) { return 0; }
+
+			var marker = this.markers[hexagon.marker[0]][hexagon.marker[1]];
+			var thumb = this.thumbs[marker.style.thumb];
+			if(!thumb.image) { return 0; } 
+
+			var size = this.options.thumbSize;
+			var scale = marker.style.scale;
+			var sizeH = this.hexagonSize * scale;
+			if(thumb.type=="icon") { sizeH *= this.options.markerIconScaler;} // 0.7
+			else { sizeH *= this.options.markerImageScaler; } // 1.15
+			var ix0 = hexagon.cx - sizeH/2;
+			var iy0 = hexagon.cy - sizeH/2;
+
+			var hPath = new Path2D(marker.cell.path);
+
+			// stroke
+			ctx.strokeStyle = style.stroke;
+			ctx.lineWidth = style.borderWidth;
+			if(selected) {
+				ctx.strokeStyle = this.options.selectionStrokeColor;
+				ctx.lineWidth = this.options.selectionBorderWidth;
+			}
+			ctx.stroke(hPath);
+	
+
+			// thumb
+			ctx.save();
+			ctx.clip(hPath);
+			ctx.drawImage(thumb.image, 0,0,size,size, ix0,iy0, sizeH,sizeH); 
+			ctx.restore();
+
+			// fill
+			ctx.fillStyle = style.fill;
+			ctx.fill(hPath);
+
+			// clicker
+			this.clickId++;
+			this.clicks[this.clickId] = hexagon.point; 
+			clicker.fillStyle = "#" + (this.clickId+1048576).toString(16);
+			clicker.fill(hPath);
+
+			return 1;
+
+		},
+		drawLink: function drawLink(ctx, link, style, selected, clicker) {
+			var path = new Path2D(link.path);
+
+			// fill
+			if(this.options.linkFill) {
+				ctx.strokeStyle = this.options.linkFill;
+				if(this.options.linkFill===true) {
+					ctx.strokeStyle = style.fill;
+				}
+				ctx.lineWidth = style.linkWidth;
+				ctx.stroke(path);
+			}
+
+			// stroke linkBorder, linkSelected
+			if(selected) {
+				ctx.strokeStyle = this.options.selectionStrokeColor;
+				ctx.lineWidth = this.options.linkWidth + this.options.selectionBorderWidth*2;
+			}
+			else {
+				ctx.strokeStyle = style.stroke;
+				ctx.lineWidth = style.linkWidth + style.borderWidth*2;
+			}
+			ctx.stroke(path);
+
+			// clicker
+			if(this.options.linkSelectable) {
+				this.clickId++;
+				this.clicks[this.clickId] = link.link; 
+				clicker.strokeStyle = "#" + (this.clickId+1048576).toString(16);
+				clicker.lineWidth = style.linkWidth + style.borderWidth*2 + this.options.selectionTolerance;
+				clicker.stroke(path);
+			}
+
+			return 1;
+			
+		},
+		drawGutter: function drawGutter(ctx) {
+			if(!this.gutter.length) { return; }
+			ctx.strokeStyle = this.options.gutterStroke;
+			ctx.fillStyle = this.options.gutterFill;
+			ctx.lineWidth = 1;
+			for(var g=0; g<this.gutter.length; g++) {
+				var path = new Path2D(this.gutter[g]);
+				if(this.options.gutterFill) {
+					ctx.fill(path);
+				}
+				if(this.options.gutterStroke) {
+					ctx.stroke(path);
+				}
+			}
+		},
+
+		//#endregion
+
+
+		// #######################################################
+		// #region cluster
+		setClustering: function setClustering(options) {
+			if(typeof options != "object") { return; }
+
+			if(typeof options.property == "string" && options.property!="") {
+				this.options.clusterProperty = options.property;
+			}
+			if(typeof options.defaultValue == "number") {
+				this.options.clusterDefaultValue = options.defaultValue;
+			}
+			if(typeof options.min == "number") {
+				this.options.clusterMinValue = options.min;
+			}
+			if(typeof options.max == "number") {
+				this.options.clusterMaxValue = options.max;
+			}
+			if(typeof options.mode == "string") {
+				this.options.clusterMode = options.mode;
+			}
+			if(typeof options.scale == "string") {
+				this.options.clusterScale = options.scale;
+			}
+			if(typeof options.colors == "object" && Array.isArray(options.colors)) {
+				this.options.clusterColors = options.colors;
+			}
+
+		},
+		updateClusterRamp: function checkClusterRamp() {
+			var ocr = JSON.stringify(this.options.clusterColors);
+			if(ocr!=this.clusterRampHash) {
+				this.setClusterRamp(this.options.clusterColors);
+			}
+		},
+		setClusterRamp: function setClusterRamp(colorArray) {
+			this.clusterRamp = [[48, 50, 52, 1] , [224, 226, 228, 1]]; // default value
+			this.clusterRampHash = JSON.stringify(this.clusterRamp);
+			if(!colorArray) {
+				return;
+			}
+			if(!Array.isArray(colorArray) || !colorArray.length) {
+				console.warn("Leaflet.hexagonal.setClusterRamp: Parameter colorArray is invalid", colorArray);
+				return;
+			}
+
+			this.clusterRamp = [];
+			for(var i=0; i<colorArray.length; i++) {
+				if(typeof colorArray[i] == "string") {
+					colorArray[i] = this._getRGBA(colorArray[i]);
+				}
+				else if(Array.isArray(colorArray[i])) {}
+				else {
+					colorArray[i] = [0,0,0,1];
+				}
+				colorArray[i][0] = colorArray[i][0] || 0;
+				colorArray[i][1] = colorArray[i][1] || 0;
+				colorArray[i][2] = colorArray[i][2] || 0;
+				colorArray[i][3] = colorArray[i][3] || 1;
+
+				this.clusterRamp[i] = colorArray[i];
+			}
+
+			if(colorArray.length<2) {
+				this.clusterRamp[1] = colorArray[0];
+			}
+
+			this.clusterRampHash = JSON.stringify(this.clusterRamp);
+
+		},
+		calcClusterColor: function calcClusterColor(value, min=0, max=1) {
+			var ramp = this.clusterRamp;
+			var l = ramp.length - 1;
+
+			var t0 = Math.min(min,max);
+			var t1 = Math.max(min,max);
+
+			if(value<=t0) { 
+				return "rgba(" + ramp[0][0] + "," + ramp[0][1] + "," + ramp[0][2] + "," + ramp[0][3] + ")";
+			}
+			else if(value>=t1) { 
+				return "rgba(" + ramp[l][0] + "," + ramp[l][1] + "," + ramp[l][2] + "," + ramp[l][3] + ")"; 
+			}
+
+			var t;
+			if(this.options.clusterScale=="log") {
+				t = Math.log(value-t0+1)/Math.log(t1-t0+1); 
+			}
+			else if(this.options.clusterScale=="square") {
+				t = Math.sqrt(value-t0)/Math.sqrt(t1-t0);
+			}
+			else {
+				t = (value-t0) / (t1-t0);
+			}
+
+			t = t * l;
+			var f = Math.floor(t);
+			t = t - f;
+			
+			return "rgba(" + (ramp[f][0]*(1-t)+ramp[f+1][0]*t) + "," + (ramp[f][1]*(1-t)+ramp[f+1][1]*t) + "," + (ramp[f][2]*(1-t)+ramp[f+1][2]*t) + ","  + (ramp[f][3]*(1-t)+ramp[f+1][3]*t) + ")";
+		},
+		// #endregion
+
+
+
+		// #######################################################
 		// #region filter
 		checkFilter: function checkFilter(point) {
 			if(!this.filterActive  || !this.filters.length) { return true; }
@@ -1726,554 +2230,6 @@
 		},
 		// #endregion
 
-		// #######################################################
-		// #region draw
-		refresh: function refresh() { 
-			var self = this;
-			window.clearTimeout(self._refreshPoints_debounce);
-			self._refreshPoints_debounce = window.setTimeout(function () {
-				self._update("onRefresh");
-			}, 50);
-		},
-		_onDraw: function _onDraw(majorChange) {
-			var startTime = performance.now();
-			this.view.zoom = this._zoom;
-			this.view.center = this._center;
-			this.hexagonalize(majorChange);
-			this.totals.hexTime = performance.now() - startTime; 
-			this.updateClusterRamp();
-			this.onDraw(this._container, this.hexagonals, this.links, this.selection, majorChange);
-			this.totals.drawTime = performance.now() - startTime; 
-		},
-		onDraw: function onDraw(canvas, hexagonals, links, selection, majorChange) {
-
-			// canvasContext
-			var ctx = canvas.getContext("2d");
-			ctx.globalCompositeOperation = "destination-over";
-			ctx.globalAlpha = 1;
-
-			var clicker = this._clicker.getContext("2d");
-			clicker.globalCompositeOperation = "destination-over";
-
-			// layers
-			if(majorChange) {}
-
-			// style
-			var style = { 
-				fill: this.options.fillDefault, 
-				stroke: this.options.strokeDefault, 
-				borderWidth: this.options.borderWidth || 1,
-				linkWidth: this.options.linkWidth || 1
-			};
-
-			// selection
-			var selGroups = false;
-			if(this.display.selection && this.options.selectionMode=="group" && selection.selected.groups) {
-				selGroups = selection.selected.groups;
-			}
-			var selIds = false;
-			if(this.display.selection && this.options.selectionMode=="id" && selection.selected.ids) {
-				selIds = selection.selected.ids;
-			}
-
-			// clicker
-			this.clickId = 0x0FFFFF;
-
-			// totals
-			var tPopulation = this.totals.population;
-			var tMin = this.totals.min;
-			if(typeof this.options.clusterMinValue == "number") {
-				tMin = this.options.clusterMinValue;
-			}
-			var tMax = this.totals.max; 
-			if(typeof this.options.clusterMaxValue == "number") {
-				tMax = this.options.clusterMaxValue;
-			} 
-			var tHexagonsDrawn = 0;
-			var tLinksDrawn = 0;
-			var tMarkersDrawn = 0;
-
-
-			// draw markers, points and links
-			var hexs = Object.keys(hexagonals); 
-			
-			// draw markers
-			if(this.display.markers && hexs.length) {
-				for (var h=0; h<hexs.length; h++) {
-
-					if(hexagonals[hexs[h]].marker) {
-
-						// style 
-						style.fill = hexagonals[hexs[h]].style.marker.fill || hexagonals[hexs[h]].style.fill || this.groupFill[hexagonals[hexs[h]].group] || this.options.fillDefault;
-
-						// cluster style
-						if(this.options.clusterMode) {
-							if(this.options.clusterMode=="population") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.population, 1, tPopulation);
-							}
-							else if(this.options.clusterMode=="sum") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
-							}
-							else if(this.options.clusterMode=="avg") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
-							}
-							else if(this.options.clusterMode=="min") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
-							}
-							else if(this.options.clusterMode=="max") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
-							}
-						}
-					
-						var sel = false;
-						// draw selected
-						if(selGroups) {
-							var gs = Object.keys(selGroups);
-							for(var g=0; g<gs.length; g++) {
-								if(hexagonals[hexs[h]].groups[gs[g]]) {
-									sel = true; 
-									selection.highlighted.push(hexagonals[hexs[h]]);
-								}
-							}
-						}
-						else if(selIds) {
-							var gs = Object.keys(selIds);
-							for(var g=0; g<gs.length; g++) {
-								if(hexagonals[hexs[h]].ids[gs[g]]) {
-									sel = true; 
-									selection.highlighted.push(hexagonals[hexs[h]]);
-								}
-							}
-						}
-
-						// draw
-						tMarkersDrawn += this.drawMarker(ctx, hexagonals[hexs[h]], style, sel, clicker);
-
-					}
-				}
-			}
-
-
-			// draw points
-			if(this.display.hexagons && hexs.length) {
-				for (var h=0; h<hexs.length; h++) {
-
-					// draw hexagonal points
-					if(hexagonals[hexs[h]].point && !hexagonals[hexs[h]].marker) {	
-
-						// style hexagonals
-						style.fill = hexagonals[hexs[h]].style.fill || this.groupFill[hexagonals[hexs[h]].group] || this.options.fillDefault;
-						if(this.options.clusterMode) {
-							if(this.options.clusterMode=="population") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.population, 1, tPopulation);
-							}
-							else if(this.options.clusterMode=="sum") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
-							}
-							else if(this.options.clusterMode=="avg") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
-							}
-							else if(this.options.clusterMode=="min") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
-							}
-							else if(this.options.clusterMode=="max") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
-							}
-						}
-
-						// draw hexagon selected
-						var sel = false;
-						if(selGroups) {
-							var gs = Object.keys(selGroups);
-							for(var g=0; g<gs.length; g++) {
-								if(hexagonals[hexs[h]].groups[gs[g]]) {
-									sel=true;
-									selection.highlighted.push(hexagonals[hexs[h]]);
-								}
-							}
-						}
-						else if(selIds) {
-							var gs = Object.keys(selIds);
-							for(var g=0; g<gs.length; g++) {
-								if(hexagonals[hexs[h]].ids[gs[g]]) {
-									sel=true;
-									selection.highlighted.push(hexagonals[hexs[h]]);
-								}
-							}
-						}
-
-
-						tHexagonsDrawn += this.drawPoint(ctx, hexagonals[hexs[h]], style, sel, clicker);
-
-
-					}
-
-				}
-			}
-
-
-
-			// draw links:ok
-			if(links.length && this.display.links) {
-
-				ctx.globalAlpha = this.options.linkOpacity || 1;
-				ctx.lineJoin = "round";
-
-				for(var i=0; i<links.length; i++) {
-
-					var cluster = false;
-					var link = links[i].start;
-					var cluster = link.cell.cluster;
-
-					// style
-					style.fill = links[i]?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
-
-
-					// cluster style
-					if(this.options.clusterMode) {
-						if(this.options.clusterMode=="population") {
-							style.fill = this.calcClusterColor(cluster.population, 1, tPopulation);
-						}
-						else if(this.options.clusterMode=="sum") {
-							style.fill = this.calcClusterColor(cluster.sum, tMin, tMax);
-						}
-						else if(this.options.clusterMode=="avg") {
-							style.fill = this.calcClusterColor(cluster.avg,  tMin, tMax);
-						}
-						else if(this.options.clusterMode=="min") {
-							style.fill = this.calcClusterColor(cluster.min,  tMin, tMax);
-						}
-						else if(this.options.clusterMode=="max") {
-							style.fill = this.calcClusterColor(cluster.max,  tMin, tMax);
-						}
-					}
-					
-					// draw 
-					var sel = false;
-					if(selGroups) {
-						if(selGroups[links[i].group]) {
-							sel = true;
-							selection.highlighted.push(links[i]);
-						}
-					}
-					tLinksDrawn += this.drawLink(ctx, links[i], style, sel, clicker);
-
-
-				}
-
-			}
-
-			// draw gutter
-			if(this.display.gutter) {
-				//this.drawGutter(ctx);
-			}
-			
-
-
-
-
-
-			
-
-	
-
-			// totals
-			this.totals.hexagonsDrawn = tHexagonsDrawn;
-			this.totals.markersDrawn = tMarkersDrawn;
-			this.totals.linksDrawn = tLinksDrawn;
-
-			// afterDraw
-			this.afterDraw();
-
-			// devel
-			if(this.options.develClicker) {
-				ctx.globalCompositeOperation = "source-over";
-				ctx.drawImage(this._clicker,-this._padding.x,-this._padding.y);
-			}
-			
-
-		},
-
-
-
-		afterDraw: function afterDraw() {
-
-		},
-		drawPoint: function drawPoint(ctx, hexagon, style, selected, clicker) {
-			if(!hexagon.visible) { return 0; }
-			var hPath = new Path2D(hexagon.path);
-
-			// stroke
-			ctx.strokeStyle = style.stroke;
-			ctx.lineWidth = style.borderWidth;
-			if(selected) {
-				ctx.strokeStyle = this.options.selectionStrokeColor;
-				ctx.lineWidth = this.options.selectionBorderWidth;
-			}
-			ctx.stroke(hPath);
-
-			// fill
-			ctx.fillStyle = style.fill;
-			ctx.fill(hPath);
-
-			// clicker
-			this.clickId++;
-			this.clicks[this.clickId] = hexagon.point; 
-			clicker.fillStyle = "#" + this.clickId.toString(16);
-			clicker.fill(hPath);
-	
-			return 1;
-		},
-		drawMarker: function drawMarker(ctx,hexagon,style, selected, clicker) {
-			if(!hexagon.visible) { return 0; }
-			if(!hexagon.marker) { return 0; }
-
-			var marker = this.markers[hexagon.marker[0]][hexagon.marker[1]];
-			var thumb = this.thumbs[marker.style.thumb];
-			if(!thumb.image) { return 0; } 
-
-			var size = this.options.thumbSize;
-			var scale = marker.style.scale;
-			var sizeH = this.hexagonSize * scale;
-			if(thumb.type=="icon") { sizeH *= this.options.markerIconScaler;} // 0.7
-			else { sizeH *= this.options.markerImageScaler; } // 1.15
-			var ix0 = hexagon.cx - sizeH/2;
-			var iy0 = hexagon.cy - sizeH/2;
-
-			var hPath = new Path2D(marker.cell.path);
-
-			// stroke
-			ctx.strokeStyle = style.stroke;
-			ctx.lineWidth = style.borderWidth;
-			if(selected) {
-				ctx.strokeStyle = this.options.selectionStrokeColor;
-				ctx.lineWidth = this.options.selectionBorderWidth;
-			}
-			ctx.stroke(hPath);
-	
-
-			// thumb
-			ctx.save();
-			ctx.clip(hPath);
-			ctx.drawImage(thumb.image, 0,0,size,size, ix0,iy0, sizeH,sizeH); 
-			ctx.restore();
-
-			// fill
-			ctx.fillStyle = style.fill;
-			ctx.fill(hPath);
-
-			// clicker
-			this.clickId++;
-			this.clicks[this.clickId] = hexagon.point; 
-			clicker.fillStyle = "#" + this.clickId.toString(16);
-			clicker.fill(hPath);
-
-			return 1;
-
-		},
-		drawLink: function drawLink(ctx, link, style, selected, clicker) {
-			var path = new Path2D(link.path);
-
-			// fill
-			if(this.options.linkFill) {
-				ctx.strokeStyle = this.options.linkFill;
-				if(this.options.linkFill===true) {
-					ctx.strokeStyle = style.fill;
-				}
-				ctx.lineWidth = style.linkWidth;
-				ctx.stroke(path);
-			}
-
-			// stroke linkBorder, linkSelected
-			if(selected) {
-				ctx.strokeStyle = this.options.selectionStrokeColor;
-				ctx.lineWidth = this.options.linkWidth + this.options.selectionBorderWidth*2;
-			}
-			else {
-				ctx.strokeStyle = style.stroke;
-				ctx.lineWidth = style.linkWidth + style.borderWidth*2;
-			}
-			ctx.stroke(path);
-
-			// clicker
-			if(this.options.linkSelectable) {
-				this.clickId++;
-				this.clicks[this.clickId] = link.link; 
-				clicker.strokeStyle = "#" + this.clickId.toString(16);
-				clicker.lineWidth = style.linkWidth + style.borderWidth*2 + this.options.selectionTolerance;
-				clicker.stroke(path);
-			}
-
-			return 1;
-			
-		},
-		drawGutter: function drawGutter(ctx) {
-			if(!this.gutter.length) { return; }
-			ctx.strokeStyle = this.options.gutterStroke;
-			ctx.fillStyle = this.options.gutterFill;
-			ctx.lineWidth = 1;
-			for(var g=0; g<this.gutter.length; g++) {
-				var path = new Path2D(this.gutter[g]);
-				if(this.options.gutterFill) {
-					ctx.fill(path);
-				}
-				if(this.options.gutterStroke) {
-					ctx.stroke(path);
-				}
-			}
-		},
-
-		//#endregion
-
-
-		// #######################################################
-		// #region cluster
-		setClustering: function setClustering(options) {
-			if(typeof options != "object") { return; }
-
-			if(typeof options.property == "string" && options.property!="") {
-				this.options.clusterProperty = options.property;
-			}
-			if(typeof options.defaultValue == "number") {
-				this.options.clusterDefaultValue = options.defaultValue;
-			}
-			if(typeof options.min == "number") {
-				this.options.clusterMinValue = options.min;
-			}
-			if(typeof options.max == "number") {
-				this.options.clusterMaxValue = options.max;
-			}
-			if(typeof options.mode == "string") {
-				this.options.clusterMode = options.mode;
-			}
-			if(typeof options.scale == "string") {
-				this.options.clusterScale = options.scale;
-			}
-			if(typeof options.colors == "object" && Array.isArray(options.colors)) {
-				this.options.clusterColors = options.colors;
-			}
-
-		},
-		updateClusterRamp: function checkClusterRamp() {
-			var ocr = JSON.stringify(this.options.clusterColors);
-			if(ocr!=this.clusterRampHash) {
-				this.setClusterRamp(this.options.clusterColors);
-			}
-		},
-		setClusterRamp: function setClusterRamp(colorArray) {
-			this.clusterRamp = [[48, 50, 52, 1] , [224, 226, 228, 1]]; // default value
-			this.clusterRampHash = JSON.stringify(this.clusterRamp);
-			if(!colorArray) {
-				return;
-			}
-			if(!Array.isArray(colorArray) || !colorArray.length) {
-				console.warn("Leaflet.hexagonal.setClusterRamp: Parameter colorArray is invalid", colorArray);
-				return;
-			}
-
-			this.clusterRamp = [];
-			for(var i=0; i<colorArray.length; i++) {
-				if(typeof colorArray[i] == "string") {
-					colorArray[i] = this._getRGBA(colorArray[i]);
-				}
-				else if(Array.isArray(colorArray[i])) {}
-				else {
-					colorArray[i] = [0,0,0,1];
-				}
-				colorArray[i][0] = colorArray[i][0] || 0;
-				colorArray[i][1] = colorArray[i][1] || 0;
-				colorArray[i][2] = colorArray[i][2] || 0;
-				colorArray[i][3] = colorArray[i][3] || 1;
-
-				this.clusterRamp[i] = colorArray[i];
-			}
-
-			if(colorArray.length<2) {
-				this.clusterRamp[1] = colorArray[0];
-			}
-
-			this.clusterRampHash = JSON.stringify(this.clusterRamp);
-
-		},
-		calcClusterColor: function calcClusterColor(value, min=0, max=1) {
-			var ramp = this.clusterRamp;
-			var l = ramp.length - 1;
-
-			var t0 = Math.min(min,max);
-			var t1 = Math.max(min,max);
-
-			if(value<=t0) { 
-				return "rgba(" + ramp[0][0] + "," + ramp[0][1] + "," + ramp[0][2] + "," + ramp[0][3] + ")";
-			}
-			else if(value>=t1) { 
-				return "rgba(" + ramp[l][0] + "," + ramp[l][1] + "," + ramp[l][2] + "," + ramp[l][3] + ")"; 
-			}
-
-			var t;
-			if(this.options.clusterScale=="log") {
-				t = Math.log(value-t0+1)/Math.log(t1-t0+1); 
-			}
-			else if(this.options.clusterScale=="square") {
-				t = Math.sqrt(value-t0)/Math.sqrt(t1-t0);
-			}
-			else {
-				t = (value-t0) / (t1-t0);
-			}
-
-			t = t * l;
-			var f = Math.floor(t);
-			t = t - f;
-			
-			return "rgba(" + (ramp[f][0]*(1-t)+ramp[f+1][0]*t) + "," + (ramp[f][1]*(1-t)+ramp[f+1][1]*t) + "," + (ramp[f][2]*(1-t)+ramp[f+1][2]*t) + ","  + (ramp[f][3]*(1-t)+ramp[f+1][3]*t) + ")";
-		},
-		// #endregion
-
-
-
-		// #######################################################
-		// #region events
-		// click
-		_onClick: function _onClick(e, target={layer:true}) {
-			var selection = this.getSelectionByClick(e); 
-			if(selection.selected) {
-				this.setInfo(selection);
-			}
-			this.onClick(e,selection, target);
-			
-		},
-		// overwritable
-		onClick: function onClick(e, selection, target) {
-		},
-
-		// rest
-		_onMouseRest: function _onMouseRest(e) {
-			var self = this;
-			window.clearTimeout(self._onMouseRestDebounced_Hexagonal);
-			self._onMouseRestDebounced_Hexagonal = window.setTimeout(function () {
-				
-				var selection = self.selectByLatlng(e.latlng);
-				self.onMouseRest(e, selection, {layer:true});
-
-			}, 250);
-		},
-		// overwritable
-		onMouseRest: function onMouseRest(e, selection, target) {
-		},
-
-		// zoomend
-		_onZoomEnd: function _onZoomEnd(e) {
-			if(this.selection) { 
-				this.setInfo(false);
-			}
-			this.onZoomEnd(e);
-		},
-		// overwritable
-		onZoomEnd: function onZoomEnd(e) {
-		},
-
-		// #endregion
-
-
 
 		// #######################################################
 		// #region group
@@ -2371,76 +2327,48 @@
 		// #endregion
 
 		
+
+
 		// #######################################################
-		// #region info
-		setInfo: function setInfo(info) {
-
-			if(this.info) {
-				this.infoLayer.clearLayers();
-				this.info = false;
-			} 
-			console.log("setInfo", info);
-
-			if(!info || !this.display.info) {
-				return;
-			}
-
-
-
-			// get html for info
-			var html = this.buildInfo(info);
-
-			var iconHtml = document.createElement("DIV");
-			iconHtml.className = "leaflet-hexagonal-info leftTop";
-			iconHtml.innerHTML = html;
-			var divicon = L.divIcon({
-				iconSize:null,
-				html: iconHtml,
-				className: this.options.infoClassName
-			});
-
-			this.info = L.marker(info.selected.latlng, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
-			L.DomEvent.on(this.info, 'mousewheel', L.DomEvent.stopPropagation);
-			L.DomEvent.on(this.info, 'click', function(e) { 
-				L.DomEvent.stopPropagation;
-				console.log('clicked info!',e);
-			});
-		
+		// #region events
+		// click
+		_onClick: function _onClick(e, target={layer:true}) {
+			var selection = this.getSelectionByClick(e); 
+			console.log(selection);
+			this.setInfo(selection);
+			this.onClick(e,selection, target);
+			
 		},
-		buildInfo: function buildInfo(info) {
-			var html = "";
+		// overwritable
+		onClick: function onClick(e, selection, target) {
+		},
 
-			// todo: rewrite with .point/.points - instead pointIndices
-			/*
-			var pis =  info.pointIndices.length;
-			var ps = [];
-			for(var i=0; i< pis; i++) {
-				var p = this.points[info.pointIndices[i]];
-				if(p.info) {
-					ps.push(p.info);
-				}
-			}
-			if(!ps.length) { html = `${pis}`; }
-			else if(ps.length==1) { html = `${ps[0]}`; }
-			else if(ps.length==2) { html = `${ps[0]}<br>${ps[1]}`; }
-			else if(ps.length==3) { html = `${ps[0]}<br>${ps[1]}<br>${ps[2]}`; }
-			else { html = `${ps[0]}<br>${ps[1]}<br>...<br>${ps[ps.length-1]}`; }
-			*/
-			return html;
+		// rest
+		_onMouseRest: function _onMouseRest(e) {
+			var self = this;
+			window.clearTimeout(self._onMouseRestDebounced_Hexagonal);
+			self._onMouseRestDebounced_Hexagonal = window.setTimeout(function () {
+				
+				var selection = self.selectByLatlng(e.latlng);
+				self.onMouseRest(e, selection, {layer:true});
 
+			}, 250);
 		},
-		showInfo: function showInfo() {
-			if(this.info) {
-				var i = document.querySelector('.leaflet-hexagonal-info-container');
-				if(i) { i.style.display="block"; }
+		// overwritable
+		onMouseRest: function onMouseRest(e, selection, target) {
+		},
+
+		// zoomend
+		_onZoomEnd: function _onZoomEnd(e) {
+			if(this.selection) { 
+				this.setInfo(false);
 			}
+			this.onZoomEnd(e);
 		},
-		hideInfo: function hideInfo() {
-			if(this.info) {
-				var i =document.querySelector('.leaflet-hexagonal-info-container');
-				if(i) { i.style.display="none"; }
-			}
+		// overwritable
+		onZoomEnd: function onZoomEnd(e) {
 		},
+
 		// #endregion
 
 
@@ -2449,34 +2377,46 @@
 		// #region selection
 		getSelectionByClick: function getSelectionByClick(e) {
 
-			var selection = { 
-				selected: false,
-				selector:false,
-				highlighted: []
-			};
-
 			// get click-color
 			var cp = e.containerPoint;
 			var x = cp.x+this._padding.x;
 			var y = cp.y+this._padding.y;
 			var ctx = this._clicker.getContext("2d"); 
-
 			var col = ctx.getImageData(x,y,1,1).data;
-			var id = (col[0]*65536 + col[1]*256 + col[2]);
+			var id = ((col[0]-16)*65536 + col[1]*256 + col[2]); // r-shift for alignment
 			if(typeof id != "number" || !this.clicks[id]) { 
 				return this.setSelection();
 			}
-			var cid = this.clicks[id];
 
+			// click-id
+			var cid = this.clicks[id];
+			var group = cid[0];
 			var p0 = this.points[cid[0]][cid[1]];
+			var p1 = this.points[cid[0]][cid[2]];
+
+			// no data
 			if(!p0) {
 				return this.setSelection();
 			}
-			if(id.length>2) { // if link
-				p1 = this.points[cid[0]][cid[2]];
+
+			// selector.point
+			var selector = { click: e.latlng, clickId: cid };
+			if(!p1) {
+				selector.point = p0;
+				selector.distLinked = p0.dist;
+				selector.distCrow = this.getDistance(p0.latlng, this.points[cid[0]][0].latlng);
+				selector.anchor = p0.latlng;
+			}
+			
+			// selector.link
+			else { 
+				selector.link = [p0,p1];
+				selector.distLinked = p1.dist + this.getDistance(e.latlng, p1.latlng);
+				selector.distCrow = this.getDistance(e.latlng, this.points[cid[0]][0].latlng);
+				selector.anchor = {lat: e.latlng.lat, lng:e.latlng.lng};
 			}
 
-			return this.setSelection(p0.latlng);
+			return this.setSelection(selector);
 
 		},
 		setSelection: function setSelection(selector) {
@@ -2485,8 +2425,6 @@
 				selector:false,
 				highlighted: []
 			};
-
-			//console.log(selector);
 
 			// clear
 			if(typeof selector != "object") {
@@ -2497,31 +2435,48 @@
 				return selection; 
 			}
 
-			// latlng
+			// latlng format
 			if(Array.isArray(selector)) {
 				if(typeof selector[0] == "number" && typeof selector[1] == "number") {
 					var latlng = { lat:selector[1], lng:selector[0] }; 
 					selector = { latlng: latlng };
 				}
 			}
-			else if(typeof selector.lat == "number" && typeof selector.lng == "number") {
-				selector.latlng = { lat:selector.lat, lng:selector.lng }; 
-			}
-			else if(typeof selector.lat == "number" && typeof selector.lon == "number") {
-				selector.latlng = { lat:selector.lat, lng:selector.lon }; 
-			}
-			if(selector.latlng) {
-				var sel = this.selectByLatlng(selector.latlng);
-				if(sel) {
-					//this.options.selectionMode = "group";
+			else if(typeof selector.lat == "number") {
+				if(typeof selector.lng == "number") {
+					selector.latlng = { lat:selector.lat, lng:selector.lng }; 
 				}
-				selection.selected = JSON.parse(JSON.stringify(sel));
-				selection.selector = { mode:"latlng", value:selector.latlng };
-				selection.highlighted = [];
+				if(typeof selector.lon == "number") {
+					selector.latlng = { lat:selector.lat, lng:selector.lon }; 
+				}
 			}
 
+
+
+			// click
+			if(selector.click) {
+				var sel;
+				if(selector.point) {
+					sel = this.selectByLatlng(selector.point.latlng);
+					selector.mode = "group";
+					selector.value = selector.clickId[0];
+				}
+				if(selector.link) {
+					sel = this.selectByLatlng(selector.link[0].latlng);
+					selector.mode = "group";
+					selector.value = selector.clickId[0];
+				}
+				if(sel) {
+					this.options.selectionMode = "group";
+					selection.selected = JSON.parse(JSON.stringify(sel)); 
+					selection.selector = selector;
+					selection.highlighted = [];				
+				}
+			}
+
+
 			// group/groups
-			if(selector.group || selector.groups) {
+			else if(selector.group || selector.groups)  {
 				if(!selector.groups) { selector.groups = selector.group; }
 				var sel = this.selectByGroups(selector.groups);
 				if(sel) {
@@ -2532,8 +2487,9 @@
 				}
 			}
 
+
 			// id
-			if(selector.id || selector.ids) {
+			else if(selector.id || selector.ids) {
 				if(!selector.ids) { selector.ids = selector.id; }
 				var sel = this.selectByIds(selector.id);
 				if(sel) {
@@ -2542,6 +2498,17 @@
 					selection.selector = { mode:"id", value:sel.ids };
 					selection.highlighted = [];
 				}
+			}
+
+			// latlng 
+			else if(selector.latlng) {
+				var sel = this.selectByLatlng(selector.latlng);
+				if(sel) {
+					//this.options.selectionMode = "group";
+				}
+				selection.selected = JSON.parse(JSON.stringify(sel));
+				selection.selector = { mode:"latlng", value:selector.latlng };
+				selection.highlighted = [];
 			}
 
 
@@ -2631,6 +2598,78 @@
 		// #endregion
 
 
+		// #######################################################
+		// #region info
+		setInfo: function setInfo(info) {
+
+			if(this.info) {
+				this.infoLayer.clearLayers();
+				this.info = false;
+			} 
+			console.log("setInfo", info);
+
+			if(!info.selected || !this.display.info) {
+				return;
+			}
+
+
+
+			// get html for info
+			var html = this.buildInfo(info);
+
+			var iconHtml = document.createElement("DIV");
+			iconHtml.className = "leaflet-hexagonal-info leftTop";
+			iconHtml.innerHTML = html;
+			var divicon = L.divIcon({
+				iconSize:null,
+				html: iconHtml,
+				className: this.options.infoClassName
+			});
+
+			this.info = L.marker(info.selected.latlng, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
+			L.DomEvent.on(this.info, 'mousewheel', L.DomEvent.stopPropagation);
+			L.DomEvent.on(this.info, 'click', function(e) { 
+				L.DomEvent.stopPropagation;
+				console.log('clicked info!',e);
+			});
+		
+		},
+		buildInfo: function buildInfo(info) {
+			var html = "";
+
+			// todo: rewrite with .point/.points - instead pointIndices
+			/*
+			var pis =  info.pointIndices.length;
+			var ps = [];
+			for(var i=0; i< pis; i++) {
+				var p = this.points[info.pointIndices[i]];
+				if(p.info) {
+					ps.push(p.info);
+				}
+			}
+			if(!ps.length) { html = `${pis}`; }
+			else if(ps.length==1) { html = `${ps[0]}`; }
+			else if(ps.length==2) { html = `${ps[0]}<br>${ps[1]}`; }
+			else if(ps.length==3) { html = `${ps[0]}<br>${ps[1]}<br>${ps[2]}`; }
+			else { html = `${ps[0]}<br>${ps[1]}<br>...<br>${ps[ps.length-1]}`; }
+			*/
+			return html;
+
+		},
+		showInfo: function showInfo() {
+			if(this.info) {
+				var i = document.querySelector('.leaflet-hexagonal-info-container');
+				if(i) { i.style.display="block"; }
+			}
+		},
+		hideInfo: function hideInfo() {
+			if(this.info) {
+				var i =document.querySelector('.leaflet-hexagonal-info-container');
+				if(i) { i.style.display="none"; }
+			}
+		},
+		// #endregion
+
 
 		// #######################################################
 		// #region thumb
@@ -2701,13 +2740,13 @@
 
 			// thumb it
 			this.thumbsInfo.called++;
-			var ref = this;
+			var that = this;
 			var size = this.options.thumbSize;
 			this.thumbs[id] = {loaded:false, size:size,  image:false, type:type} ;
 			this.thumbs[id].image = new Image();
 			this.thumbs[id].image.onload = function() {
 
-				ref.thumbs[id].original = { width:this.width, height:this.height };
+				that.thumbs[id].original = { width:this.width, height:this.height };
 
 				var thumb = document.createElement("CANVAS");
 				thumb.width = size;
@@ -2742,40 +2781,40 @@
 					ctx.fillRect(0,0,size,size);
 				}
 
-				ref.thumbs[id].image = thumb;
-				ref.thumbs[id].size = size;
-				ref.thumbs[id].loaded = 2;
+				that.thumbs[id].image = thumb;
+				that.thumbs[id].size = size;
+				that.thumbs[id].loaded = 2;
 
 
 				// check refresh
-				ref.thumbsInfo.resolved++;
+				that.thumbsInfo.resolved++;
 				var ts = Date.now();
-				if(ref.thumbsInfo.called == ref.thumbsInfo.resolved) {
-					ref.thumbsInfo.last = ts; 
-					ref.refresh();
+				if(that.thumbsInfo.called == that.thumbsInfo.resolved) {
+					that.thumbsInfo.last = ts; 
+					that.refresh();
 				}
-				else if(ref.thumbsInfo.last+1000<ts) {
-					ref.thumbsInfo.last = ts; 
-					ref.refresh();		
+				else if(that.thumbsInfo.last+1000<ts) {
+					that.thumbsInfo.last = ts; 
+					that.refresh();		
 				}
 
 			};
 			// onerror: error-image
 			this.thumbs[id].image.onerror = function() {
-				ref.thumbs[id].loaded = 1;
-				ref.thumbs[id].image = ref.thumbs.error.image;
-				ref.thumbs[id].size = ref.thumbs.error.size;
+				that.thumbs[id].loaded = 1;
+				that.thumbs[id].image = that.thumbs.error.image;
+				that.thumbs[id].size = that.thumbs.error.size;
 
 				// check refresh
-				ref.thumbsInfo.resolved++;
+				that.thumbsInfo.resolved++;
 				var ts = Date.now();
-				if(ref.thumbsInfo.called == ref.thumbsInfo.resolved) {
-					ref.thumbsInfo.last = ts; 
-					ref.refresh();
+				if(that.thumbsInfo.called == that.thumbsInfo.resolved) {
+					that.thumbsInfo.last = ts; 
+					that.refresh();
 				}
-				else if(ref.thumbsInfo.last+1000<ts) {
-					ref.thumbsInfo.last = ts; 
-					ref.refresh();		
+				else if(that.thumbsInfo.last+1000<ts) {
+					that.thumbsInfo.last = ts; 
+					that.refresh();		
 				}
 
 			};
@@ -2838,6 +2877,9 @@
 				}
 			}
 			return [0,0,0,1];
+		},
+		_getClickColor: function _getClickColor(clickId) {
+			return "#" + (clickId+1048576).toString(16);
 		},
 		_genUid: function _genUid() {
 			return (Date.now()&16777215) + "_" + Math.floor(Math.random() * 1000000); // string = uses 4.6 days worth of ms and 10^6 random
