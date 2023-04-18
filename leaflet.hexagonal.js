@@ -10,6 +10,8 @@
 
 // DONE calc groupDistance, pointDistance, groupDuration, pointDuration
 // rework setInfo, buildInfo
+// draw selected points first, then everything else
+
 
 // updates
 // DONE: special treatment for linkMode=curve clickability?
@@ -140,8 +142,8 @@
 
 			// selectionDisplay: boolean || {minZoom,maxZoom}
 			selectionDisplay: true,
-			// selectionMode: "group" || "id"
-			selectionMode: "group",
+			// selectionMode: "point" || "points" || "group" || "groups" || "linked" || "ids"
+			selectionMode: "point",
 			// selectionFillColor: "color" || false
 			selectionFillColor: "rgba(0,0,0,0)", //"rgba(255,255,255,0.2)", 	
 			// selectionStrokeColor: "color" || false
@@ -194,9 +196,11 @@
 		clicks: [],
 
 		selection: {
-			selected:false,
-			selector:false,
-			highlighted: false
+			type:false,
+			mode:false,
+			ts:0,
+			selected:[],
+			highlighted: []
 		},
 
 		groupOrder:[],
@@ -910,6 +914,8 @@
 
 						this.hexagonals[h.cell].visible = p.visible;
 
+						this.hexagonals[h.cell].selected = 0;
+
 					}
 
 					// first point in hex
@@ -921,6 +927,8 @@
 					// new point in hex
 					this.hexagonals[h.cell].point = [group,i];
 					this.hexagonals[h.cell].points.push([group, i]);
+
+					this.hexagonals[h.cell].selected = Math.max(point.selected, this.hexagonals[h.cell].selected);
 					
 					// new group in hex
 					if(typeof this.hexagonals[h.cell].groups[group] != "number") {
@@ -1015,12 +1023,15 @@
 
 							this.hexagonals[h.cell].visible = m.visible;
 
+							this.hexagonals[h.cell].selected = 0;
+
 						}
 
 						// new marker in hex
 						this.hexagonals[h.cell].marker = [group,i];
 						this.hexagonals[h.cell].markers.push([group, i]);
 						this.hexagonals[h.cell].style.marker = marker.style;
+						this.hexagonals[h.cell].selected = Math.max(point.selected, this.hexagonals[h.cell].selected);
 
 						// new group in hex
 						if(typeof this.hexagonals[h.cell].groups[group] != "number") {
@@ -1082,10 +1093,10 @@
 										var style = p1.style || false;
 										
 										if(p1.marker) {
-											style = p0.style; //{ fill:"#f00" } //p0.style; // todo ????
-											console.log(p0.marker,p1.marker);
+											style = p0.style; 
 										}
-										this.links.push({group: group, start:p0, end:p1, path:path, style:style, link:[group,i,i0]});
+
+										this.links.push({group: group, start:p0, end:p1, path:path, style:style, link:[group,i,i0], selected:p1.selected});
 										tLinks++;
 									}
 								}
@@ -1523,14 +1534,10 @@
 			};
 
 			// selection
-			var selGroups = false;
-			if(this.display.selection && this.options.selectionMode=="group" && selection.selected.groups) {
-				selGroups = selection.selected.groups;
-			}
-			var selIds = false;
-			if(this.display.selection && this.options.selectionMode=="id" && selection.selected.ids) {
-				selIds = selection.selected.ids;
-			}
+			var selTs = false;
+			if(this.display.selection) {
+				selTs = this.selection.ts;
+			}			
 
 			// clicker
 			this.clickId = -1;
@@ -1581,25 +1588,11 @@
 							}
 						}
 					
-						var sel = false;
 						// draw selected
-						if(selGroups) {
-							var gs = Object.keys(selGroups);
-							for(var g=0; g<gs.length; g++) {
-								if(hexagonals[hexs[h]].groups[gs[g]]) {
-									sel = true; 
-									selection.highlighted.push(hexagonals[hexs[h]]);
-								}
-							}
-						}
-						else if(selIds) {
-							var gs = Object.keys(selIds);
-							for(var g=0; g<gs.length; g++) {
-								if(hexagonals[hexs[h]].ids[gs[g]]) {
-									sel = true; 
-									selection.highlighted.push(hexagonals[hexs[h]]);
-								}
-							}
+						var sel = false;
+						if(selTs && hexagonals[hexs[h]].selected >= selTs) {
+							sel = true; 
+							selection.highlighted.push(hexagonals[hexs[h]]);
 						}
 
 						// draw
@@ -1639,25 +1632,11 @@
 
 						// draw hexagon selected
 						var sel = false;
-						if(selGroups) {
-							var gs = Object.keys(selGroups);
-							for(var g=0; g<gs.length; g++) {
-								if(hexagonals[hexs[h]].groups[gs[g]]) {
-									sel=true;
-									selection.highlighted.push(hexagonals[hexs[h]]);
-								}
-							}
+						if(hexagonals[hexs[h]].selected >= selTs) {
+							sel = true; 
+							selection.highlighted.push(hexagonals[hexs[h]]);
 						}
-						else if(selIds) {
-							var gs = Object.keys(selIds);
-							for(var g=0; g<gs.length; g++) {
-								if(hexagonals[hexs[h]].ids[gs[g]]) {
-									sel=true;
-									selection.highlighted.push(hexagonals[hexs[h]]);
-								}
-							}
-						}
-
+						
 
 						tHexagonsDrawn += this.drawPoint(ctx, hexagonals[hexs[h]], style, sel, clicker);
 
@@ -1706,11 +1685,9 @@
 					
 					// draw 
 					var sel = false;
-					if(selGroups) {
-						if(selGroups[links[i].group]) {
-							sel = true;
-							selection.highlighted.push(links[i]);
-						}
+					if(links[i].selected >= selTs) {
+						sel = true; 
+						selection.highlighted.push(links[i]);
 					}
 					tLinksDrawn += this.drawLink(ctx, links[i], style, sel, clicker);
 
@@ -2333,7 +2310,7 @@
 		// #region events
 		// click
 		_onClick: function _onClick(e, target={layer:true}) {
-			var selection = this.getSelectionByClick(e); 
+			var selection = this.setSelectionByClick(e); 
 			console.log(selection);
 			this.setInfo(selection);
 			this.onClick(e,selection, target);
@@ -2349,8 +2326,8 @@
 			window.clearTimeout(self._onMouseRestDebounced_Hexagonal);
 			self._onMouseRestDebounced_Hexagonal = window.setTimeout(function () {
 				
-				var selection = self.selectByLatlng(e.latlng);
-				self.onMouseRest(e, selection, {layer:true});
+				//var selection = self.selectByLatlng(e.latlng);
+				//self.onMouseRest(e, selection, {layer:true});
 
 			}, 250);
 		},
@@ -2375,6 +2352,108 @@
 
 		// #######################################################
 		// #region selection
+		setSelectionByClick: function setSelectionByClick(e) {
+
+			var mode = this.options.selectionMode;
+			var ts = Date.now();
+
+			var selection = { 
+				type:"click",
+				mode: mode,
+				ts: ts,
+				selected: [],
+				highlighted: [],
+				target:false
+			};
+
+
+			// get click-color
+			var cp = e.containerPoint;
+			var x = cp.x+this._padding.x;
+			var y = cp.y+this._padding.y;
+			var ctx = this._clicker.getContext("2d"); 
+			var col = ctx.getImageData(x,y,1,1).data;
+			var id = ((col[0]-16)*65536 + col[1]*256 + col[2]); // r-shift for alignment
+			if(typeof id != "number" || !this.clicks[id]) { 
+				return this.setSelection();
+			}
+
+			// click-id
+			var cid = this.clicks[id];
+			var group = cid[0];
+			var p0 = cid[1];
+			var p1 = cid[2];
+			var point0 = this.points[group][p0];
+			var point1 = this.points[group][p1];
+
+
+
+			// no hit > clear selection
+			if(!point0) {
+				return this.setSelection();
+			}
+
+
+			// get hexagon
+			var hex = this.getHexagon(point0.latlng);
+
+			selection.target = hex.latlng;
+
+			// select by mode
+			if(mode=="point") {
+				point0.selected = ts;
+				selection.selected.push([group,p0]);
+				if(point1) {
+					point1.selected = ts;
+					selection.selected.push([group,p1]);
+				}
+			}
+			else if(mode=="points") {
+				var ps = hex.points;
+				for(var i=0; i<ps.length;i++) {
+					this.points[ps[i][0]][ps[i][1]].selected = ts;
+					selection.selected.push([ps[i][0],ps[i][1]]);
+				}
+			}
+			else if(mode=="group") {
+				var ps = this.points[group];
+				for(var i=0; i<ps.length;i++) {
+					this.points[group][i].selected = ts;
+					selection.selected.push([group,i]);
+				}
+			}
+			else if(mode=="groups") {
+				var gs = Object.keys(hex.groups);
+				for(var j=0; j<gs.length; j++) {
+					var g = gs[j]; 
+					var ps = this.points[g]; 
+					for(var i=0; i<ps.length;i++) {
+						this.points[g][i].selected = ts;
+						selection.selected.push([g,i]);
+					}
+				}
+			}
+			else if(mode=="linked") {
+				//walkLink
+				var ps = this.points[group];
+				var ls = this.walkLink(ps,p0);
+				for(var i=0;i<ls.length;i++) {
+					this.points[group][ls[i]].selected = ts;
+					selection.selected.push([group,ls[i]]);
+				}
+
+			}
+
+
+			// update selection
+			this.selection = selection;
+			this.refresh();
+			return selection; 
+
+
+
+		},
+
 		getSelectionByClick: function getSelectionByClick(e) {
 
 			// get click-color
@@ -2400,30 +2479,33 @@
 			}
 
 			// selector.point
-			var selector = { click: e.latlng, clickId: cid };
-			if(!p1) {
-				selector.point = p0;
-				selector.distLinked = p0.dist;
-				selector.distCrow = this.getDistance(p0.latlng, this.points[cid[0]][0].latlng);
-				selector.anchor = p0.latlng;
-			}
-			
-			// selector.link
-			else { 
-				selector.link = [p0,p1];
-				selector.distLinked = p1.dist + this.getDistance(e.latlng, p1.latlng);
-				selector.distCrow = this.getDistance(e.latlng, this.points[cid[0]][0].latlng);
-				selector.anchor = {lat: e.latlng.lat, lng:e.latlng.lng};
+			var selector = { 
+				click:true,
+				clicked: p0,
+				clickId: cid,
+				clickGroup: group,
+				clickObj: "point",
+				clickOrigin: e.latlng
+			}; 
+			if(p1) {
+				selector.clickObj = "link";
 			}
 
 			return this.setSelection(selector);
 
 		},
 		setSelection: function setSelection(selector) {
+
+			var mode = this.options.selectionMode;
+			var ts = Date.now();
+
 			var selection = { 
-				selected: false,
-				selector:false,
-				highlighted: []
+				type: false,
+				mode: mode,
+				ts: ts,
+				selected: [],
+				highlighted: [],
+				target: false
 			};
 
 			// clear
@@ -2435,6 +2517,7 @@
 				return selection; 
 			}
 
+			/* todo: setSelection(latlng ???)
 			// latlng format
 			if(Array.isArray(selector)) {
 				if(typeof selector[0] == "number" && typeof selector[1] == "number") {
@@ -2451,39 +2534,24 @@
 				}
 			}
 
-
-
-			// click
-			if(selector.click) {
-				var sel;
-				if(selector.point) {
-					sel = this.selectByLatlng(selector.point.latlng);
-					selector.mode = "group";
-					selector.value = selector.clickId[0];
-				}
-				if(selector.link) {
-					sel = this.selectByLatlng(selector.link[0].latlng);
-					selector.mode = "group";
-					selector.value = selector.clickId[0];
-				}
-				if(sel) {
-					this.options.selectionMode = "group";
-					selection.selected = JSON.parse(JSON.stringify(sel)); 
-					selection.selector = selector;
-					selection.highlighted = [];				
-				}
-			}
-
+			// latlng  
+			*/
 
 			// group/groups
-			else if(selector.group || selector.groups)  {
+			if(selector.group || selector.groups)  {
 				if(!selector.groups) { selector.groups = selector.group; }
-				var sel = this.selectByGroups(selector.groups);
-				if(sel) {
-					this.options.selectionMode = "group";
-					selection.selected = sel; 
-					selection.selector = { mode:"group", value:sel.groups };
-					selection.highlighted = [];
+				if(!Array.isArray(selector.groups)) { selector.groups = [selector.groups]; }
+				this.options.selectionMode = "groups";
+				selection.type ="groups";
+				selection.mode = "groups";
+				var gs = selector.groups;
+				for(var j=0; j<gs.length; j++) {
+					var g = gs[j]; 
+					var ps = this.points[g]; 
+					for(var i=0; i<ps.length;i++) {
+						this.points[g][i].selected = ts;
+						selection.selected.push([g,i]);
+					}
 				}
 			}
 
@@ -2491,24 +2559,25 @@
 			// id
 			else if(selector.id || selector.ids) {
 				if(!selector.ids) { selector.ids = selector.id; }
-				var sel = this.selectByIds(selector.id);
-				if(sel) {
-					this.options.selectionMode = "id";
-					selection.selected = sel; 
-					selection.selector = { mode:"id", value:sel.ids };
-					selection.highlighted = [];
-				}
-			}
+				if(!Array.isArray(selector.ids)) { selector.ids = [selector.ids]; }
+				this.options.selectionMode = "points";
+				selection.type ="ids";
+				selection.mode = "points";
 
-			// latlng 
-			else if(selector.latlng) {
-				var sel = this.selectByLatlng(selector.latlng);
-				if(sel) {
-					//this.options.selectionMode = "group";
+				for(var go=0; go<this.groupOrder.length; go++) {
+					var group = this.groupOrder[go];
+
+					for(var i=0; i<this.points[group].length; i++) {
+						var p = this.points[group][i];
+
+						for(var j=0; j<selector.ids.length;j++) {
+							if(p.id == selector.ids[j]) {
+								p.selected = ts;
+								selection.selected.push([group,i]);
+							}
+						}
+					}
 				}
-				selection.selected = JSON.parse(JSON.stringify(sel));
-				selection.selector = { mode:"latlng", value:selector.latlng };
-				selection.highlighted = [];
 			}
 
 
@@ -2517,7 +2586,6 @@
 			this.refresh();
 			return selection; 
 
-
 		},
 		clearSelection: function clearSelection() {
 			return this.setSelection();
@@ -2525,7 +2593,7 @@
 		selectByLatlng: function selectByLatlng(latlng) {
 
 			if(!latlng) {
-				return this.selection;
+				return false;
 			}
 
 			var wh = this._map.getSize();
@@ -2546,55 +2614,7 @@
 			return false;
 
 		},
-		selectByGroups: function selectByGroups(groups) {
-			var sel = false;
 
-			if(typeof groups == "string" || typeof groups == "number") {
-				groups = [groups];
-			}
-			if(!Array.isArray(groups)) {
-				return sel;
-			}
-
-			for(var i=0; i<groups.length;i++) {
-				if(typeof groups[i] == "number") {
-					groups[i] += "";
-				}
-				if(typeof groups[i] == "string") {
-					if(!sel) { 
-						sel = { groups: {} };
-					}
-					sel.groups[groups[i]] = true;
-				}
-			}
-
-			return sel;
-
-		},
-		selectByIds: function selectByIds(ids) {
-			var sel = false;
-
-			if(typeof ids == "string" || typeof ids == "number") {
-				ids = [ids];
-			}
-			if(!Array.isArray(ids)) {
-				return sel;
-			}
-
-			for(var i=0; i<ids.length;i++) {
-				if(typeof ids[i] == "number") {
-					ids[i] += "";
-				}
-				if(typeof ids[i] == "string") {
-					if(!sel) { 
-						sel = { ids: {} };
-					}
-					sel.ids[ids[i]] = true;
-				}
-			}
-
-			return sel;
-		},
 		// #endregion
 
 
@@ -2612,6 +2632,10 @@
 				return;
 			}
 
+			if(!info.target) {
+				return;
+			}
+
 
 
 			// get html for info
@@ -2626,7 +2650,7 @@
 				className: this.options.infoClassName
 			});
 
-			this.info = L.marker(info.selected.latlng, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
+			this.info = L.marker(info.target, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
 			L.DomEvent.on(this.info, 'mousewheel', L.DomEvent.stopPropagation);
 			L.DomEvent.on(this.info, 'click', function(e) { 
 				L.DomEvent.stopPropagation;
@@ -2840,6 +2864,46 @@
 			var d = Math.sin(lat0) * Math.sin(lat1) + Math.cos(lat0) * Math.cos(lat1) * Math.cos(dt);
 			d = Math.min(1,d);
 			return Math.round(Math.acos(d) * 6378136.78);
+		},
+		getHexagon: function getHexagon(latlng) {
+			if(typeof latlng != "object") {
+				return false;
+			}
+			if(typeof latlng.lat != "number" || typeof latlng.lng !="number") {
+				return false;
+			}
+
+			var wh = this._map.getSize();
+			var zoom = this._map.getZoom();
+			var size = this.calcHexagonSize(zoom);
+			var overhang = size*2; 
+			var nw = this._map.getBounds().getNorthWest();
+			var offset = this._map.project(nw, zoom);
+			offset = {x:Math.round(offset.x), y: Math.round(offset.y) };
+			var p = this._getPixels_from_latlng(latlng, wh.w, wh.h, overhang);
+			var h = this.calcHexagonCell(p.x,p.y,size, offset,zoom);
+
+			// hexagonals
+			if(this.hexagonals[h.cell]) {
+				return this.hexagonals[h.cell];
+			}
+
+			return false;
+		},
+		walkLink: function walkLink(groupArray, startIndex, resArray=[], pairs={}) {
+			if(groupArray[startIndex]) {
+				resArray.push(startIndex);
+				if(groupArray[startIndex].link) {
+					for(var i=0;i<groupArray[startIndex].link.length; i++) {
+						var p = startIndex + "_" + groupArray[startIndex].link[i]; 
+						if(!pairs[p]) {
+							pairs[p]=true;
+							resArray = this.walkLink(groupArray,groupArray[startIndex].link[i],resArray,pairs);
+						}
+					}
+				}
+			}
+			return resArray;
 		},
 		_getPixels_from_mxy: function _getPixels_from_mxy(mxy, w,h, overhang=0, zoom, pixelOrigin, pixelPane) {
 			var f = Math.pow(2,zoom)*256;
