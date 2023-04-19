@@ -59,7 +59,6 @@
 			padding: 0.1,
 
 
-
 			// hexagonDisplay: boolean || {minZoom,maxZoom}
 			// > whether or not / at what zoomlevels hexagons will be visible
 			hexagonDisplay: true,
@@ -1537,8 +1536,7 @@
 			var selTs = false;
 			if(this.display.highlight) {
 				selTs = this.selection.ts;
-			}	
-			var highlighted = [];		
+			}		
 
 			// clicker
 			this.clickId = -1;
@@ -1595,8 +1593,7 @@
 						var sel = false;
 						if(selTs && hex.selected >= selTs) {
 							sel = true; 
-							selection.highlighted.push(hex);
-							highlighted.push(hex);
+							selection.highlighted.push([hex.marker[0], hex.marker[1]]);
 						}
 
 						// draw
@@ -1640,8 +1637,7 @@
 						var sel = false;
 						if(hex.selected >= selTs) {
 							sel = true; 
-							selection.highlighted.push(hex);
-							highlighted.push(hex);
+							selection.highlighted.push([hex.point[0], hex.point[1]]);
 						}
 						
 						tHexagonsDrawn += this.drawPoint(ctx, hex, style, sel, clicker);
@@ -1692,7 +1688,7 @@
 					var sel = false;
 					if(links[i].selected >= selTs) {
 						sel = true; 
-						selection.highlighted.push(links[i]);
+						selection.highlighted.push([links[i].link[0], links[i].link[1] ,links[i].link[2] ]);
 					}
 					tLinksDrawn += this.drawLink(ctx, links[i], style, sel, clicker);
 
@@ -1704,8 +1700,8 @@
 
 			// draw highlights
 			ctx.globalCompositeOperation = "source-over";
-			for(var i=0;i<highlighted.length; i++) {
-				this.drawHighlight(ctx, highlighted[i]);
+			for(var i=0;i<selection.selected.length; i++) {
+				this.drawHighlight(ctx, selection.selected[i]);
 			} 
 
 			// draw gutter
@@ -1833,18 +1829,18 @@
 			return 1;
 			
 		},
-		drawHighlight: function drawHighlight(ctx, hexagon) {
+		drawHighlight: function drawHighlight(ctx, gid) {
 			
-			// highlight marker
-			if(hexagon.marker) {
-				var marker = this.markers[hexagon.marker[0]][hexagon.marker[1]];
-				var hPath = new Path2D(marker.cell.path);
+			if(gid.length!=2) { return; }
+
+			if(this.markers[gid[0]][gid[1]]) {
+				var hPath = new Path2D(this.markers[gid[0]][gid[1]].cell.path);
 				ctx.strokeStyle = this.options.highlightStrokeColor;
 				ctx.lineWidth = this.options.highlightStrokeWidth;
 				ctx.stroke(hPath);	
 			}
-			else {
-				var hPath = new Path2D(hexagon.path);
+			else if(this.points[gid[0]][gid[1]]){
+				var hPath = new Path2D(this.points[gid[0]][gid[1]].cell.path);
 				ctx.strokeStyle = this.options.highlightStrokeColor;
 				ctx.lineWidth = this.options.highlightStrokeWidth;
 				ctx.stroke(hPath);				
@@ -2320,15 +2316,14 @@
 		// #######################################################
 		// #region events
 		// click
-		_onClick: function _onClick(e, target={layer:true}) {
+		_onClick: function _onClick(e) {
 			var selection = this.setSelectionByClick(e); 
-			console.log(selection);
 			this.setInfo(selection);
-			this.onClick(e,selection, target);
+			this.onClick(e,selection);
 			
 		},
 		// overwritable
-		onClick: function onClick(e, selection, target) {
+		onClick: function onClick(e, selection) {
 		},
 
 		// rest
@@ -2633,20 +2628,18 @@
 		// #region info
 		setInfo: function setInfo(info) {
 
+			// clear current
 			if(this.info) {
 				this.infoLayer.clearLayers();
 				this.info = false;
 			} 
-			console.log("setInfo", info);
 
-			if(!info.selected || !this.display.info) {
+			// not to be displayed / not valid 
+			if(!this.display.info || !info.selected || !info.target) {
 				return;
 			}
 
-			if(!info.target) {
-				return;
-			}
-
+			console.log(info);
 
 
 			// get html for info
@@ -2670,24 +2663,7 @@
 		
 		},
 		buildInfo: function buildInfo(info) {
-			var html = "";
-
-			// todo: rewrite with .point/.points - instead pointIndices
-			/*
-			var pis =  info.pointIndices.length;
-			var ps = [];
-			for(var i=0; i< pis; i++) {
-				var p = this.points[info.pointIndices[i]];
-				if(p.info) {
-					ps.push(p.info);
-				}
-			}
-			if(!ps.length) { html = `${pis}`; }
-			else if(ps.length==1) { html = `${ps[0]}`; }
-			else if(ps.length==2) { html = `${ps[0]}<br>${ps[1]}`; }
-			else if(ps.length==3) { html = `${ps[0]}<br>${ps[1]}<br>${ps[2]}`; }
-			else { html = `${ps[0]}<br>${ps[1]}<br>...<br>${ps[ps.length-1]}`; }
-			*/
+			var html = info.selected.length;
 			return html;
 
 		},
