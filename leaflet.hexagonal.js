@@ -8,9 +8,9 @@
 // DONE: draw marker ontop of hexagons !!!!
 // DONE: linkSelectable
 
-// DONE calc groupDistance, pointDistance, groupDuration, pointDuration
+// DONE: calc groupDistance, pointDistance, groupDuration, pointDuration
 // rework setInfo, buildInfo
-// draw selected points first, then everything else
+// DONE: draw selected points first, then everything else
 
 
 // updates
@@ -131,7 +131,7 @@
 
 
 			//  gutterDisplay: boolean || {minZoom,maxZoom}
-			gutterDisplay: false,
+			gutterDisplay: true,
 			// gutterFill: false || "#color"
 			gutterFill: false, //"#101214",
 			// gutterStroke: false || "#color"
@@ -140,19 +140,18 @@
 			// thumbSize: integer
 			thumbSize: 128,
 
-			// selectionDisplay: boolean || {minZoom,maxZoom}
-			selectionDisplay: true,
+
 			// selectionMode: "point" || "points" || "group" || "groups" || "linked" || "ids"
-			selectionMode: "point",
-			// selectionFillColor: "color" || false
-			selectionFillColor: "rgba(0,0,0,0)", //"rgba(255,255,255,0.2)", 	
-			// selectionStrokeColor: "color" || false
-			selectionStrokeColor: "rgba(255,255,255)", 	 	
-			// selectionBorderWidth: pixels
-			selectionBorderWidth: 2,
+			selectionMode: "group",
 			// selectionTolerance
 			selectionTolerance:4,	
 			
+			// highlightDisplay: boolean || {minZoom,maxZoom}
+			highlightDisplay: true,
+			// highlightStrokeColor: "color" || false
+			highlightStrokeColor: "rgba(255,255,255)", 	 	
+			// highlightStrokeWidth: pixels
+			highlightStrokeWidth: 2,
 
 			// infoDisplay: boolean || {minZoom,maxZoom}
 			infoDisplay: true,
@@ -831,7 +830,7 @@
 			this.display.markers = this._checkDisplay(this.options.markerDisplay,zoom);
 			this.display.links = this._checkDisplay(this.options.linkDisplay,zoom);
 			this.display.gutter = this._checkDisplay(this.options.gutterDisplay,zoom);
-			this.display.selection = this._checkDisplay(this.options.selectionDisplay,zoom);
+			this.display.highlight = this._checkDisplay(this.options.highlightDisplay,zoom);
 			this.display.info = this._checkDisplay(this.options.infoDisplay,zoom);
 
 
@@ -874,7 +873,7 @@
 
 					// skip invisible+unlinked
 					if(!point.visible) {
-						if(!this.display.links || !point.link.length) {
+						if(!this.display.links) {
 							continue;
 						}
 					}
@@ -1512,6 +1511,7 @@
 			this.onDraw(this._container, this.hexagonals, this.links, this.selection, majorChange);
 			this.totals.drawTime = performance.now() - startTime; 
 		},
+
 		onDraw: function onDraw(canvas, hexagonals, links, selection, majorChange) {
 
 			// canvasContext
@@ -1535,9 +1535,10 @@
 
 			// selection
 			var selTs = false;
-			if(this.display.selection) {
+			if(this.display.highlight) {
 				selTs = this.selection.ts;
-			}			
+			}	
+			var highlighted = [];		
 
 			// clicker
 			this.clickId = -1;
@@ -1564,39 +1565,42 @@
 			if(this.display.markers && hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
 
-					if(hexagonals[hexs[h]].marker) {
+					var hex = hexagonals[hexs[h]];
+
+					if(hex.visible && hex.marker) {
 
 						// style 
-						style.fill = hexagonals[hexs[h]].style.marker.fill || hexagonals[hexs[h]].style.fill || this.groupFill[hexagonals[hexs[h]].group] || this.options.fillDefault;
+						style.fill = hex.style.marker.fill || hex.style.fill || this.groupFill[hex.group] || this.options.fillDefault;
 
 						// cluster style
 						if(this.options.clusterMode) {
 							if(this.options.clusterMode=="population") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.population, 1, tPopulation);
+								style.fill = this.calcClusterColor(hex.cluster.population, 1, tPopulation);
 							}
 							else if(this.options.clusterMode=="sum") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
+								style.fill = this.calcClusterColor(hex.cluster.sum,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="avg") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
+								style.fill = this.calcClusterColor(hex.cluster.avg,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="min") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
+								style.fill = this.calcClusterColor(hex.cluster.min,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="max") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
+								style.fill = this.calcClusterColor(hex.cluster.max,  tMin, tMax);
 							}
 						}
 					
 						// draw selected
 						var sel = false;
-						if(selTs && hexagonals[hexs[h]].selected >= selTs) {
+						if(selTs && hex.selected >= selTs) {
 							sel = true; 
-							selection.highlighted.push(hexagonals[hexs[h]]);
+							selection.highlighted.push(hex);
+							highlighted.push(hex);
 						}
 
 						// draw
-						tMarkersDrawn += this.drawMarker(ctx, hexagonals[hexs[h]], style, sel, clicker);
+						tMarkersDrawn += this.drawMarker(ctx, hex, style, sel, clicker);
 
 					}
 				}
@@ -1607,39 +1611,40 @@
 			if(this.display.hexagons && hexs.length) {
 				for (var h=0; h<hexs.length; h++) {
 
+					var hex = hexagonals[hexs[h]];
+
 					// draw hexagonal points
-					if(hexagonals[hexs[h]].point && !hexagonals[hexs[h]].marker) {	
+					if(hex.visible && hex.point && !hex.marker) {	
 
 						// style hexagonals
-						style.fill = hexagonals[hexs[h]].style.fill || this.groupFill[hexagonals[hexs[h]].group] || this.options.fillDefault;
+						style.fill = hex.style.fill || this.groupFill[hex.group] || this.options.fillDefault;
 						if(this.options.clusterMode) {
 							if(this.options.clusterMode=="population") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.population, 1, tPopulation);
+								style.fill = this.calcClusterColor(hex.cluster.population, 1, tPopulation);
 							}
 							else if(this.options.clusterMode=="sum") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.sum,  tMin, tMax);
+								style.fill = this.calcClusterColor(hex.cluster.sum,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="avg") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.avg,  tMin, tMax);
+								style.fill = this.calcClusterColor(hex.cluster.avg,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="min") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.min,  tMin, tMax);
+								style.fill = this.calcClusterColor(hex.cluster.min,  tMin, tMax);
 							}
 							else if(this.options.clusterMode=="max") {
-								style.fill = this.calcClusterColor(hexagonals[hexs[h]].cluster.max,  tMin, tMax);
+								style.fill = this.calcClusterColor(hex.cluster.max,  tMin, tMax);
 							}
 						}
 
 						// draw hexagon selected
 						var sel = false;
-						if(hexagonals[hexs[h]].selected >= selTs) {
+						if(hex.selected >= selTs) {
 							sel = true; 
-							selection.highlighted.push(hexagonals[hexs[h]]);
+							selection.highlighted.push(hex);
+							highlighted.push(hex);
 						}
 						
-
-						tHexagonsDrawn += this.drawPoint(ctx, hexagonals[hexs[h]], style, sel, clicker);
-
+						tHexagonsDrawn += this.drawPoint(ctx, hex, style, sel, clicker);
 
 					}
 
@@ -1696,19 +1701,19 @@
 
 			}
 
+
+			// draw highlights
+			ctx.globalCompositeOperation = "source-over";
+			for(var i=0;i<highlighted.length; i++) {
+				this.drawHighlight(ctx, highlighted[i]);
+			} 
+
 			// draw gutter
 			if(this.display.gutter) {
-				//this.drawGutter(ctx);
+				ctx.globalCompositeOperation = "destination-over";
+				this.drawGutter(ctx);
 			}
 			
-
-
-
-
-
-			
-
-	
 
 			// totals
 			this.totals.hexagonsDrawn = tHexagonsDrawn;
@@ -1728,21 +1733,15 @@
 		},
 
 
-
 		afterDraw: function afterDraw() {
 
 		},
 		drawPoint: function drawPoint(ctx, hexagon, style, selected, clicker) {
-			if(!hexagon.visible) { return 0; }
 			var hPath = new Path2D(hexagon.path);
 
 			// stroke
 			ctx.strokeStyle = style.stroke;
 			ctx.lineWidth = style.borderWidth;
-			if(selected) {
-				ctx.strokeStyle = this.options.selectionStrokeColor;
-				ctx.lineWidth = this.options.selectionBorderWidth;
-			}
 			ctx.stroke(hPath);
 
 			// fill
@@ -1758,8 +1757,6 @@
 			return 1;
 		},
 		drawMarker: function drawMarker(ctx,hexagon,style, selected, clicker) {
-			if(!hexagon.visible) { return 0; }
-			if(!hexagon.marker) { return 0; }
 
 			var marker = this.markers[hexagon.marker[0]][hexagon.marker[1]];
 			var thumb = this.thumbs[marker.style.thumb];
@@ -1778,10 +1775,6 @@
 			// stroke
 			ctx.strokeStyle = style.stroke;
 			ctx.lineWidth = style.borderWidth;
-			if(selected) {
-				ctx.strokeStyle = this.options.selectionStrokeColor;
-				ctx.lineWidth = this.options.selectionBorderWidth;
-			}
 			ctx.stroke(hPath);
 	
 
@@ -1819,8 +1812,8 @@
 
 			// stroke linkBorder, linkSelected
 			if(selected) {
-				ctx.strokeStyle = this.options.selectionStrokeColor;
-				ctx.lineWidth = this.options.linkWidth + this.options.selectionBorderWidth*2;
+				ctx.strokeStyle = this.options.highlightStrokeColor;
+				ctx.lineWidth = this.options.linkWidth + this.options.highlightStrokeWidth*2;
 			}
 			else {
 				ctx.strokeStyle = style.stroke;
@@ -1839,6 +1832,24 @@
 
 			return 1;
 			
+		},
+		drawHighlight: function drawHighlight(ctx, hexagon) {
+			
+			// highlight marker
+			if(hexagon.marker) {
+				var marker = this.markers[hexagon.marker[0]][hexagon.marker[1]];
+				var hPath = new Path2D(marker.cell.path);
+				ctx.strokeStyle = this.options.highlightStrokeColor;
+				ctx.lineWidth = this.options.highlightStrokeWidth;
+				ctx.stroke(hPath);	
+			}
+			else {
+				var hPath = new Path2D(hexagon.path);
+				ctx.strokeStyle = this.options.highlightStrokeColor;
+				ctx.lineWidth = this.options.highlightStrokeWidth;
+				ctx.stroke(hPath);				
+			}
+
 		},
 		drawGutter: function drawGutter(ctx) {
 			if(!this.gutter.length) { return; }
