@@ -1873,7 +1873,8 @@
 
 		//#endregion
 
-
+		
+ 
 		// #######################################################
 		// #region cluster
 		setClustering: function setClustering(options) {
