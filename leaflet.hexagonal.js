@@ -502,6 +502,8 @@
 				marker: marker,
 				link:link,
 
+				selected:0,
+
 				style: {
 					fill: meta.fill || false,
 					stroke: meta.stroke || false,
@@ -1029,7 +1031,7 @@
 						this.hexagonals[h.cell].marker = [group,i];
 						this.hexagonals[h.cell].markers.push([group, i]);
 						this.hexagonals[h.cell].style.marker = marker.style;
-						this.hexagonals[h.cell].selected = Math.max(point.selected, this.hexagonals[h.cell].selected);
+						this.hexagonals[h.cell].selected = Math.max(marker.selected, this.hexagonals[h.cell].selected);
 
 						// new group in hex
 						if(typeof this.hexagonals[h.cell].groups[group] != "number") {
@@ -1122,8 +1124,6 @@
 			this.totals.min = tMin;
 			this.totals.max = tMax;
 			this.totals.delta = tMax-tMin;
-
-			//console.log("totals", this.totals)
 
 		},
 		calcHexagonSize: function calcHexagonSize(zoom) {
@@ -1370,6 +1370,8 @@
 						
 						this.hexagonals[h.cell].style = { fill:false };
 
+						this.hexagonals[h.cell].selected = 0;
+
 					}
 
 					this.hexagonals[h.cell].link = [group, index0, index1];
@@ -1536,7 +1538,12 @@
 			var selTs = false;
 			if(this.display.highlight) {
 				selTs = this.selection.ts;
-			}		
+			}	
+			var selLinks = false;
+			if(this.selection.mode!="points") {
+				selLinks = true;
+			}
+			this.selection.highlighted = [];	
 
 			// clicker
 			this.clickId = -1;
@@ -1635,7 +1642,7 @@
 
 						// draw hexagon selected
 						var sel = false;
-						if(hex.selected >= selTs) {
+						if(selTs && hex.selected >= selTs) {
 							sel = true; 
 							selection.highlighted.push([hex.point[0], hex.point[1]]);
 						}
@@ -1686,7 +1693,7 @@
 					
 					// draw 
 					var sel = false;
-					if(links[i].selected >= selTs) {
+					if(selTs && selLinks && links[i].selected >= selTs) {
 						sel = true; 
 						selection.highlighted.push([links[i].link[0], links[i].link[1] ,links[i].link[2] ]);
 					}
@@ -1700,8 +1707,8 @@
 
 			// draw highlights
 			ctx.globalCompositeOperation = "source-over";
-			for(var i=0;i<selection.selected.length; i++) {
-				this.drawHighlight(ctx, selection.selected[i]);
+			for(var i=0;i<selection.highlighted.length; i++) {
+				this.drawHighlight(ctx, selection.highlighted[i]);
 			} 
 
 			// draw gutter
@@ -1829,7 +1836,8 @@
 			return 1;
 			
 		},
-		drawHighlight: function drawHighlight(ctx, gid) {
+
+		drawHighlight: function drawHighlight(ctx, gid, selTs) {
 			
 			if(gid.length!=2) { return; }
 
@@ -1843,7 +1851,7 @@
 				var hPath = new Path2D(this.points[gid[0]][gid[1]].cell.path);
 				ctx.strokeStyle = this.options.highlightStrokeColor;
 				ctx.lineWidth = this.options.highlightStrokeWidth;
-				ctx.stroke(hPath);				
+				ctx.stroke(hPath);	
 			}
 
 		},
@@ -2317,7 +2325,7 @@
 		// #region events
 		// click
 		_onClick: function _onClick(e) {
-			var selection = this.setSelectionByClick(e); 
+			var selection = this.setSelection(e); 
 			this.setInfo(selection);
 			this.onClick(e,selection);
 			
@@ -2332,8 +2340,6 @@
 			window.clearTimeout(self._onMouseRestDebounced_Hexagonal);
 			self._onMouseRestDebounced_Hexagonal = window.setTimeout(function () {
 				
-				//var selection = self.selectByLatlng(e.latlng);
-				//self.onMouseRest(e, selection, {layer:true});
 
 			}, 250);
 		},
@@ -2358,13 +2364,35 @@
 
 		// #######################################################
 		// #region selection
-		setSelectionByClick: function setSelectionByClick(e) {
+		setSelection: function setSelection(selector) {
+
+			var selection = this.getSelection(selector);
+
+			/*
+			// devel
+			console.log("----------");
+			console.log(selector);
+			console.log(selection.selected);
+			console.log(selection.highlighted);
+
+			var s = selection.selected[0];
+			console.log(this.points[s[0]][s[1]]);
+			*/
+
+			// update selection
+			this.selection = selection;
+			this.refresh();
+			return selection; 
+
+		},
+
+		getSelection: function getSelection(selector) {
 
 			var mode = this.options.selectionMode;
 			var ts = Date.now();
 
 			var selection = { 
-				type:"click",
+				type:false,
 				mode: mode,
 				ts: ts,
 				selected: [],
@@ -2372,16 +2400,80 @@
 				target:false
 			};
 
+			// selector: undefined
+			if(!selector) {
+				return selection;
+			}
+
+			// selector: group/groups
+			if(selector.group || selector.groups)  {
+				if(!selector.groups) { selector.groups = selector.group; }
+				if(!Array.isArray(selector.groups)) { selector.groups = [selector.groups]; }
+				this.options.selectionMode = "groups";
+				selection.type ="groups";
+				selection.mode = "groups";
+				var gs = selector.groups;
+				for(var j=0; j<gs.length; j++) {
+					var g = gs[j]; 
+					var ps = this.points[g]; 
+					for(var i=0; i<ps.length;i++) {
+						this.points[g][i].selected = ts;
+						selection.selected.push([g,i]);
+					}
+				}
+				return selection;
+			}
+
+
+			// selector: id
+			else if(selector.id || selector.ids) {
+				if(!selector.ids) { selector.ids = selector.id; }
+				if(!Array.isArray(selector.ids)) { selector.ids = [selector.ids]; }
+				this.options.selectionMode = "points";
+				selection.type ="ids";
+				selection.mode = "points";
+
+				for(var go=0; go<this.groupOrder.length; go++) {
+					var group = this.groupOrder[go];
+
+					for(var i=0; i<this.points[group].length; i++) {
+						var p = this.points[group][i];
+
+						for(var j=0; j<selector.ids.length;j++) {
+							if(p.id == selector.ids[j]) {
+								p.selected = ts;
+								selection.selected.push([group,i]);
+							}
+						}
+					}
+				}
+				return selection;
+			}
+
+
+			// selector: latlng / click
+			var cp;
+			if(selector.containerPoint) {
+				cp = selector.containerPoint;
+				selection.type = "click";
+			}
+			else if(sel.latlng) {
+				cp = L.latLngToContainerPoint(selector.latlng);
+				selection.type = "latlng";
+			}
+			if(!cp) {
+				return selection;
+			}
+
 
 			// get click-color
-			var cp = e.containerPoint;
 			var x = cp.x+this._padding.x;
 			var y = cp.y+this._padding.y;
 			var ctx = this._clicker.getContext("2d"); 
 			var col = ctx.getImageData(x,y,1,1).data;
 			var id = ((col[0]-16)*65536 + col[1]*256 + col[2]); // r-shift for alignment
 			if(typeof id != "number" || !this.clicks[id]) { 
-				return this.setSelection();
+				return selection;
 			}
 
 			// click-id
@@ -2396,7 +2488,7 @@
 
 			// no hit > clear selection
 			if(!point0) {
-				return this.setSelection();
+				return selection;
 			}
 
 
@@ -2451,175 +2543,13 @@
 			}
 
 
-			// update selection
-			this.selection = selection;
-			this.refresh();
-			return selection; 
-
-
-
-		},
-
-		getSelectionByClick: function getSelectionByClick(e) {
-
-			// get click-color
-			var cp = e.containerPoint;
-			var x = cp.x+this._padding.x;
-			var y = cp.y+this._padding.y;
-			var ctx = this._clicker.getContext("2d"); 
-			var col = ctx.getImageData(x,y,1,1).data;
-			var id = ((col[0]-16)*65536 + col[1]*256 + col[2]); // r-shift for alignment
-			if(typeof id != "number" || !this.clicks[id]) { 
-				return this.setSelection();
-			}
-
-			// click-id
-			var cid = this.clicks[id];
-			var group = cid[0];
-			var p0 = this.points[cid[0]][cid[1]];
-			var p1 = this.points[cid[0]][cid[2]];
-
-			// no data
-			if(!p0) {
-				return this.setSelection();
-			}
-
-			// selector.point
-			var selector = { 
-				click:true,
-				clicked: p0,
-				clickId: cid,
-				clickGroup: group,
-				clickObj: "point",
-				clickOrigin: e.latlng
-			}; 
-			if(p1) {
-				selector.clickObj = "link";
-			}
-
-			return this.setSelection(selector);
-
-		},
-		setSelection: function setSelection(selector) {
-
-			var mode = this.options.selectionMode;
-			var ts = Date.now();
-
-			var selection = { 
-				type: false,
-				mode: mode,
-				ts: ts,
-				selected: [],
-				highlighted: [],
-				target: false
-			};
-
-			// clear
-			if(typeof selector != "object") {
-				if(this.selection.selected) {
-					this.selection = selection;
-					this.refresh();
-				}
-				return selection; 
-			}
-
-			/* todo: setSelection(latlng ???)
-			// latlng format
-			if(Array.isArray(selector)) {
-				if(typeof selector[0] == "number" && typeof selector[1] == "number") {
-					var latlng = { lat:selector[1], lng:selector[0] }; 
-					selector = { latlng: latlng };
-				}
-			}
-			else if(typeof selector.lat == "number") {
-				if(typeof selector.lng == "number") {
-					selector.latlng = { lat:selector.lat, lng:selector.lng }; 
-				}
-				if(typeof selector.lon == "number") {
-					selector.latlng = { lat:selector.lat, lng:selector.lon }; 
-				}
-			}
-
-			// latlng  
-			*/
-
-			// group/groups
-			if(selector.group || selector.groups)  {
-				if(!selector.groups) { selector.groups = selector.group; }
-				if(!Array.isArray(selector.groups)) { selector.groups = [selector.groups]; }
-				this.options.selectionMode = "groups";
-				selection.type ="groups";
-				selection.mode = "groups";
-				var gs = selector.groups;
-				for(var j=0; j<gs.length; j++) {
-					var g = gs[j]; 
-					var ps = this.points[g]; 
-					for(var i=0; i<ps.length;i++) {
-						this.points[g][i].selected = ts;
-						selection.selected.push([g,i]);
-					}
-				}
-			}
-
-
-			// id
-			else if(selector.id || selector.ids) {
-				if(!selector.ids) { selector.ids = selector.id; }
-				if(!Array.isArray(selector.ids)) { selector.ids = [selector.ids]; }
-				this.options.selectionMode = "points";
-				selection.type ="ids";
-				selection.mode = "points";
-
-				for(var go=0; go<this.groupOrder.length; go++) {
-					var group = this.groupOrder[go];
-
-					for(var i=0; i<this.points[group].length; i++) {
-						var p = this.points[group][i];
-
-						for(var j=0; j<selector.ids.length;j++) {
-							if(p.id == selector.ids[j]) {
-								p.selected = ts;
-								selection.selected.push([group,i]);
-							}
-						}
-					}
-				}
-			}
-
-
-			// update selection
-			this.selection = selection;
-			this.refresh();
-			return selection; 
+			return selection;
 
 		},
 		clearSelection: function clearSelection() {
 			return this.setSelection();
 		},
-		selectByLatlng: function selectByLatlng(latlng) {
 
-			if(!latlng) {
-				return false;
-			}
-
-			var wh = this._map.getSize();
-			var zoom = this._map.getZoom();
-			var size = this.calcHexagonSize(zoom);
-			var overhang = size*2; 
-			var nw = this._map.getBounds().getNorthWest();
-			var offset = this._map.project(nw, zoom);
-			offset = {x:Math.round(offset.x), y: Math.round(offset.y) };
-			var p = this._getPixels_from_latlng(latlng, wh.w, wh.h, overhang);
-			var h = this.calcHexagonCell(p.x,p.y,size, offset,zoom);
-
-			// hexagonals
-			if(this.hexagonals[h.cell]) {
-				return this.hexagonals[h.cell];
-			}
-
-			return false;
-
-		},
 
 		// #endregion
 
@@ -2639,12 +2569,11 @@
 				return;
 			}
 
-			console.log(info);
-
 
 			// get html for info
 			var html = this.buildInfo(info);
 
+			// add divIcon
 			var iconHtml = document.createElement("DIV");
 			iconHtml.className = "leaflet-hexagonal-info leftTop";
 			iconHtml.innerHTML = html;
@@ -2654,11 +2583,12 @@
 				className: this.options.infoClassName
 			});
 
+			var that = this;
 			this.info = L.marker(info.target, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
 			L.DomEvent.on(this.info, 'mousewheel', L.DomEvent.stopPropagation);
 			L.DomEvent.on(this.info, 'click', function(e) { 
 				L.DomEvent.stopPropagation;
-				console.log('clicked info!',e);
+				that.onClickInfo(e); 
 			});
 		
 		},
@@ -2678,6 +2608,9 @@
 				var i =document.querySelector('.leaflet-hexagonal-info-container');
 				if(i) { i.style.display="none"; }
 			}
+		},
+		onClickInfo: function onClickInfo(e) {
+			console.log("Leaflet.Hexagonal:onClickInfo",e);
 		},
 		// #endregion
 
