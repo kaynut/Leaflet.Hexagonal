@@ -204,7 +204,7 @@
 		groupOrder:[],
 		groupVisibility:{},
 		groupInfo: {},
-		groupFill: {},
+		groupStyle: {},
 
 		filters: [],
 		filterActive: true,
@@ -473,8 +473,8 @@
 			// marker
 			var marker = this._valMarker(meta);
 
-			// scale
-			var scale = meta.scale || 1;
+			// style (fill, stroke, scale)
+			var style = this._valStyle(meta);
 
 			// dist
 			var dist = this._valDist(meta, latlng, group, link);
@@ -504,13 +504,7 @@
 
 				selected:0,
 
-				style: {
-					fill: meta.fill || false,
-					stroke: meta.stroke || false,
-					borderWidth: meta.borderWidth || false,
-					linkWidth: meta.linkWidth || false,
-					scale: scale
-				}
+				style: style
 			};
 
 			// add points
@@ -910,7 +904,7 @@
 
 						this.hexagonals[h.cell].cluster = { population:0, sum:0, avg:0, min:0, max:0 }; 
 						
-						this.hexagonals[h.cell].style = { fill:false };
+						this.hexagonals[h.cell].style = { fill:false, stroke:false, scale:1 };
 
 						this.hexagonals[h.cell].visible = p.visible;
 
@@ -946,7 +940,11 @@
 					this.hexagonals[h.cell].cluster.avg = this.hexagonals[h.cell].cluster.sum / this.hexagonals[h.cell].cluster.population || 0; 
 					this.hexagonals[h.cell].cluster.min = Math.min(this.hexagonals[h.cell].cluster.min, d);
 					this.hexagonals[h.cell].cluster.max = Math.max(this.hexagonals[h.cell].cluster.max, d);
-					this.hexagonals[h.cell].style = { fill: (point.style.fill || false) };
+
+					// style
+					this.hexagonals[h.cell].style.fill = point.style.fill;
+					this.hexagonals[h.cell].style.stroke = point.style.stroke;
+					this.hexagonals[h.cell].style.scale = point.style.scale;
 
 					// countMax
 					tPopulationCellMax = Math.max(this.hexagonals[h.cell].cluster.population, tPopulationCellMax);  
@@ -1019,7 +1017,7 @@
 
 							this.hexagonals[h.cell].cluster = { population:0, sum:0, avg:0, min:0, max:0 }; 
 							
-							this.hexagonals[h.cell].style = { fill:false };
+							this.hexagonals[h.cell].style = { fill:false, stroke:false, scale:1, marker:false };
 
 							this.hexagonals[h.cell].visible = m.visible;
 
@@ -1030,7 +1028,14 @@
 						// new marker in hex
 						this.hexagonals[h.cell].marker = [group,i];
 						this.hexagonals[h.cell].markers.push([group, i]);
-						this.hexagonals[h.cell].style.marker = marker.style;
+						
+						// style
+						this.hexagonals[h.cell].style.fill = marker.style.fill;
+						this.hexagonals[h.cell].style.stroke = marker.style.stroke;
+						this.hexagonals[h.cell].style.scale = marker.style.scale;
+						this.hexagonals[h.cell].style.marker = marker.style.thumb; 
+
+						// selected
 						this.hexagonals[h.cell].selected = Math.max(marker.selected, this.hexagonals[h.cell].selected);
 
 						// new group in hex
@@ -1368,7 +1373,7 @@
 
 						this.hexagonals[h.cell].cluster = { population:0, sum:0, avg:0, min:0, max:0 }; 
 						
-						this.hexagonals[h.cell].style = { fill:false };
+						this.hexagonals[h.cell].style = { fill:false, stroke:false, scale:1 };
 
 						this.hexagonals[h.cell].selected = 0;
 
@@ -1378,8 +1383,7 @@
 					this.hexagonals[h.cell].links.push([group, index0, index1]);
 
 					// link clickability
-					// if hexagon only contains links > add group/groups //// and not curve-mode
-					if(this.hexagonals[h.cell].linkOnly===true) { //// && this.options.linkMode!="curve") {
+					if(this.hexagonals[h.cell].linkOnly===true) { 
 						if(typeof this.hexagonals[h.cell].groups[group] != "number") {
 							this.hexagonals[h.cell].groups[group] = 0;
 						}
@@ -1575,7 +1579,8 @@
 					if(hex.visible && hex.marker) {
 
 						// style 
-						style.fill = hex.style.marker.fill || hex.style.fill || this.groupFill[hex.group] || this.options.fillDefault;
+						style.fill = hex.style.fill || this.groupStyle[hex.group]?.fill || this.options.fillDefault;
+						style.stroke = hex.style.stroke || this.groupStyle[hex.group]?.stroke || this.options.strokeDefault;
 
 						// cluster style
 						if(this.options.clusterMode) {
@@ -1600,7 +1605,7 @@
 						var sel = false;
 						if(selTs && hex.selected >= selTs) {
 							sel = true; 
-							selection.highlighted.push([hex.marker[0], hex.marker[1]]);
+							selection.highlighted.push({marker: [hex.marker[0], hex.marker[1]]});
 						}
 
 						// draw
@@ -1620,8 +1625,10 @@
 					// draw hexagonal points
 					if(hex.visible && hex.point && !hex.marker) {	
 
-						// style hexagonals
-						style.fill = hex.style.fill || this.groupFill[hex.group] || this.options.fillDefault;
+						// style 
+						style.fill = hex.style.fill || this.groupStyle[hex.group]?.fill || this.options.fillDefault;
+						style.stroke = hex.style.stroke || this.groupStyle[hex.group]?.stroke || this.options.strokeDefault;
+
 						if(this.options.clusterMode) {
 							if(this.options.clusterMode=="population") {
 								style.fill = this.calcClusterColor(hex.cluster.population, 1, tPopulation);
@@ -1644,7 +1651,7 @@
 						var sel = false;
 						if(selTs && hex.selected >= selTs) {
 							sel = true; 
-							selection.highlighted.push([hex.point[0], hex.point[1]]);
+							selection.highlighted.push({ point: [hex.point[0], hex.point[1]]}); 
 						}
 						
 						tHexagonsDrawn += this.drawPoint(ctx, hex, style, sel, clicker);
@@ -1669,7 +1676,11 @@
 					var cluster = link.cell.cluster;
 
 					// style
-					style.fill = links[i]?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
+					//style.fill = links[i]?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
+
+					// style 
+					style.fill = links[i].style?.fill || this.groupStyle[hex.group]?.fill || this.options.fillDefault;
+					style.stroke = links[i].style?.stroke || this.groupStyle[hex.group]?.stroke || this.options.strokeDefault;
 
 
 					// cluster style
@@ -1695,7 +1706,7 @@
 					var sel = false;
 					if(selTs && selLinks && links[i].selected >= selTs) {
 						sel = true; 
-						selection.highlighted.push([links[i].link[0], links[i].link[1] ,links[i].link[2] ]);
+						selection.highlighted.push({link: [links[i].link[0], links[i].link[1] ,links[i].link[2] ]});
 					}
 					tLinksDrawn += this.drawLink(ctx, links[i], style, sel, clicker);
 
@@ -1708,7 +1719,7 @@
 			// draw highlights
 			ctx.globalCompositeOperation = "source-over";
 			for(var i=0;i<selection.highlighted.length; i++) {
-				this.drawHighlight(ctx, selection.highlighted[i]);
+				this.drawHighlight(ctx, selection.highlighted[i]); 
 			} 
 
 			// draw gutter
@@ -1837,23 +1848,23 @@
 			
 		},
 
-		drawHighlight: function drawHighlight(ctx, gid, selTs) {
-			
-			if(gid.length!=2) { return; }
+		drawHighlight: function drawHighlight(ctx, gid) {
+			console.log(gid);
 
-			if(this.markers[gid[0]][gid[1]]) {
-				var hPath = new Path2D(this.markers[gid[0]][gid[1]].cell.path);
+			if(gid.marker) {
+				// var m = this.markers[gid.marker[0]][gid.marker[1]];
+				var hPath = new Path2D(this.markers[gid.marker[0]][gid.marker[1]].cell.path);
 				ctx.strokeStyle = this.options.highlightStrokeColor;
 				ctx.lineWidth = this.options.highlightStrokeWidth;
 				ctx.stroke(hPath);	
 			}
-			else if(this.points[gid[0]][gid[1]]){
-				var hPath = new Path2D(this.points[gid[0]][gid[1]].cell.path);
+			else if(gid.point) {
+				// var p = this.points[gid.point[0]][gid.point[1]];
+				var hPath = new Path2D(this.points[gid.point[0]][gid.point[1]].cell.path);
 				ctx.strokeStyle = this.options.highlightStrokeColor;
 				ctx.lineWidth = this.options.highlightStrokeWidth;
 				ctx.stroke(hPath);	
 			}
-
 		},
 		drawGutter: function drawGutter(ctx) {
 			if(!this.gutter.length) { return; }
@@ -2300,15 +2311,21 @@
 			}
 
 		},
-		setGroupFill: function setGroupFill(group, color = false) {
+		setGroupStyle: function setGroupStyle(group, style) {
 			if(typeof group != "string" && typeof group != "number") {
-				console.warn("Leaflet.hexagonal.setGroupFill: name of group invalid", group);
+				console.warn("Leaflet.hexagonal.setGroupStyle: name of group invalid", group);
 				return;
 			}
-			if(typeof color !== "string") {
-				color = false;
+
+			if(typeof style !== "object") {
+				console.warn("Leaflet.hexagonal.setGroupStyle: style invalid", JSON.stringify(style));
+				return
 			}
-			this.groupFill[group] = color;
+			
+			if(typeof style.fill != "string") { style.fill=false; }
+			if(typeof style.stroke != "string") { style.stroke=false; }
+			this.groupStyle[group] = {fill:style.fill, stroke:style.stroke};
+
 		},
 		setGroupInfo: function setGroupInfo(group, info) {
 			if(typeof group != "string" && typeof group != "number") {
@@ -2558,7 +2575,7 @@
 		// #######################################################
 		// #region info
 		setInfo: function setInfo(info) {
-
+console.log(info);
 			// clear current
 			if(this.info) {
 				this.infoLayer.clearLayers();
@@ -2994,6 +3011,19 @@
 
 			// else => []
 			return [];
+		},
+		_valStyle: function _valStyle(meta) {
+			var pfill = meta.fillProperty || "fill";
+			var fill = meta[pfill] || false;
+			var pstroke = meta.strokeProperty || "stroke";
+			var stroke = meta[pstroke] || false;
+			var pscale = meta.scaleProperty || "scale";
+			var scale = meta[pscale] || 1;
+			return {
+				fill:fill,
+				stroke:stroke,
+				scale:scale
+			};
 		},
 		_valData: function _valData(meta) {
 			var mks = Object.keys(meta);

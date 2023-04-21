@@ -65,29 +65,26 @@
 
 
       // group B
-      layer.setGroupFill("B","#f00");
+      layer.setGroupStyle("B",{fill: "#f00"});
       // add single point with style to group B
       layer.addPoint({ lat: 45.089036, lng: 5.119629 }, { group:"B", fill:"#f00", info:"Group B", time:10 });
       // add another single point with style to group B
       layer.addPoint({ lat: 46.073231, lng: 5.119629 }, { group:"B", fill:"#f00", line:"#ff0", time:20 });
-      // devel
-      layer.addPoint({ lat: 47.073231, lng: 7.119629 }, { group:"B", fill:"#f00", line:"#ff0", link:[0,1], time:"May 1, 2023" });
-
 
       // group C
-      layer.setGroupFill("C","#8d0");      
+      layer.setGroupStyle("C",{fill: "#8d0"});      
       // add three points with style to group C
       layer.addPoints([[7.536621,45.089036],[7.536621,46.073231],[7.536621,47.040182]], { group:"C", fill:"#8d0" } );
 
 
       // group D
-      layer.setGroupFill("D","#ff0");      
+      layer.setGroupStyle("D",{fill: "#ff0"});      
       // add line (four linked points) with style
       layer.addLine([ [9.953613,45.089036],[9.953613,46.073231],[9.953613,47.040182],[9.953613,47.989922] ], { group:"D", fill:"#ff0" });
 
 
       // group E
-      layer.setGroupFill("E","#d80");      
+      layer.setGroupStyle("E",{fill: "#d80"});      
       // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
       var gj = {
          "type": "FeatureCollection",
@@ -138,25 +135,15 @@
   
 
       // group F
-      layer.setGroupFill("F","#8d0");
+      layer.setGroupStyle("F",{fill: "#8d0"});
       layer.addPoint({ lat: 47.089036, lng: 14.787597 }, {group:"F" });
       layer.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true });
-      // add a image-marker 
-      layer.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", marker:"./assets/person.svg", scale:1.5 });
-      // add a image-marker with a size
-      layer.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"./assets/image0.jpg", scale:1.2 });
+      layer.addPoint({ lat: 49.089036, lng: 14.787597 }, {group:"F", link:true });
+      // add a image-marker: svg-icon 
+      layer.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", marker:"./assets/person.svg", scale:1.5, fill:"#ddd"});
+      // add a image-marker: jpg-image
+      layer.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"./assets/image0.jpg", scale:1.2, link:true  });
 
-/*
-      // groupG
-      layer.setGroupFill("G","#ff0");
-      // add another icon-marker 
-      layer.addIcon({ lat: 45.089036, lng: 17.204589 }, {group:"G" });
-      // add an icon-marker 
-      layer.cacheIcon("token",'./assets/token.svg', 1);
-      layer.addMarker({ lat: 47.040182, lng: 17.204589 }, {group:"G", icon:"token", fill:"#fff" });
-      // add another icon-marker 
-      layer.addMarker({ lat: 46.073231, lng: 17.204589 }, {group:"G", icon:"token" });
-*/
 
 
 
