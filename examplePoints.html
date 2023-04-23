@@ -55,7 +55,10 @@
 
 
 		// layer
-		var layer = new L.Hexagonal({hexagonSize:32}).addTo(map);
+		var layer = new L.Hexagonal({
+         hexagonSize:32,
+         linkWidth:4
+      }).addTo(map);
 
       layer.options.hexagonOrientation = "octagon";
       
@@ -84,7 +87,7 @@
 
 
       // group E
-      layer.setGroupStyle("E",{fill: "#d80"});      
+      layer.setGroupStyle("E",{fill: "#d80", link:true});      
       // add geojson (accepts url, gejson-String, geojson-Object) (geojson-Types:Point,MultiPoint,LineString,Feature,FeatureCollection)
       var gj = {
          "type": "FeatureCollection",
@@ -99,7 +102,7 @@
             },
             {
                "type": "Feature",
-               "properties": { linked:true },
+               "properties": { link:true },
                "geometry": {
                   "coordinates": [ 12.370605, 46.073231 ],
                   "type": "Point"
@@ -115,7 +118,7 @@
             },
             {
                "type": "Feature",
-               "properties": { linked:true },
+               "properties": { link:true, fill:"#88a" },
                "geometry": {
                   "coordinates": [ 12.370605, 47.989922 ],
                   "type": "Point"
@@ -123,7 +126,7 @@
             },
             {
                "type": "Feature",
-               "properties": { linked:true },
+               "properties": { link:true },
                "geometry": {
                   "coordinates": [ 12.370605, 48.922499 ],
                   "type": "Point"
@@ -131,7 +134,7 @@
             }
          ]
       }
-      layer.addGeojson(gj, {group:"E" });
+      layer.addGeojson(gj, {group:"E" }); //,fill: "#d80" });
   
 
       // group F

@@ -11,7 +11,7 @@
 // DONE: calc groupDistance, pointDistance, groupDuration, pointDuration
 // rework setInfo, buildInfo
 // DONE: draw selected points first, then everything else
-
+// extend info on selection.target
 
 // updates
 // DONE: special treatment for linkMode=curve clickability?
@@ -1675,13 +1675,10 @@
 					var link = links[i].start;
 					var cluster = link.cell.cluster;
 
-					// style
-					//style.fill = links[i]?.style?.fill || this.groupFill[link.group] || this.options.fillDefault;
 
 					// style 
-					style.fill = links[i].style?.fill || this.groupStyle[hex.group]?.fill || this.options.fillDefault;
-					style.stroke = links[i].style?.stroke || this.groupStyle[hex.group]?.stroke || this.options.strokeDefault;
-
+					style.fill = links[i].style?.fill || this.groupStyle[link.group]?.fill || this.options.fillDefault;
+					style.stroke = links[i].style?.stroke || this.groupStyle[link.group]?.stroke || this.options.strokeDefault;
 
 					// cluster style
 					if(this.options.clusterMode) {
@@ -1849,7 +1846,6 @@
 		},
 
 		drawHighlight: function drawHighlight(ctx, gid) {
-			console.log(gid);
 
 			if(gid.marker) {
 				// var m = this.markers[gid.marker[0]][gid.marker[1]];
@@ -2336,8 +2332,7 @@
 		},
 		// #endregion
 
-		
-
+	
 
 		// #######################################################
 		// #region events
@@ -2385,17 +2380,6 @@
 		setSelection: function setSelection(selector) {
 
 			var selection = this.getSelection(selector);
-
-			/*
-			// devel
-			console.log("----------");
-			console.log(selector);
-			console.log(selection.selected);
-			console.log(selection.highlighted);
-
-			var s = selection.selected[0];
-			console.log(this.points[s[0]][s[1]]);
-			*/
 
 			// update selection
 			this.selection = selection;
@@ -2471,12 +2455,8 @@
 
 			// selector: latlng / click
 			var cp;
-			if(selector.containerPoint) {
-				cp = selector.containerPoint;
-				selection.type = "click";
-			}
-			else if(sel.latlng) {
-				cp = L.latLngToContainerPoint(selector.latlng);
+			if(selector.latlng) {
+				cp = this._map.latLngToContainerPoint(selector.latlng);
 				selection.type = "latlng";
 			}
 			if(!cp) {
@@ -2509,11 +2489,45 @@
 				return selection;
 			}
 
-
 			// get hexagon
 			var hex = this.getHexagon(point0.latlng);
 
-			selection.target = hex.latlng;
+
+			// target
+			if(point1) {
+				// todo: calc dist and time
+				var dist1S = this.getDistance(point1.latlng, selector.latlng);
+				var dist10 = this.getDistance(point1.latlng, point0.latlng) + 0.1;
+				var distQ = dist1S / dist10;
+				var dist = point1.dist + dist1S;
+				var time = point1.time*(1-distQ) + point0.time*distQ || 0;
+				var span = time - this.points[group][0].time;
+				selection.target = { 
+					latlng:selector.latlng, 
+					point: point0, 
+					link:[point1, point0], 
+					dist:dist, 
+					time:time,
+					span: span
+				};
+
+
+			}
+			else {
+				var time = point0.time || 0;
+				var span = time - this.points[group][0].time;
+				selection.target = { 
+					latlng:hex.latlng, 
+					point: point0, 
+					link:false, 
+					dist:point0.dist, 
+					time:point0.time,
+					span: span 
+				};
+			}
+
+console.log(selection.target, point0,point1);
+
 
 			// select by mode
 			if(mode=="point") {
@@ -2602,7 +2616,7 @@ console.log(info);
 			});
 
 			var that = this;
-			this.info = L.marker(info.target, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
+			this.info = L.marker(info.target.latlng, {icon: divicon, zIndexOffset:1000, opacity:this.options.infoOpacity }).addTo(this.infoLayer);
 			L.DomEvent.on(this.info, 'mousewheel', L.DomEvent.stopPropagation);
 			L.DomEvent.on(this.info, 'click', function(e) { 
 				L.DomEvent.stopPropagation;
