@@ -14,11 +14,11 @@
 
 
    <!-- Leaflet.Hexagonal -->  
-	<link rel="stylesheet" href="./leaflet.hexagonal.css" />
-	<script src="./leaflet.hexagonal.js"></script>
+	<link rel="stylesheet" href="../leaflet.hexagonal.css" />
+	<script src="../leaflet.hexagonal.js"></script>
 
 	<!--lil-gui -->
-	<script src="./assets/lil-gui.js"></script>   
+	<script src="../assets/lil-gui.js"></script>   
 
    <!-- styles -->
 	<style type="text/css">
@@ -60,7 +60,7 @@
          linkWidth:4
       }).addTo(map);
 
-      layer.options.hexagonOrientation = "octagon";
+      //layer.options.hexagonOrientation = "circle"; //"pointyTop"; //"circle";
       
       // group "undefined"
       // add single point
@@ -94,7 +94,7 @@
          "features": [
             {
                "type": "Feature",
-               "properties": {},
+               "properties": {time:0},
                "geometry": {
                   "coordinates": [ 12.370605, 45.089036 ],
                   "type": "Point"
@@ -102,7 +102,7 @@
             },
             {
                "type": "Feature",
-               "properties": { link:true },
+               "properties": { link:true,time:1 },
                "geometry": {
                   "coordinates": [ 12.370605, 46.073231 ],
                   "type": "Point"
@@ -110,7 +110,7 @@
             },
             {
                "type": "Feature",
-               "properties": {},
+               "properties": {time:2},
                "geometry": {
                   "coordinates": [ 12.370605, 47.040182 ],
                   "type": "Point"
@@ -118,7 +118,7 @@
             },
             {
                "type": "Feature",
-               "properties": { link:true, fill:"#88a" },
+               "properties": { link:true, fill:"#88a",time:3 },
                "geometry": {
                   "coordinates": [ 12.370605, 47.989922 ],
                   "type": "Point"
@@ -126,7 +126,7 @@
             },
             {
                "type": "Feature",
-               "properties": { link:true },
+               "properties": { link:true,time:4 },
                "geometry": {
                   "coordinates": [ 12.370605, 48.922499 ],
                   "type": "Point"
@@ -143,9 +143,9 @@
       layer.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true });
       layer.addPoint({ lat: 49.089036, lng: 14.787597 }, {group:"F", link:true });
       // add a image-marker: svg-icon 
-      layer.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", marker:"./assets/person.svg", scale:1.5, fill:"#ddd"});
+      layer.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", marker:"../assets/person.svg", scale:1.5, fill:"#ddd"});
       // add a image-marker: jpg-image
-      layer.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"./assets/image0.jpg", scale:1.2, link:true  });
+      layer.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"../assets/image0.jpg", scale:1.2, link:true  });
 
 
 
@@ -160,16 +160,13 @@
             console.log(layer.points);
             console.log(layer.hexagonals);
             console.log(layer.clicks);
-            /*
-            if(layer.options.visible) {
-               layer.hide();
-            }
-            else {
-               layer.show();
-            }
-            */
-         }
+         },
+         hexagonOrientation:"flatTop"
       }
+      gui.add(guiOptions, 'hexagonOrientation', [ 'flatTop', 'pointyTop','circle' ] ).onChange(value => {
+			layer.options.hexagonOrientation = value;
+			layer.refresh();
+		});
       gui.add(guiOptions, 'toggle');
 
 	</script>

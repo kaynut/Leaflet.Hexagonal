@@ -16,23 +16,23 @@
 <br>
 
 ## What is Leaflet.Hexagonal
-Leaflet.Hexagonal is a Leaflet-canvas-layer (composite-layer), that takes 
+Leaflet.Hexagonal is a Leaflet-canvas-layer, that takes 
 - **points** (single, multiple or linked points) 
-- **lines** (array of array, array of latLng-objects)
-- **geojson** (Point, LineString, Feature, FeatureCollection)
 - **markers** (images or svg-icons)
+- **geojson** (Point, LineString, Feature, FeatureCollection)
 
 and 
 
-- **locates**, **clusters** them - based on a hexagonal grid 
-- **links** them up - based on supplied identifiers
-- **styles** them - based on supplied metadata
-- makes them **interactive** (highlight, select via click/hover)
+- **displays** them, **clusters** them - based on a hexagonal grid 
+- **groups** them, **links** them, **styles** them - based on metadata
+- **filters** them - based on conditions
+- **selects and highlights** them - based on interaction 
+
 
 <br>
 
 ## Setup
-Download this repository and add the links to **leaflet.hexagonal.js** and **leaflet.hexagonal.css** to your project - below the links to leaflet.js and leaflet.css.
+Download the repository and add the links to **leaflet.hexagonal.js** and **leaflet.hexagonal.css** to your project - below the links to leaflet.js and leaflet.css. (Leaflet version >1.0)
 ```html
 <!DOCTYPE html>
 <html>
