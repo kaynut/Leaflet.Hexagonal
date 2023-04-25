@@ -1,8 +1,9 @@
 # Leaflet.Hexagonal
 
 ![image](/assets/demo.jpg)
-[**Click here to see an example**](https://kaynut.github.io/Leaflet.Hexagonal/)
-
+[Click here to see an example](https://kaynut.github.io/Leaflet.Hexagonal/)
+<br>
+<br>
 ## Contents
 - [What is Leaflet.Hexagonal](#what-is-leaflet-hexagonal)
 - [Setup](#setup)
@@ -78,7 +79,10 @@ Download the repository and add the links to **leaflet.hexagonal.js** and **leaf
 <br>
 
 ## Adding data 
-Depending on the kind and format of your data, you can choose between different functions for adding data. The basic function for adding data is called ***addPoint(coordinates, metadata)***. All other functions internally use this one: They are just there to make unpacking, configuring and then adding your data a bit more convenient. Each of these functions takes one mandatory argument (***coordinates***) and one optional argument (***metadata***).
+
+Depending on the kind and format of your data, you can choose between different functions for adding data. The basic function for adding data is called ***addPoint(coordinates, metadata)***.
+Functions like **addPoints(...)**, **addLine(...)** and **addGeojson(...)** are there to make unpacking, configuring and then adding your larger amounts of data a little bit more convenient.
+Each of these functions takes one mandatory argument (***coordinates***) and one optional argument (***metadata***).
 ```js
 // add a single point: using coordinate object {lat:y , lng:x } 
 layer.addPoint( { lat: 31, lng: 121 } );
@@ -86,48 +90,60 @@ layer.addPoint( { lat: 31, lng: 121 } );
 // add a single point: using coordinate object {lat:y , lon:x } 
 layer.addPoint( { lat: 31, lon: 121 } );
 
-// add a single point: using coordinate notation [longitude, latitude] 
-layer.addPoint( [ 121, 31 ] ); // ATTENTION: order of arguments is [x,y]
-                               // LIKE in geojson-standard / classic coordinate-systems 
-                               // NOT LIKE in leaflet.js, where it is [y,x]
+// add a single point: using coordinate notation [longitude, latitude] // NOTE: order of arguments is [x,y]
+layer.addPoint( [ 121, 31 ] ); 
 
-// add three points: points default to metadata.linked:false
+// add three points: points default to metadata.link:false
 layer.addPoints( [ [121,31], [122,32], [123,33] ] ),
 
-// add a line: lines default to metadata.linked:true
+// add a line: lines default to metadata.link:true
 layer.addLine( [ {lat: 31, lng: 121}, {lat: 32, lon: 122}, [123,33] ] ),
 
-// add a geojson-file: geojson of type Point,Points,LineString,Feature,FeatureCollection
+// add a geojson-file via url: geojson of type Point,Points,LineString,Feature,FeatureCollection
 layer.addGeojson("./assets/EUROPE5000.geojson");
 
 // add a geojson-object: geojson of type Point,Points,LineString,Feature,FeatureCollection
 var geojson_obj = {"type": "FeatureCollection", "features": [ { "type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [127, 37] } } ] };
 layer.addGeojson(geojson_obj);
 ```
-[**Click here to see an example**](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
+[Click here to see an example](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
 
 <br>
 
-The functions addMarker(...), addIcon(...), addImage(...) work just like the above, but will create a Leaflet.divIcon, sitting ontop of the canvas layer, where all the other additions to this layer live. 
+### Adding markers
+
+The function **addMarker(...)** will add an image/icon and therefor needs a source, defined in the metadata-argument. 
 
 ```js
-// add an image: mandatory property 'image' takes a url
-layer.addImage( [129,39] , { image: "./assets/image0.jpg" });
-// add an image: mandatory property 'image' takes a dataUrl
-layer.addImage( [131,41] , { image: "data:image/png;base64,..." });
+// add an image: mandatory property 'marker' takes a url
+layer.addMarker( [129,39] , { marker: "./assets/image0.jpg" });
 
-// add an icon: mandatory property 'icon' takes a svg-string
-layer.addIcon( [128,38] , { icon: '<svg xmlns="http://www.w3.org/2000/svg" ... </svg>"' });
-// add an icon: mandatory property 'icon' takes an identifier of a previously cached icon
-layer.cacheIcon("home",'<svg xmlns="http://www.w3.org/2000/svg" ... </svg>', 0.5);
-layer.addIcon( [130,40] , { icon: "home" }); // 
+// add an icon: mandatory property 'marker' takes a url
+layer.addMarker( [129,39] , { marker: "./assets/token.svg" });
 
-// add an icon or image, depending on the property passed
-layer.addMarker( [131,41] , { image: "data:image/png;base64,..." });
-layer.addMarker( [130,40] , { icon: "home" });
+// add an image: mandatory property 'marker' takes a dataUrl
+layer.addMarker( [131,41] , { marker: "data:image/png;base64,..." });
+
+// add an icon: mandatory property 'marker' takes a svg-string
+layer.addMarker( [128,38] , { marker: '<svg xmlns="http://www.w3.org/2000/svg" ... </svg>"' });
 
 ``` 
 [Click here to see an example](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)
+
+<br>
+
+### Removing data 
+Once added, points can also be removed. This can be done based on a previously passed point-id, a group name - or entirely.
+```js
+layer.addPoint( [129,39] , { id:"A" });
+layer.removePoint("A");
+
+layer.addPoints( [ [121,31], [122,32], [123,33] ], { group:"B" } );
+layer.removeGroup("B");
+
+layer.removeAll();
+``` 
+In some cases it may be preverable to remove all and add the needed points back on.
 
 <br>
 

@@ -531,10 +531,6 @@
 			return 1; 
 
 		},
-
-
-
-
 		// addLine: add array of latlngs (all with same metadata), all in the same group and all linked by default
 		addLine: function addLine(latlngs, meta) {  // [ latlng0, latlng1, ... ] , {group,data, ...} 
 			if(!Array.isArray(latlngs)) {
@@ -713,6 +709,62 @@
 		
 		// #######################################################
 		// #region remove
+		removePoint: function removePoint(id, group=false) {
+
+			// id
+			if(typeof id!="string" && typeof id!="number") {
+				return 0;
+			}
+			
+			var c = 0;
+
+			for(var go=0; go<this.groupOrder.length; go++) {
+				var g = this.groupOrder[go];
+				if(typeof group == "string" && group !== g) {
+					continue;
+				}
+
+				for(var i=0; i<this.points[g].length; i++) {
+					if(this.points[g][i].id==id) {
+						var p = this.points[g][i];
+						var plinked = p.link.length
+
+						for(var j=0; j<this.points[g].length; j++) {
+							if(j!=i) {
+								var p1 = this.points[g][j];
+								for(var k=0; k<p1.link.length; k++) {
+									// link to above
+									if(p1.link[k]>i) {
+										p1.link[k]-= 1;
+									}
+									// link to delete
+									else if(plinked && p1.link[k]==i) {
+										p1.link[k] = p.link[0]; // only link to first
+									}
+									// link to below
+									else { }
+								}
+
+							}
+						}
+						this.points[g].splice(i,1);
+						c++;
+					}
+
+					if(!this.points[g].length) {
+						this.removeGroup(g);
+						break;
+					}
+
+				}
+
+			}
+
+			this.refresh();
+
+			return c;
+
+		},
 		removeGroup: function removeGroup(group) {
 			if(typeof group != "number" && typeof group != "string") {
 				return 0;

@@ -102,7 +102,7 @@
             },
             {
                "type": "Feature",
-               "properties": { link:true,time:1 },
+               "properties": { link:true, time:1 },
                "geometry": {
                   "coordinates": [ 12.370605, 46.073231 ],
                   "type": "Point"
@@ -118,7 +118,7 @@
             },
             {
                "type": "Feature",
-               "properties": { link:true, fill:"#88a",time:3 },
+               "properties": { link:true, time:3 },
                "geometry": {
                   "coordinates": [ 12.370605, 47.989922 ],
                   "type": "Point"
@@ -140,12 +140,13 @@
       // group F
       layer.setGroupStyle("F",{fill: "#8d0"});
       layer.addPoint({ lat: 47.089036, lng: 14.787597 }, {group:"F" });
-      layer.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true });
-      layer.addPoint({ lat: 49.089036, lng: 14.787597 }, {group:"F", link:true });
+      layer.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true, id:"F2" });
+      layer.addPoint({ lat: 49.089036, lng: 14.787597 }, {group:"F", link:true, id:"F3" });
+
       // add a image-marker: svg-icon 
       layer.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", marker:"../assets/person.svg", scale:1.5, fill:"#ddd"});
       // add a image-marker: jpg-image
-      layer.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"../assets/image0.jpg", scale:1.2, link:true  });
+      layer.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"../assets/image0.jpg", scale:1.5, link:true  });
 
 
 
@@ -161,12 +162,20 @@
             console.log(layer.hexagonals);
             console.log(layer.clicks);
          },
+         removeF2: function() {
+            layer.removePoint("F2");
+         },
+         removeF3: function() {
+            layer.removePoint("F3");
+         },
          hexagonOrientation:"flatTop"
       }
       gui.add(guiOptions, 'hexagonOrientation', [ 'flatTop', 'pointyTop','circle' ] ).onChange(value => {
 			layer.options.hexagonOrientation = value;
 			layer.refresh();
 		});
+      gui.add(guiOptions, 'removeF2');
+      gui.add(guiOptions, 'removeF3');
       gui.add(guiOptions, 'toggle');
 
 	</script>
