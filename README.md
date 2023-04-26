@@ -132,68 +132,57 @@ layer.addMarker( [128,38] , { marker: '<svg xmlns="http://www.w3.org/2000/svg" .
 
 <br>
 
-### Removing data 
-Once added, points can also be removed. This can be done based on a previously passed point-id, a group name - or entirely.
-```js
-layer.addPoint( [129,39] , { id:"A" });
-layer.removePoint("A");
-
-layer.addPoints( [ [121,31], [122,32], [123,33] ], { group:"B" } );
-layer.removeGroup("B");
-
-layer.removeAll();
-``` 
-In some cases it may be preverable to remove all and add the needed points back on.
-
-<br>
-
 ### Metadata
-The second argument is optional. It contains additional data for the supplied point/points. Data-properties needed for clustering-purposes also belong here: See 'altitude' and 'population' in the example - and watch for the possibility of **collisions** with default metadata-properties. 
+The second argument is optional. It contains additional data for the supplied point/points. 
 |metadata|type|default|description|
 |:--|:--|:--|:--|
-|id|string|auto|a value identifing a single point. Used for example to remove this point|
-|group|string|auto|a value to bind this point to a [new/existing] group of points|
-|info|string|false|Info to be passed on selection|
-|fill|color|false| Color, the point is drawn, if drawn on its own (not clustered,etc)|
-|linked|boolean|false|whether point should be linked to previous point in group. addLine(...) and addGeojson(LineString) default to true|
-|pointless|boolean|false|if point should be drawn. Using addMarker(...) defaults to true|
-|marker|boolean|false|**Images** and **icons** default to true|
-|image|string|false|**Images** only: Determines the image source. Can be a regular url or a dataUrl|
-|icon|string|false|**Icons** only: Determines the icon source. Can be a svg-string or the name of a previously cached icon. See cacheIcon(...)|
-|scale|number|1|**Icons** only: Determines the scaling of svg-icons|
+|id|string|increment|value identifing the point|
+|group|string|'group'|name of the group the point should be bound to|
+|name|string|''|value describing the point (for filtering, selection,...)|
+|tags|string|''|value describing the point (for filtering, selection,...)|
+|marker|string|false|image/icon-source in from of a url, data-url, svg-string|
+|link|boolean, array|false|whether the point should be linked to previous point in the group<br> or to which indices in the group the point should be linked to|
+|time|integer|0|unix-timestamp (millisecs) of the point|
+|fill|color|false| individual fillcolor for the point (if not clustered,etc)|
+|stroke|color|false| individual strokecolor for the point (if not clustered,etc)|
+|scale|float|1| individual scaling factor for the point (if not clustered,etc)|
 
-
+It's totally fine to pass custom properties (e.g: for clustering purposes). But be aware, that only properties with numerical values will be accessable later on. If you have to pass strings, use the properties 'name' and 'tags'. <br>
+You can redirect the lookup of values by adding an additional property, defining the redirect. (For an example, see below. Works with every metadata-property: 'idProperty', 'groupProperty', 'fillProperty', ....)  
 
 ```js
 // add point with metadata
 layer.addPoint( [121,31], {
    id: "a001",
    group: "A",
-   info: "Group A",
+   name: "Group A",
    fill: "#a00",   
-   linked: false,
+   link: false,
+
    // custom properties for clustering   
    altitude: 4810,              
-   population: 1000000
+   population: 1000000,
+
+   // redirect property from 
+   ts:123456,
+   timeProperty:"ts"
 });
 ```
 <br>
 
 ### Removing data
-Added points, qualified by 'group' or 'id', can removed later - at any time. Never the less: Removing all points and adding back the needed ones may be more straight forward - in most cases.
+Added points, qualified by 'group' or 'id', can removed later - individually and at any time. Never the less: Removing all points (or groups) and adding back the needed ones may be more straight forward - in most cases.
 ```js
-      // remove point by id
-      layer.removeItem("a00"); // can be point or marker
-      layer.removePoint("a00"); // has to be point
-      layer.removeMarker("a00"); // has to be marker
-      layer.removeIcon("a00"); // has to be marker
-      layer.removeImage("a00"); // has to be marker
+// add and remove single point by 'id'
+layer.addPoint( [129,39] , { id:"A" });
+layer.removePoint("A");
 
-      // remove group of points
-      layer.removeGroup("A");
+// remove a group of points
+layer.addPoints( [ [121,31], [122,32], [123,33] ], { group:"B" } );
+layer.removeGroup("B");
 
-      // remove all points
-      layer.removeAll();
+// remove all points in all groups
+layer.removeAll();
 ```  
 <br>
 
@@ -203,13 +192,17 @@ Added points, qualified by 'group' or 'id', can removed later - at any time. Nev
 - You can add points to a group at any time - and add/remove other points in between. 
 - Only points within a group can be linked ("connected with a line").
 - Removing a group, removes all containing points.
-- You can assign a fillcolor to a group by **setGroupColor(groupName, color)**
-- You can assign an info to a group by **setGroupInfo(groupName, info)** 
+- You can assign a style to a group by **setGroupStyle(groupName, style)**
+- You can assign an info to a group by **setGroupName(groupName, name)**
+- Groups (and there points) are drawn one after the other. You can change the order of groups and therefore what group lies ontop by **setGroupOrder(mode, groupName)**
 ```js
 layer.addPoint([120,30], { id:"A0", group: "A"}); // from hereon there exists a group called "A"
 layer.addPoint([121,31], { id:"A1", group: "A"});
-layer.setGroupColor( "A", "#f00" );
-layer.setGroupInfo( "A", "Group A" );
+layer.addPoint([122,32], { id:"B1", group: "B"});
+layer.setGroupColor( "A", {fill:"#f00"} );
+layer.setGroupName( "A", "Group A" );
+layer.setGroupOrder( "reverse" );
+layer.setGroupOrder( "up","B" );
 layer.removeGroup("A");
 ```
 <br>
@@ -226,15 +219,16 @@ layer.addPoint([122,32], { id:"A1", group: "A", linked:true }); // link > A1 bac
 <br>
 
 ### refresh
-- The function **refresh()** forces the data and layer to be reevaluated and redrawn.
-- If you use the plugin as is, there should be no cases, where it is nessesary to call **refresh()**: Every change you make to the data/appearance should automatically issue a refresh. 
+- The function **refresh()** forces the layer to be reevaluated and redrawn.
+- If you use the plugin as is, there should be few cases, where it is nessesary to call **refresh()**: Every change you make to the data/appearance should automatically issue a refresh. 
 - **refresh()** is debounced: If triggered repeatedly within a short delay (100ms) it will only run once. 
 
 ```js
 for(var i=0; i<10000; i++) {
    layer.addPoint([120+i/1000,30]);
+   layer.refresh(); // not nessesary at all
 }
-layer.refresh(); // !!! not nessesary at all
+layer.refresh(); // !!! not nessesary
 
 ```
 <br>

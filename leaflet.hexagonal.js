@@ -203,7 +203,7 @@
 
 		groupOrder:[],
 		groupVisibility:{},
-		groupInfo: {},
+		groupName: {},
 		groupStyle: {},
 
 		filters: [],
@@ -2373,12 +2373,12 @@
 			this.groupStyle[group] = {fill:style.fill, stroke:style.stroke};
 
 		},
-		setGroupInfo: function setGroupInfo(group, info) {
+		setGroupName: function setGroupName(group, name) {
 			if(typeof group != "string" && typeof group != "number") {
-				console.warn("Leaflet.hexagonal.setGroupInfo: name of group invalid", group);
+				console.warn("Leaflet.hexagonal.setGroupName: name of group invalid", group);
 				return;
 			}
-			this.groupInfo[group] = info;
+			this.groupName[group] = name;
 		},
 		// #endregion
 
@@ -3104,7 +3104,7 @@ console.log(info);
 			return tags;
 		},
 		_valDist: function _valDist(meta, latlng, group, links) {
-			var prop = meta.timeProperty || false;
+			var prop = meta.distProperty || false;
 			if(typeof meta[prop] == "number") {
 				return meta[prop];
 			}
