@@ -188,17 +188,18 @@ layer.removeAll();
 
 ## Concepts
 ### group
-- A group ist not set explicitly. If you add a point, declaring a group, then from hereon the group exists. 
+- A group ist not set on its own. If you add a point, declaring a group, then from hereon the group exists. 
 - You can add points to a group at any time - and add/remove other points in between. 
+- Each point belongs to a group. If you don't declare a group, the point becomes part of a default group.
 - Only points within a group can be linked ("connected with a line").
 - Removing a group, removes all containing points.
 - You can assign a style to a group by **setGroupStyle(groupName, style)**
 - You can assign an info to a group by **setGroupName(groupName, name)**
-- Groups (and there points) are drawn one after the other. You can change the order of groups and therefore what group lies ontop by **setGroupOrder(mode, groupName)**
+- Groups (and there points) are drawn one after the other. The order, in which they are drawn can be altered by using **setGroupOrder(mode, groupName)**
 ```js
-layer.addPoint([120,30], { id:"A0", group: "A"}); // from hereon there exists a group called "A"
-layer.addPoint([121,31], { id:"A1", group: "A"});
-layer.addPoint([122,32], { id:"B1", group: "B"});
+layer.addPoint([120,30], { id:"A0", group: "A" }); 
+layer.addPoint([121,31], { id:"A1", group: "A" });
+layer.addPoint([122,32], { id:"B1", group: "B" });
 layer.setGroupColor( "A", {fill:"#f00"} );
 layer.setGroupName( "A", "Group A" );
 layer.setGroupOrder( "reverse" );
@@ -209,24 +210,25 @@ layer.removeGroup("A");
 
 ### link
 - A link is a connection between two points in the same group, repesentend by a line - of some sort.
-- A link is not set explicitly: If you add a point to a group, that already exists, and pass **linked:true**, a link will be added.
-- A link always reaches from a specific point (with: linked:true) to its group internal predecessor.
+- A link is not set on its own: If you add a point, you can use **link:true** to connect this point to it's predecessor in the group. You can also use **link:[...]** to link this point to a specific point or a number of points: The Array has to consist of a number of indicies in this group.
 ```js
 layer.addPoint([120,30], { id:"A0", group: "A"});
 layer.addPoint([121,31], { id:"B0", group: "B"});
-layer.addPoint([122,32], { id:"A1", group: "A", linked:true }); // link > A1 back to A0 
+layer.addPoint([122,32], { id:"A1", group: "A", link:true });  // link: A1 to predecessor A0 
+layer.addPoint([123,32], { id:"A2", group: "A", link:[0] });   // link: A2 to A0 
+layer.addPoint([124,32], { id:"A3", group: "A", link:[0,1] }); // link: A3 to A0 and to A1
 ```
 <br>
 
 ### refresh
 - The function **refresh()** forces the layer to be reevaluated and redrawn.
-- If you use the plugin as is, there should be few cases, where it is nessesary to call **refresh()**: Every change you make to the data/appearance should automatically issue a refresh. 
-- **refresh()** is debounced: If triggered repeatedly within a short delay (100ms) it will only run once. 
+- If you use the functions of plugin, there should be few cases, where it is nessesary to call **refresh()**: Every change you make to the data/appearance should automatically issue a refresh. 
+- **refresh()** is debounced: If triggered repeatedly within a short amount of time (100ms), only the last call will trigger a refresh. 
 
 ```js
 for(var i=0; i<10000; i++) {
    layer.addPoint([120+i/1000,30]);
-   layer.refresh(); // not nessesary at all
+   layer.refresh(); // not nessesary at all, but shouldn't harm performance too much
 }
 layer.refresh(); // !!! not nessesary
 
@@ -263,89 +265,85 @@ layer.options.hexagonSize = 24;
 ### hexagon-options
 |<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |:--|:--|:--|:--|
-|hexagonVisible|boolean|true|Whether or not hexagons should be visible|
-|hexagonSize|pixels|16|Size in pixels of the hexagonal grid. Defines the smallest crossection of a hexagon in pixels.|
-|hexagonSize|function||The size can also be given as a function (depending on the zoomlevel), returning a pixel-size. For example, if you want your hexagons not to shrink (in realworld area) beyond a certain zoomlevel, pass something like this: <br>``` hexagonSize: function(zoom) { return Math.max(16,Math.pow(2, zoom-6));```|
-|hexagonGap|pixels|0|Visual gap between the cells of the hexagonal grid|
-|hexagonOrientation|"flatTop"<br> "pointyTop"|"flatTop"|Orientation of the hexagonal grid. flatTop, meaning each hexagon has a horizontal line on its northern edge, is the default|
+|hexagonDisplay|boolean<br>{...}|true|Whether or not hexagons should be displayed.<br>To limit the display to a zoomrange, pass { minZoom:x, maxZoom:y }|
+|hexagonSize|pixels|16|Size in pixels of the hexagonal grid. (Smallest crossection of a hexagon)|
+|hexagonSize|function||The size can also be given as a function (depending on the zoomlevel), returning a pixel-size. For example, if you want your hexagons not to shrink (in realworld area) beyond a certain zoomlevel, pass something like this: <br>```hexagonSize: (z) => { return Math.max(16,Math.pow(2, z-6)); }```|
+|hexagonGap|pixels|0|Visual gap between the cells of the hexagonal grid and the grid itself|
+|hexagonOrientation|"flatTop"<br> "pointyTop"<br>"circle"|"flatTop"|Orientation of the hexagonal grid. "flatTop" means, each hexagon has a horizontal line on its northern edge. Compared to "flatTop", "pointTop" is rotated by 90°. "circle" is the other hand is a flatTop grid, but represented as packed circles|
 
 <br>
 
 ### style-options
 |<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |:--|:--|:--|:--|
-|fillColor|color|"#ffdd11"|Sets the default fillcolor for the hexagons and links|
-|strokeColor|color|"#303234"|Sets the standard linecolor for the hexagons and links|
-|borderWidth|pixels|1|Sets the width of the lines surrounding the hexagons and links|
+|fillDefault|color|"#ffdd11"|Sets the default fillcolor for the hexagons and links. This color will only apply, if there is no point- or group-based coloring and there is no clustering going on. |
+|strokeDefault|color|"#303234"|Sets the standard linecolor for the hexagons and links|
+|borderDefault|pixels|1|Sets the width of the lines surrounding the hexagons and links|
 
 <br>
 
-### data-options
+### marker-options / thumb-options
 |<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |:--|:--|:--|:--|
-|idProperty|string|"id"|Property in the metadata, to extract the id of a point from. If extraction fails, id is autogenerated.|
-|groupProperty|string|"group"|Property in the metadata, to extract the group of a point from. If extraction fails, group is autogenerated.|
-|groupDefault|string|false|Normally each point, that is not explicitly set to a group, is set to a new, autogenerated group. If you want all those points to belong to one specific group, pass a name for this group.| 
-|dataProperties|array|["data"]|Determines the data-properties, that are imported on adding a point. Those property-names should point to numerical properties only. They can later be used for clustering and gathering info. <br>Best practise would be to set this array up, as soon and as with so many properties as you need: Points added before a later change may otherwise show default values - cause point-metadata is only imported directly on addition.|
-|infoProperty|string|"info"|Property in the metadata, to extract the id of a point from. This should normally point to a property describing the point: for example the name of the point.| 
-
-<br>
-
-### marker-options
-|<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
-|:--|:--|:--|:--|
-|markerVisible|boolean|true|Whether markers (icons/images) should be visible|
-|markerOpacity|number|0.9|Opacity of the Leafelt.groupLayer() every added marker automatically gets attached to.|
+|markerDisplay|boolean<br>{...}|true|Whether or not markers should be displayed.<br>To limit the display to a zoomrange, pass { minZoom:x, maxZoom:y }|
+|markerImageScaler|float|1.15|The amount a raster-image is scaled|
+|markerIconScaler|float|0.7|The amount a vector-image is scaled|
+|thumbFetchSize|pixels|128|Thumbsize in pixels for a marker-image or marker-icon|
+|thumbImageTint|color|"303234"|Color to tint the raster-image with|
+|thumbIconColor|color|"#303234"|Color to draw the vector-image with|
 
 <br>
 
 ### link-options
 |<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |:--|:--|:--|:--|
-|linkVisible|boolean|true|Whether the links should be visible|	
-|linkWidth|pixels|2|How thick the link-line should be. If options.borderWidth is set, this adds to this width of the link|
-|linkFill|color, <br>boolean|true|Whether the link-line should have a fixed (color) or a adapted (boolean) colorfilling|	
+|linkDisplay|boolean<br>{...}|true|Whether or not links should be displayed.<br>To limit the display to a zoomrange, pass { minZoom:x, maxZoom:y }|	
+|linkWidth|pixels|2|The thickness of the link-line|
+|linkFill|color, <br>boolean|true|Whether the link-line should have a fixed (color) or a adapted (boolean) colorfilling|
+|linkOpacity|float|1|The opacity of the link-lines|	
 |linkMode|"curve"<br> "spline"<br> "line"<br> "aligned"<br> "hexagonal"|"spline"|Determines the way the links are drawn. For better understanding, what each mode does, it's probably best to play around with them.|
 |linkJoin|number|1| Determines from where to where the links are drawn: <br>0 = link starts at the following cell<br>0.5 = link starts midway<br>1 = link starts in the center of the cell itself|  
-|linkReach|number|50000|Max distance (meter) beyond the viewport, for which links are calculated. If you're not missing any far reaching links, don't care about this one: It's a performance thing.|
+|linkSelectable|boolean|true|Determines, if a link is selectable/clickable|
 
 <br>
 
 ### gutter-options
 |<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |:--|:--|:--|:--|
+|gutterDisplay|boolean<br>{...}|false|Whether or not the gutter should be displayed.<br>To limit the display to a zoomrange, pass { minZoom:x, maxZoom:y }|
 |gutterFill|color, false|false|If you want hexagons, that don't contain any data, to be drawn, set a fillcolor for those|
-|gutterStroke|color, false|false|If you want hexagons, that don't contain any data, to be drawn, set a linecolor for those|
+|gutterStroke|color, false|"#202224"|If you want hexagons, that don't contain any data, to be drawn, set a linecolor for those|
 
 <br>
 
 ### cluster-options
 |<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |:--|:--|:--|:--|
-|clusterMode|"count",<br>"sum","avg",<br>"min","max",<br>"first","last",<br>false|false|Determines the way the fillcolor of hexagons with multiple points is calculated. Clustering relies on a number of options, but mostly on the *dataProperties*, the *clusterProperty* and the *clusterColors*.|
-|clusterProperty|property|"data"|Determines the name of the property, that is being used to calculate the fillcolor of the hexagon. Idealy the property should be present in each added point and must hold a numerical value.|
-|clusterDefaultValue|number|0|If a point does not have the defined clusterProperty, it defaults to this value.|
+|clusterMode|"population",<br>"sum","avg",<br>"min","max",<br>false|false|Determines the way the fillcolor of hexagons with multiple points is calculated. Clustering relies on a number of options, but mostly on the *dataProperties*, the *clusterProperty* and the *clusterColors*.|
+|clusterProperty|property|false|The name of the property in your data (passed to metadata), upon which the cluster-coloring will be calculated.|
+|clusterDefaultValue|number|0|If a point does not have a value for the defined clusterProperty, it defaults to this value.|
 |clusterMinValue|number|false|Defines the lower bound of the clustering-result.|
 |clusterMaxValue|number|false|Defines the upper bound of the clustering-result.|
-|clusterScale|"linear",<br>"square",<br>"log"|"log"|Defines the scale used for interpolating colors between min and max. "square" standing for the square root, "log" standing for the natural logarithm.|
-|clusterColors|array|["#4d4","#dd4",<br>"#d44","#800"]|Array of colors defines a color-ramp, which is used for color-interpolation during clustering.|
+|clusterScale|"linear",<br>"sqrt",<br>"log"|"log"|Defines the scale used for interpolating colors between min and max. "sqrt" standing for the square root, "log" standing for the natural logarithm.|
+|clusterColors|array|["#4d4","#dd4",<br>"#d44","#800"]|Array of colors, defining a color-ramp, which is used for color-interpolation during clustering.|
 
 <br>
 
-### selection-options
+### selection-options / highlight-options
 |<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |:--|:--|:--|:--|
-|selectionVisible|boolean|true|Whether the selection should be visible.|
-|selectionFillColor|color|"rgba(255,255,255,0.2)"|Fillcolor for the selection|
-|selectionStrokeColor|color|"rgba(255,255,255,0.2)"|Strokecolor for the selection|
-|selectionBorderWidth|pixels|2|Borderwidth for the selection|
+|selectionMode|"point", "points"<br>"group", "groups"<br>"linked", "ids"|"group"|Determines the extend of a selection. A click on an hexagon could select the point ontop, all points, the group ontop, all groups or the group-points linked up to this point. <br>With the help of **setSelection(...)** it's also possible to select a list of points, via their ids.|
+|selectionTolerance|pixels|4|The tolerance in pixels for a click to hit a certain object| 
+|highlightDisplay|boolean<br>{...}|false|Whether or not the highlighting should be displayed.<br>To limit the display to a zoomrange, pass { minZoom:x, maxZoom:y }|
+|highlightStrokeColor|color|"rgba(255,255,255)"|Strokecolor for the selection|
+|highlightStrokeWidth|pixels|2|Borderwidth for the selection|
 
 <br>
 
 ### info-options
 |<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |:--|:--|:--|:--|
-|infoVisible|boolean|true|Whether the info-overlay should be visible.|
+|infoDisplay|boolean<br>{...}|false|Whether or not the infobox should be displayed.<br>To limit the display to a zoomrange, pass { minZoom:x, maxZoom:y }|
 |infoOpacity|float|0.9|Opacity of info-overlay.|
 |infoClassName|css-class|"leaflet-hexagonal-<br>info-container"|Classname for the info-overlay|
 
@@ -463,3 +461,16 @@ This layer was designed to be
 - [Use cases](#use-cases)
 - [Priorities](#priorities)
 - [License](#license)
+
+
+
+### data-options
+|<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
+|:--|:--|:--|:--|
+|idProperty|string|"id"|Property in the metadata, to extract the id of a point from. If extraction fails, id is autogenerated.|
+|groupProperty|string|"group"|Property in the metadata, to extract the group of a point from. If extraction fails, group is autogenerated.|
+|groupDefault|string|false|Normally each point, that is not explicitly set to a group, is set to a new, autogenerated group. If you want all those points to belong to one specific group, pass a name for this group.| 
+|dataProperties|array|["data"]|Determines the data-properties, that are imported on adding a point. Those property-names should point to numerical properties only. They can later be used for clustering and gathering info. <br>Best practise would be to set this array up, as soon and as with so many properties as you need: Points added before a later change may otherwise show default values - cause point-metadata is only imported directly on addition.|
+|infoProperty|string|"info"|Property in the metadata, to extract the id of a point from. This should normally point to a property describing the point: for example the name of the point.| 
+
+<br>

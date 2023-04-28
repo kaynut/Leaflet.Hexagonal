@@ -59,6 +59,10 @@
 			padding: 0.1,
 
 
+			// groupDefault: false || "groupName"
+			groupDefault: "_group", // if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
+
+
 			// hexagonDisplay: boolean || {minZoom,maxZoom}
 			// > whether or not / at what zoomlevels hexagons will be visible
 			hexagonDisplay: true,
@@ -77,40 +81,22 @@
 			fillDefault: "#fd1",
 			// strokeDefault: "color" || false
 			strokeDefault: "#303234", 	
-			// borderWidth: pixels
-			borderWidth: 1,
-
-
-			// groupDefault: false || "groupName"
-			groupDefault: "_group", // if set, points with no group, will default to this. if not set, ungrouped points will be put in an indiviual group
-
-
-			// clusterMode: "population" || "sum" || "avg" || "min" || "max" || false (style for hexagon-cluster: depending on point data) 	
-			clusterMode: false,
-			//clusterProperty: "meta.propertyName" 
-			clusterProperty: "_", // current property for data-based coloring (included in meta)
-			//clusterDefaultValue: number 
-			clusterDefaultValue: 0, // default value, when current clusterProperty is not set for datapoint
-			// clusterMinValue: false || number
-			clusterMinValue: false,
-			// clusterMaxValue: false || number
-			clusterMaxValue: false,
-			// clusterScale: false="linear" || "square" || "log"
-			clusterScale: "log",
-			// clusterColors: [ "#color", "rgba(r,g,b)", [r,g,b,a],...] 
-			clusterColors: ["#4d4","#dd4","#d44","#800"],
+			// borderDefault: pixels
+			borderDefault: 1,
 
 
 			// markerDisplay: boolean || {minZoom,maxZoom}
 			markerDisplay: true,
-			// markerImageTint: false || color
-			markerImageTint:"#303234",
 			// markerImageScaler: float
-			markerImageScaler: 1.15,
-			// markerIconColor: false || color
-			markerIconColor:"#303234",
+			markerImageScaler: 1.15,	
 			// markerIconScaler: float
-			markerIconScaler: 0.7,
+			markerIconScaler: 0.7,		
+			// thumbFetchSize: integer
+			thumbFetchSize: 128,
+			// thumbImageTint: false || color
+			thumbImageTint:"#303234",
+			// thumbIconColor: false || color
+			thumbIconColor:"#303234",
 
 
 			// linkDisplay: boolean || {minZoom,maxZoom}
@@ -121,7 +107,7 @@
 			linkFill: true,	
 			// linkOpacity: false , number(0.1-1)
 			linkOpacity: false,		
-			// linkMode: "spline" || "line" || "aligned" || "hexagonal" || false
+			// linkMode: "spline" || "line" || "aligned" || "curve" || "hexagonal" || false
 			linkMode: "spline",
 			// linkJoin: number (0=gap between hexagon and line / 0.5=hexagon and line touch / 1=hexagon-center and line fully joined)
 			linkJoin: 1,  
@@ -136,8 +122,23 @@
 			// gutterStroke: false || "#color"
 			gutterStroke: "#202224",
 
-			// thumbSize: integer
-			thumbSize: 128,
+			// clusterMode: "population" || "sum" || "avg" || "min" || "max" || false (style for hexagon-cluster: depending on point data) 	
+			clusterMode: false,
+			//clusterProperty: "meta.propertyName" 
+			clusterProperty: false, // current property for data-based coloring (included in meta)
+			//clusterDefaultValue: number 
+			clusterDefaultValue: 0, // default value, when current clusterProperty is not set for datapoint
+			// clusterMinValue: false || number
+			clusterMinValue: false,
+			// clusterMaxValue: false || number
+			clusterMaxValue: false,
+			// clusterScale: false="linear" || "sqrt" || "log"
+			clusterScale: "log",
+			// clusterColors: [ "#color", "rgba(r,g,b)", [r,g,b,a],...] 
+			clusterColors: ["#4d4","#dd4","#d44","#800"],
+
+
+
 
 
 			// selectionMode: "point" || "points" || "group" || "groups" || "linked" || "ids"
@@ -1584,7 +1585,7 @@
 			var style = { 
 				fill: this.options.fillDefault, 
 				stroke: this.options.strokeDefault, 
-				borderWidth: this.options.borderWidth || 1,
+				borderWidth: this.options.borderDefault || 1,
 				linkWidth: this.options.linkWidth || 1
 			};
 
@@ -1823,9 +1824,9 @@
 			var thumb = this.thumbs[marker.style.thumb];
 			if(!thumb.image) { return 0; } 
 
-			var size = this.options.thumbSize;
+			var size = this.options.thumbFetchSize;
 			var scale = marker.style.scale;
-			var sizeH = this.hexagonSize * scale;
+			var sizeH = (this.hexagonSize-this.options.hexagonGap) * scale;
 			if(thumb.type=="icon") { sizeH *= this.options.markerIconScaler;} // 0.7
 			else { sizeH *= this.options.markerImageScaler; } // 1.15
 			var ix0 = hexagon.cx - sizeH/2;
@@ -2019,7 +2020,7 @@
 			if(this.options.clusterScale=="log") {
 				t = Math.log(value-t0+1)/Math.log(t1-t0+1); 
 			}
-			else if(this.options.clusterScale=="square") {
+			else if(this.options.clusterScale=="sqrt") {
 				t = Math.sqrt(value-t0)/Math.sqrt(t1-t0);
 			}
 			else {
@@ -2719,8 +2720,8 @@ console.log(info);
 			// meta
 			if(typeof meta != "object") { meta = {id:false, tint:false, opacity:false} }
 			var id = meta.id || this._genHash(source);
-			var imageTint = meta.imageTint || this.options.markerImageTint || false;
-			var iconColor = meta.iconColor || this.options.markerIconColor || false;
+			var imageTint = meta.imageTint || this.options.thumbImageTint || false;
+			var iconColor = meta.iconColor || this.options.thumbIconColor || false;
 			
 
 			// thumb already exists
@@ -2765,7 +2766,7 @@ console.log(info);
 			// thumb it
 			this.thumbsInfo.called++;
 			var that = this;
-			var size = this.options.thumbSize;
+			var size = this.options.thumbFetchSize;
 			this.thumbs[id] = {loaded:false, size:size,  image:false, type:type} ;
 			this.thumbs[id].image = new Image();
 			this.thumbs[id].image.onload = function() {
@@ -3156,6 +3157,7 @@ console.log(info);
 			if(typeof val.maxZoom == "number") {
 				return zoom<=val.maxZoom;
 			}
+
 			return true;
 		}
 		// #endregion

@@ -204,7 +204,7 @@
 
 		// hexagonal.options
 		var options = gui.addFolder('hexagonal.options');
-		var cmode = options.add(guiOptions, 'clusterMode', [ false, 'count','sum','avg','min','max','first','last' ] ).onChange(value => {
+		var cmode = options.add(guiOptions, 'clusterMode', [ false, 'population','sum','avg','min','max' ] ).onChange(value => {
 			layer.options.clusterMode = value;
 			layer.refresh();
 		}).listen();
