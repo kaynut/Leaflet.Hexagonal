@@ -55,7 +55,7 @@
 			opacity: 0.7,
 			visible: true,
 			minZoom: 0,
-			maxZoom: 18,
+			maxZoom: 21,
 			padding: 0.1,
 
 
@@ -631,6 +631,22 @@
 				return 1;
 			}
 
+			// g == MultiPoint
+			if(g.type == "MultiPoint") {
+				var c = g.coordinates.length;
+				if(!c) { return 0; }
+
+				var gp = g.properties || {};
+				var m = Object.assign({}, gp, meta);
+				m.group = this._valGroup(m);
+				m.link = false;
+
+				for(var i=0; i<c; i++) {
+					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, m);
+				}
+				return c;
+			}
+
 			// g == LineString
 			if(g.type == "LineString") {
 				var c = g.coordinates.length;
@@ -647,21 +663,26 @@
 				return c;
 			}
 
-			// g == MultiPoint
-			if(g.type == "MultiPoint") {
+			// g == MultiLineString
+			if(g.type == "MultiLineString") {
 				var c = g.coordinates.length;
 				if(!c) { return 0; }
 
 				var gp = g.properties || {};
 				var m = Object.assign({}, gp, meta);
 				m.group = this._valGroup(m);
-				m.link = false;
+				
 
 				for(var i=0; i<c; i++) {
-					this.addPoint({lng:g.coordinates[i][0],lat:g.coordinates[i][1]}, m);
+					m.link = false;
+					for(var j=0; j<g.coordinates[i].length;j++) {
+						this.addPoint({lng:g.coordinates[i][j][0],lat:g.coordinates[i][j][1]}, m);
+						m.link = true;
+					}
 				}
 				return c;
 			}
+
 
 			// g == Feature
 			if(g.type == "Feature") {
@@ -1382,12 +1403,27 @@
 			var dx = h0.cx - h1.cx;
 			var dy = h0.cy - h1.cy;
 			var dist = Math.sqrt((dx*dx+dy*dy)) / size;
-   
-			// identity or direct neighbor
-			if(dist<1.1) {
-			   return false;
-			}
 
+
+			// direct neighbor || linkMode = line 
+			if(this.options.linkMode=="line" || dist<1.1) {			
+				var join = 1 - this.options.linkJoin; 
+		
+				var mx = (h0.cx+h1.cx)/2;
+				var my = (h0.cy+h1.cy)/2;
+
+				var x = h0.cx + (mx-h0.cx) * join;
+				var y = h0.cy + (my-h0.cy) * join;
+				var path = `M${x} ${y} L${mx} ${my} `; 
+				x = h1.cx + (mx-h1.cx) * join;
+				y = h1.cy + (my-h1.cy) * join;
+				path += `L${x} ${y}`;
+
+				return path;
+			}
+			
+
+			// distant neighbor && linkMode != line			
 			// collect unique hexagons on connecting line
 			var h;
 			var hs = {};
@@ -1447,22 +1483,7 @@
 
 
 
-			// linkMode = line
-			if(this.options.linkMode=="line") {			
-				var join = 1 - this.options.linkJoin; 
-		
-				var mx = (h0.cx+h1.cx)/2;
-				var my = (h0.cy+h1.cy)/2;
 
-				var x = h0.cx + (mx-h0.cx) * join;
-				var y = h0.cy + (my-h0.cy) * join;
-				var path = `M${x} ${y} L${mx} ${my} `; 
-				x = h1.cx + (mx-h1.cx) * join;
-				y = h1.cy + (my-h1.cy) * join;
-				path += `L${x} ${y}`;
-
-				return path;
-			}
 
 
 			// linkMode = spline
