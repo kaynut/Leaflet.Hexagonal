@@ -59,7 +59,8 @@
          hexagonSize:12,
 		 hexagonGap:4,
          linkWidth:2,
-		 linkOpacity:0.5
+		 linkOpacity:0.5,
+		 selectionMode:"linked"
       }).addTo(map);
 
       //layer.options.hexagonOrientation = "circle"; //"pointyTop"; //"circle";
@@ -68,10 +69,10 @@
 
       // group E
       layer.setGroupStyle("E",{fill: "#d80", link:true});      
-      layer.addGeojson("../assets/track1.geojson", {group:"E" }); //,fill: "#d80" });
+      layer.addGeojson("../assets/track2.geojson", {group:"E",fill: "#d80", markerProperty:"thumb", scale:3 });
   
-		layer.addMarker({ lat: 55.096108,  lng: 8.467024 }, {group:"F", marker:"../assets/image0.jpg", scale:4, link:true  });
-		layer.addMarker({ lat: 55.096108, lng: 8.468024 }, {group:"F", marker:"../assets/person.svg", scale:4, fill:"#ddd"});
+		//layer.addMarker({ lat: 55.096108,  lng: 8.467024 }, {group:"F", marker:"../assets/image0.jpg", scale:4, link:true  });
+		//layer.addMarker({ lat: 55.096108, lng: 8.468024 }, {group:"F", marker:"../assets/person.svg", scale:4, fill:"#ddd"});
 
 	  /*
       // group F
@@ -86,7 +87,7 @@
       layer.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"../assets/image0.jpg", scale:1.5, link:true  });
 	  */
 
-
+console.log(layer.markers, layer.points);
 
 		// gui
 	   var gui = new lil.GUI();

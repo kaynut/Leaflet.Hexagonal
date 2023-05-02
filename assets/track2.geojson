@@ -1,0 +1,2802 @@
+{
+	"type": "FeatureCollection",
+	"bbox": [
+		10.304025,
+		47.779147,
+		10.304379,
+		47.779289
+	],
+	"geometry": {
+		"type": "MultiLineString",
+		"coordinates": [
+			[
+				[
+					10.30424,
+					47.779164
+				],
+				[
+					10.30424,
+					47.779164
+				],
+				[
+					10.304318,
+					47.779201
+				],
+				[
+					10.304342,
+					47.77922
+				],
+				[
+					10.304353,
+					47.77923
+				],
+				[
+					10.304224,
+					47.779202
+				],
+				[
+					10.30423,
+					47.779227
+				],
+				[
+					10.30423,
+					47.779227
+				]
+			],
+			[
+				[
+					10.30423,
+					47.779227
+				],
+				[
+					10.30423,
+					47.779227
+				]
+			],
+			[
+				[
+					10.30423,
+					47.779227
+				],
+				[
+					10.30423,
+					47.779227
+				]
+			],
+			[
+				[
+					10.30423,
+					47.779227
+				],
+				[
+					10.30423,
+					47.779227
+				],
+				[
+					10.30436,
+					47.779245
+				],
+				[
+					10.304311,
+					47.779242
+				],
+				[
+					10.304265,
+					47.779279
+				],
+				[
+					10.304025,
+					47.779226
+				],
+				[
+					10.304037,
+					47.779222
+				],
+				[
+					10.304082,
+					47.779194
+				],
+				[
+					10.304058,
+					47.779158
+				],
+				[
+					10.304107,
+					47.779168
+				],
+				[
+					10.304192,
+					47.779148
+				],
+				[
+					10.304207,
+					47.779147
+				],
+				[
+					10.304235,
+					47.779193
+				],
+				[
+					10.304373,
+					47.779223
+				],
+				[
+					10.304367,
+					47.779237
+				],
+				[
+					10.304379,
+					47.779242
+				],
+				[
+					10.304327,
+					47.779234
+				],
+				[
+					10.304326,
+					47.779235
+				],
+				[
+					10.304312,
+					47.77924
+				],
+				[
+					10.304168,
+					47.779237
+				],
+				[
+					10.304126,
+					47.779239
+				],
+				[
+					10.304125,
+					47.779248
+				],
+				[
+					10.304084,
+					47.779259
+				],
+				[
+					10.304177,
+					47.779195
+				],
+				[
+					10.304178,
+					47.779196
+				],
+				[
+					10.30415,
+					47.779273
+				],
+				[
+					10.304138,
+					47.779285
+				],
+				[
+					10.304116,
+					47.779289
+				],
+				[
+					10.304127,
+					47.779274
+				],
+				[
+					10.30414,
+					47.779236
+				],
+				[
+					10.304152,
+					47.779249
+				],
+				[
+					10.30421,
+					47.779215
+				],
+				[
+					10.304152,
+					47.779242
+				],
+				[
+					10.304112,
+					47.779252
+				]
+			],
+			[
+				[
+					10.304112,
+					47.779252
+				],
+				[
+					10.304112,
+					47.779252
+				]
+			],
+			[
+				[
+					10.304112,
+					47.779252
+				],
+				[
+					10.304112,
+					47.779252
+				]
+			],
+			[
+				[
+					10.304112,
+					47.779252
+				],
+				[
+					10.304112,
+					47.779252
+				],
+				[
+					10.304173,
+					47.779269
+				]
+			],
+			[
+				[
+					10.304235,
+					47.779285
+				],
+				[
+					10.304235,
+					47.779285
+				]
+			]
+		]
+	},
+	"properties": {
+		"generator": "plog.storePlogs",
+		"version": 1,
+		"created": "2023-05-02 12:30:01",
+		"modified": "2023-05-02 15:00:01",
+		"last_added": 1,
+		"last_dublicates": 0,
+		"last_invalids": 0,
+		"_hash": "6379c640beefb17d2f3accccf702819f"
+	},
+	"edit_users": "",
+	"edit_title": "",
+	"edit_desc": "",
+	"edit_transport": "",
+	"edit_thumb": "",
+	"edit_tags": "",
+	"edit_ts": 0,
+	"edit_lng": 0,
+	"edit_lat": 0,
+	"edit_alti": 0,
+	"edit_dem": 0,
+	"edit_near": "",
+	"edit_iso2": "",
+	"_planed": 0,
+	"_private": 0,
+	"_deleted": 0,
+	"userday": "20230502KN5UO64Z",
+	"user": "KNUT",
+	"day": 20230502,
+	"dist_total": 181,
+	"dist_crow": 13,
+	"dist_reach": 17,
+	"dist_lines": 177,
+	"dist_breaks": 5,
+	"trip_type": -1,
+	"total_points": 47,
+	"total_fotos": 1,
+	"total_markers": 0,
+	"start_ts": 1683030278,
+	"start_lng": 10.30424,
+	"start_lat": 47.779164,
+	"start_alti": 718,
+	"start_dem": 669.2,
+	"start_near": "Lauben",
+	"start_iso2": "DE",
+	"end_ts": 1683039597,
+	"end_lng": 10.304235,
+	"end_lat": 47.779285,
+	"end_alti": 723,
+	"end_dem": 669,
+	"end_near": "Lauben",
+	"end_iso2": "DE",
+	"low_ts": 1683032094,
+	"low_lng": 10.304025,
+	"low_lat": 47.779226,
+	"low_alti": 712,
+	"low_dem": 668.7,
+	"low_near": "Lauben",
+	"low_iso2": "DE",
+	"high_ts": 1683032242,
+	"high_lng": 10.304373,
+	"high_lat": 47.779223,
+	"high_alti": 712,
+	"high_dem": 669.3,
+	"high_near": "Lauben",
+	"high_iso2": "DE",
+	"reach_ts": 1683032094,
+	"reach_lng": 10.304025,
+	"reach_lat": 47.779226,
+	"reach_alti": 712,
+	"reach_dem": 668.7,
+	"reach_near": "Lauben",
+	"reach_iso2": "DE",
+	"break_dist": 5,
+	"break_secs": 7529,
+	"line_count": 7,
+	"line_points": 39,
+	"line_dist": 177,
+	"line_secs": 1790,
+	"alti_min": 712,
+	"alti_max": 723,
+	"alti_up": 6,
+	"alti_down": 6,
+	"dem_min": 669,
+	"dem_max": 669,
+	"dem_up": 1,
+	"dem_down": 2,
+	"speed_avg": 1,
+	"speed_cats": [
+		{
+			"count": 12,
+			"secs": 8409,
+			"dist": 15
+		},
+		{
+			"count": 34,
+			"secs": 910,
+			"dist": 167
+		},
+		{
+			"count": 0,
+			"secs": 0,
+			"dist": 0
+		},
+		{
+			"count": 0,
+			"secs": 0,
+			"dist": 0
+		},
+		{
+			"count": 0,
+			"secs": 0,
+			"dist": 0
+		},
+		{
+			"count": 0,
+			"secs": 0,
+			"dist": 0
+		}
+	],
+	"speed_max": 4,
+	"temp_max": 13.8,
+	"temp_min": 11.9,
+	"humid_max": 88,
+	"humid_min": 84,
+	"wind_max": 2.8,
+	"wind_min": 1.8,
+	"tiles12": {
+		"UxWd": {
+			"x": 2165,
+			"y": 1427,
+			"zoom": 12,
+			"count": 47,
+			"secs": 9320,
+			"dist": 182
+		}
+	},
+	"tiles15": {
+		"UxWdh": {
+			"count": 47,
+			"secs": 9320,
+			"dist": 182
+		}
+	},
+	"thumb_0": "./data/20230502KN5UO64Z/20230502KN5UO64Z12590400043Fx128.jpg",
+	"thumb_1": "",
+	"thumb_2": "",
+	"_up": 1683039601,
+	"_last_dub": 0,
+	"_last_invalid": 0,
+	"_last_added": 1,
+	"_hash": "6379c640beefb17d2f3accccf702819f",
+	"_errors": [],
+	"features": [
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30424,
+					47.779164
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12243800012P",
+				"uid": "1683030278012KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683030278,
+				"lng": 10.30424,
+				"lat": 47.779164,
+				"alti": 718,
+				"dem": 669.2,
+				"dist": 0,
+				"bear": 0,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2,
+					16,
+					97,
+					"10d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683030312,
+				"_src": "",
+				"line": 0,
+				"link": false,
+				"t64": "UxWdhny0",
+				"quad": "120221130123201311230320_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304318,
+					47.779201
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12251400013P",
+				"uid": "1683030314013KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683030314,
+				"lng": 10.304318,
+				"lat": 47.779201,
+				"alti": 718,
+				"dem": 669.2,
+				"dist": 7,
+				"bear": 55,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2,
+					16,
+					97,
+					"10d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683030317,
+				"_src": "",
+				"line": 0,
+				"link": true,
+				"t64": "UxWdhnzY",
+				"quad": "120221130123201311231022_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304342,
+					47.77922
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12252000015P",
+				"uid": "1683030320015KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683030320,
+				"lng": 10.304342,
+				"lat": 47.77922,
+				"alti": 718,
+				"dem": 669.2,
+				"dist": 3,
+				"bear": 40,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2,
+					16,
+					97,
+					"10d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683030334,
+				"_src": "",
+				"line": 0,
+				"link": true,
+				"t64": "UxWdhnzR",
+				"quad": "120221130123201311231021_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304353,
+					47.77923
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12253400016P",
+				"uid": "1683030334016KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683030334,
+				"lng": 10.304353,
+				"lat": 47.77923,
+				"alti": 718,
+				"dem": 669.2,
+				"dist": 1,
+				"bear": 36,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2,
+					16,
+					97,
+					"10d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683030345,
+				"_src": "",
+				"line": 0,
+				"link": true,
+				"t64": "UxWdhnzJ",
+				"quad": "120221130123201311231003_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304224,
+					47.779202
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12255900017P",
+				"uid": "1683030359017KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683030359,
+				"lng": 10.304224,
+				"lat": 47.779202,
+				"alti": 718,
+				"dem": 669,
+				"dist": 10,
+				"bear": 252,
+				"q": 4,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2,
+					16,
+					97,
+					"10d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683030364,
+				"_src": "",
+				"line": 0,
+				"link": true,
+				"t64": "UxWdhnyb",
+				"quad": "120221130123201311230033_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30423,
+					47.779227
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12260600023P",
+				"uid": "1683030366023KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683030366,
+				"lng": 10.30423,
+				"lat": 47.779227,
+				"alti": 718,
+				"dem": 669,
+				"dist": 3,
+				"bear": 9,
+				"q": 5,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					11.9,
+					11.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 11.9,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032048,
+				"_src": "",
+				"line": 0,
+				"link": true,
+				"t64": "UxWdhnyL",
+				"quad": "120221130123201311230013_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30423,
+					47.779227
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12302000018R",
+				"uid": "1683030620018KNUr",
+				"user": "KNUT",
+				"type": "r",
+				"ts": 1683030620,
+				"lng": 10.30423,
+				"lat": 47.779227,
+				"alti": 718,
+				"dem": 669,
+				"dist": 0,
+				"bear": 0,
+				"q": 5,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "Resting: 254secs",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2,
+					16,
+					97,
+					"10d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683030620,
+				"_src": "",
+				"line": 0,
+				"link": true,
+				"t64": "UxWdhnyL",
+				"quad": "120221130123201311230013_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30423,
+					47.779227
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12352100019R",
+				"uid": "1683030921019KNUr",
+				"user": "KNUT",
+				"type": "r",
+				"ts": 1683030921,
+				"lng": 10.30423,
+				"lat": 47.779227,
+				"alti": 718,
+				"dem": 669,
+				"dist": 0,
+				"bear": 0,
+				"q": 5,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "Resting: 555secs",
+				"weather": [
+					12.5,
+					11.9,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"10d.png"
+				],
+				"temp": 12.5,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683030921,
+				"_src": "",
+				"line": 1,
+				"link": false,
+				"t64": "UxWdhnyL",
+				"quad": "120221130123201311230013_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30423,
+					47.779227
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12452300021R",
+				"uid": "1683031523021KNUr",
+				"user": "KNUT",
+				"type": "r",
+				"ts": 1683031523,
+				"lng": 10.30423,
+				"lat": 47.779227,
+				"alti": 718,
+				"dem": 669,
+				"dist": 0,
+				"bear": 0,
+				"q": 5,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "Resting: 1157secs",
+				"weather": [
+					11.9,
+					11.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 11.9,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683031523,
+				"_src": "",
+				"line": 2,
+				"link": false,
+				"t64": "UxWdhnyL",
+				"quad": "120221130123201311230013_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30423,
+					47.779227
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12502400022R",
+				"uid": "1683031824022KNUr",
+				"user": "KNUT",
+				"type": "r",
+				"ts": 1683031824,
+				"lng": 10.30423,
+				"lat": 47.779227,
+				"alti": 718,
+				"dem": 669,
+				"dist": 0,
+				"bear": 0,
+				"q": 5,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "Resting: 1458secs",
+				"weather": [
+					11.9,
+					11.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 11.9,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683031824,
+				"_src": "",
+				"line": 3,
+				"link": false,
+				"t64": "UxWdhnyL",
+				"quad": "120221130123201311230013_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30436,
+					47.779245
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12541000024P",
+				"uid": "1683032050024KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032050,
+				"lng": 10.30436,
+				"lat": 47.779245,
+				"alti": 718,
+				"dem": 669.2,
+				"dist": 10,
+				"bear": 78,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					11.9,
+					11.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 11.9,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032056,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnzB",
+				"quad": "120221130123201311231001_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304311,
+					47.779242
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12541600025P",
+				"uid": "1683032056025KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032056,
+				"lng": 10.304311,
+				"lat": 47.779242,
+				"alti": 718,
+				"dem": 669.1,
+				"dist": 4,
+				"bear": 265,
+				"q": 9,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					11.9,
+					11.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 11.9,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032075,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnyH",
+				"quad": "120221130123201311230111_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304265,
+					47.779279
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12543500026P",
+				"uid": "1683032075026KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032075,
+				"lng": 10.304265,
+				"lat": 47.779279,
+				"alti": 713,
+				"dem": 669,
+				"dist": 5,
+				"bear": 320,
+				"q": 10,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					11.9,
+					11.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 11.9,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032087,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnq1",
+				"quad": "120221130123201311212321_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304025,
+					47.779226
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12545400027P",
+				"uid": "1683032094027KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032094,
+				"lng": 10.304025,
+				"lat": 47.779226,
+				"alti": 712,
+				"dem": 668.7,
+				"dist": 19,
+				"bear": 252,
+				"q": 6,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					11.9,
+					11.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 11.9,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032100,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnxK",
+				"quad": "120221130123201311221012_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304037,
+					47.779222
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12550400028P",
+				"uid": "1683032104028KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032104,
+				"lng": 10.304037,
+				"lat": 47.779222,
+				"alti": 712,
+				"dem": 668.7,
+				"dist": 1,
+				"bear": 116,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					11.9,
+					11.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 11.9,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032116,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnxS",
+				"quad": "120221130123201311221030_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304082,
+					47.779194
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12551800030P",
+				"uid": "1683032118030KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032118,
+				"lng": 10.304082,
+				"lat": 47.779194,
+				"alti": 712,
+				"dem": 668.9,
+				"dist": 5,
+				"bear": 133,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032135,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnxd",
+				"quad": "120221130123201311221123_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304058,
+					47.779158
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12554200031P",
+				"uid": "1683032142031KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032142,
+				"lng": 10.304058,
+				"lat": 47.779158,
+				"alti": 712,
+				"dem": 669,
+				"dist": 4,
+				"bear": 204,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032189,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnxz",
+				"quad": "120221130123201311221231_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304107,
+					47.779168
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12562900032P",
+				"uid": "1683032189032KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032189,
+				"lng": 10.304107,
+				"lat": 47.779168,
+				"alti": 712,
+				"dem": 669,
+				"dist": 4,
+				"bear": 73,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032190,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnxu",
+				"quad": "120221130123201311221312_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304192,
+					47.779148
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12564300033P",
+				"uid": "1683032203033KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032203,
+				"lng": 10.304192,
+				"lat": 47.779148,
+				"alti": 712,
+				"dem": 669.1,
+				"dist": 7,
+				"bear": 109,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032205,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhny6",
+				"quad": "120221130123201311230232_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304207,
+					47.779147
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12564500034P",
+				"uid": "1683032205034KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032205,
+				"lng": 10.304207,
+				"lat": 47.779147,
+				"alti": 712,
+				"dem": 669.1,
+				"dist": 1,
+				"bear": 96,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032229,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhny6",
+				"quad": "120221130123201311230232_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304235,
+					47.779193
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12571000035P",
+				"uid": "1683032230035KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032230,
+				"lng": 10.304235,
+				"lat": 47.779193,
+				"alti": 712,
+				"dem": 669.1,
+				"dist": 6,
+				"bear": 22,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032239,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnyk",
+				"quad": "120221130123201311230300_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304373,
+					47.779223
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12572200036P",
+				"uid": "1683032242036KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032242,
+				"lng": 10.304373,
+				"lat": 47.779223,
+				"alti": 712,
+				"dem": 669.3,
+				"dist": 11,
+				"bear": 72,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032263,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnzK",
+				"quad": "120221130123201311231012_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304367,
+					47.779237
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12574300037P",
+				"uid": "1683032263037KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032263,
+				"lng": 10.304367,
+				"lat": 47.779237,
+				"alti": 712,
+				"dem": 669.2,
+				"dist": 2,
+				"bear": 344,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032272,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnzC",
+				"quad": "120221130123201311231010_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304379,
+					47.779242
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12575200038P",
+				"uid": "1683032272038KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032272,
+				"lng": 10.304379,
+				"lat": 47.779242,
+				"alti": 712,
+				"dem": 669.2,
+				"dist": 1,
+				"bear": 58,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032281,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnzC",
+				"quad": "120221130123201311231010_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304327,
+					47.779234
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12580400039P",
+				"uid": "1683032284039KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032284,
+				"lng": 10.304327,
+				"lat": 47.779234,
+				"alti": 712,
+				"dem": 669.1,
+				"dist": 4,
+				"bear": 257,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032306,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnzI",
+				"quad": "120221130123201311231002_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304326,
+					47.779235
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12582900040P",
+				"uid": "1683032309040KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032309,
+				"lng": 10.304326,
+				"lat": 47.779235,
+				"alti": 712,
+				"dem": 669.1,
+				"dist": 0,
+				"bear": 326,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032315,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnzI",
+				"quad": "120221130123201311231002_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304312,
+					47.77924
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12583400041P",
+				"uid": "1683032314041KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032314,
+				"lng": 10.304312,
+				"lat": 47.77924,
+				"alti": 712,
+				"dem": 669.1,
+				"dist": 1,
+				"bear": 298,
+				"q": 6,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032326,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnyH",
+				"quad": "120221130123201311230111_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304168,
+					47.779237
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12585500042P",
+				"uid": "1683032335042KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032335,
+				"lng": 10.304168,
+				"lat": 47.779237,
+				"alti": 712,
+				"dem": 668.9,
+				"dist": 11,
+				"bear": 268,
+				"q": 5,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032340,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnyB",
+				"quad": "120221130123201311230001_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304126,
+					47.779239
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12590400043F",
+				"uid": "1683032344043KNUf",
+				"user": "KNUT",
+				"type": "f",
+				"ts": 1683032344,
+				"lng": 10.304126,
+				"lat": 47.779239,
+				"alti": 712,
+				"dem": 668.8,
+				"dist": 3,
+				"bear": 274,
+				"q": 0,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "./data/20230502KN5UO64Z/20230502KN5UO64Z12590400043Fx128.jpg",
+				"data": "./data/20230502KN5UO64Z/20230502KN5UO64Z12590400043Fx1920.jpg",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032458,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnxH",
+				"quad": "120221130123201311221111_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304125,
+					47.779248
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12591400044P",
+				"uid": "1683032354044KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032354,
+				"lng": 10.304125,
+				"lat": 47.779248,
+				"alti": 712,
+				"dem": 668.8,
+				"dist": 1,
+				"bear": 356,
+				"q": 5,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032458,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnxH",
+				"quad": "120221130123201311221111_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304084,
+					47.779259
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z12592600045P",
+				"uid": "1683032366045KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032366,
+				"lng": 10.304084,
+				"lat": 47.779259,
+				"alti": 712,
+				"dem": 668.7,
+				"dist": 3,
+				"bear": 292,
+				"q": 4,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032421,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnp9",
+				"quad": "120221130123201311203323_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304177,
+					47.779195
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13002400047P",
+				"uid": "1683032424047KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032424,
+				"lng": 10.304177,
+				"lat": 47.779195,
+				"alti": 712,
+				"dem": 669,
+				"dist": 10,
+				"bear": 136,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.1,
+					11.6,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.1,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032430,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnyZ",
+				"quad": "120221130123201311230023_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304178,
+					47.779196
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13003800048P",
+				"uid": "1683032438048KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032438,
+				"lng": 10.304178,
+				"lat": 47.779196,
+				"alti": 712,
+				"dem": 669,
+				"dist": 0,
+				"bear": 34,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032488,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnyZ",
+				"quad": "120221130123201311230023_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30415,
+					47.779273
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13012900049P",
+				"uid": "1683032489049KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032489,
+				"lng": 10.30415,
+				"lat": 47.779273,
+				"alti": 712,
+				"dem": 668.8,
+				"dist": 9,
+				"bear": 346,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032491,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnqw",
+				"quad": "120221130123201311212220_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304138,
+					47.779285
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13013100050P",
+				"uid": "1683032491050KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032491,
+				"lng": 10.304138,
+				"lat": 47.779285,
+				"alti": 712,
+				"dem": 668.8,
+				"dist": 2,
+				"bear": 326,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032505,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnpv",
+				"quad": "120221130123201311203313_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304116,
+					47.779289
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13014500051P",
+				"uid": "1683032505051KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032505,
+				"lng": 10.304116,
+				"lat": 47.779289,
+				"alti": 712,
+				"dem": 668.7,
+				"dist": 2,
+				"bear": 285,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032520,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnpu",
+				"quad": "120221130123201311203312_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304127,
+					47.779274
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13020000052P",
+				"uid": "1683032520052KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032520,
+				"lng": 10.304127,
+				"lat": 47.779274,
+				"alti": 712,
+				"dem": 668.8,
+				"dist": 2,
+				"bear": 154,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032651,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnp3",
+				"quad": "120221130123201311203331_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30414,
+					47.779236
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13041300053P",
+				"uid": "1683032653053KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032653,
+				"lng": 10.30414,
+				"lat": 47.779236,
+				"alti": 712,
+				"dem": 668.8,
+				"dist": 4,
+				"bear": 167,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032662,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnxP",
+				"quad": "120221130123201311221113_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304152,
+					47.779249
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13042800054P",
+				"uid": "1683032668054KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032668,
+				"lng": 10.304152,
+				"lat": 47.779249,
+				"alti": 712,
+				"dem": 668.8,
+				"dist": 2,
+				"bear": 32,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032671,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnyA",
+				"quad": "120221130123201311230000_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.30421,
+					47.779215
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13044000056P",
+				"uid": "1683032680056KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032680,
+				"lng": 10.30421,
+				"lat": 47.779215,
+				"alti": 712,
+				"dem": 669,
+				"dist": 6,
+				"bear": 131,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032969,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnyS",
+				"quad": "120221130123201311230030_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304152,
+					47.779242
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13092900057P",
+				"uid": "1683032969057KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032969,
+				"lng": 10.304152,
+				"lat": 47.779242,
+				"alti": 718,
+				"dem": 668.8,
+				"dist": 5,
+				"bear": 305,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					12.3,
+					11.8,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.3,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683032970,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnyA",
+				"quad": "120221130123201311230000_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304112,
+					47.779252
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13093400062P",
+				"uid": "1683032974062KNUp",
+				"user": "KNUT",
+				"type": "p",
+				"ts": 1683032974,
+				"lng": 10.304112,
+				"lat": 47.779252,
+				"alti": 718,
+				"dem": 668.7,
+				"dist": 3,
+				"bear": 290,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "",
+				"weather": [
+					13.8,
+					13.4,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 13.8,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683034228,
+				"_src": "",
+				"line": 3,
+				"link": true,
+				"t64": "UxWdhnp-",
+				"quad": "120221130123201311203332_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304112,
+					47.779252
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13152900059R",
+				"uid": "1683033329059KNUr",
+				"user": "KNUT",
+				"type": "r",
+				"ts": 1683033329,
+				"lng": 10.304112,
+				"lat": 47.779252,
+				"alti": 718,
+				"dem": 668.7,
+				"dist": 0,
+				"bear": 0,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "Resting: 355secs",
+				"weather": [
+					12.7,
+					12.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.7,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683033329,
+				"_src": "",
+				"line": 4,
+				"link": false,
+				"t64": "UxWdhnp-",
+				"quad": "120221130123201311203332_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304112,
+					47.779252
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13203000060R",
+				"uid": "1683033630060KNUr",
+				"user": "KNUT",
+				"type": "r",
+				"ts": 1683033630,
+				"lng": 10.304112,
+				"lat": 47.779252,
+				"alti": 718,
+				"dem": 668.7,
+				"dist": 0,
+				"bear": 0,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "Resting: 656secs",
+				"weather": [
+					12.7,
+					12.3,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 12.7,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683033630,
+				"_src": "",
+				"line": 5,
+				"link": false,
+				"t64": "UxWdhnp-",
+				"quad": "120221130123201311203332_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304112,
+					47.779252
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13253100061R",
+				"uid": "1683033931061KNUr",
+				"user": "KNUT",
+				"type": "r",
+				"ts": 1683033931,
+				"lng": 10.304112,
+				"lat": 47.779252,
+				"alti": 718,
+				"dem": 668.7,
+				"dist": 0,
+				"bear": 0,
+				"q": 3,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "Resting: 957secs",
+				"weather": [
+					13.8,
+					13.4,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 13.8,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683033931,
+				"_src": "",
+				"line": 6,
+				"link": false,
+				"t64": "UxWdhnp-",
+				"quad": "120221130123201311203332_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304173,
+					47.779269
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z13302900063S",
+				"uid": "1683034229063KNUs1",
+				"user": "KNUT",
+				"type": "s1",
+				"ts": 1683034229,
+				"lng": 10.304173,
+				"lat": 47.779269,
+				"alti": 718,
+				"dem": 668.8,
+				"dist": 5,
+				"bear": 67,
+				"q": 0,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "s1",
+				"weather": [
+					13.8,
+					13.4,
+					1020,
+					84,
+					10000,
+					1.8,
+					2.2,
+					19,
+					49,
+					"03d.png"
+				],
+				"temp": 13.8,
+				"humid": 84,
+				"wind": 1.8,
+				"_up": 1683034229,
+				"_src": "",
+				"line": 6,
+				"link": true,
+				"t64": "UxWdhnqx",
+				"quad": "120221130123201311212221_"
+			}
+		},
+		{
+			"type": "Feature",
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					10.304235,
+					47.779285
+				]
+			},
+			"properties": {
+				"guid": "20230502KN5UO64Z14595700390S",
+				"uid": "1683039597390KNUs0",
+				"user": "KNUT",
+				"type": "s0",
+				"ts": 1683039597,
+				"lng": 10.304235,
+				"lat": 47.779285,
+				"alti": 723,
+				"dem": 669,
+				"dist": 5,
+				"bear": 69,
+				"q": 0,
+				"gsm": 0,
+				"bat": 0,
+				"iso2": "DE",
+				"nearby": "Lauben",
+				"thumb": "",
+				"data": "s0",
+				"weather": [
+					12.6,
+					12.2,
+					1021,
+					88,
+					6818,
+					2.8,
+					3.7,
+					8,
+					58,
+					"10d.png"
+				],
+				"temp": 12.6,
+				"humid": 88,
+				"wind": 2.8,
+				"_up": 1683039598,
+				"_src": "",
+				"line": 7,
+				"link": false,
+				"t64": "UxWdhnqs",
+				"quad": "120221130123201311212302_"
+			}
+		}
+	]
+}

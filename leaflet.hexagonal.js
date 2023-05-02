@@ -508,13 +508,14 @@
 				style: style
 			};
 
+
 			// add points
 			this.points[group].push(point);
 
 			// add marker
-			if(meta.marker) {
+			if(marker) {
 
-				var thumb = this.fetchThumb(meta.marker);
+				var thumb = this.fetchThumb(marker);
 				if(thumb !== false) {
 					point.style.thumb = thumb;
 					this.markers[group].push(point);
@@ -695,6 +696,9 @@
 			if(g.type == "FeatureCollection") {
 				var c = 0;
 				var gp = g.properties || {};
+				if(typeof gp.link == "undefined") {
+					gp.link = true;
+				}
 				for(var i=0; i<g.features.length; i++) {
 					var gpi = g.features[i].properties || {};
 					var m = Object.assign({}, gp, gpi, meta);
