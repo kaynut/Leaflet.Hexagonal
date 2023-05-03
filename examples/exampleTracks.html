@@ -49,8 +49,8 @@
 
 
 		// map
-		var center = { lat: 47, lng: 10 };
-		var map = L.map('map').setView(center, 6);
+		var center = { lat: 65, lng: -15 };
+		var map = L.map('map').setView(center, 8);
 		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 
 
@@ -59,20 +59,24 @@
          hexagonSize:12,
 		 hexagonGap:4,
          linkWidth:2,
-		 linkOpacity:0.5,
-		 selectionMode:"linked"
+		 linkOpacity:1,
+		 selectionMode:"group"
       }).addTo(map);
 
       //layer.options.hexagonOrientation = "circle"; //"pointyTop"; //"circle";
       
 
+	  layer.preloadThumb("token", "../assets/token.svg");
+
 
       // group E
-      layer.setGroupStyle("E",{fill: "#d80", link:true});      
-      layer.addGeojson("../assets/track2.geojson", {group:"E",fill: "#d80", markerProperty:"thumb", scale:3 });
-  
-		//layer.addMarker({ lat: 55.096108,  lng: 8.467024 }, {group:"F", marker:"../assets/image0.jpg", scale:4, link:true  });
-		//layer.addMarker({ lat: 55.096108, lng: 8.468024 }, {group:"F", marker:"../assets/person.svg", scale:4, fill:"#ddd"});
+      layer.setGroupStyle("Track1",{fill: "#d80", link:true});      
+      layer.addGeojson("../assets/track2.geojson", {
+		group:"E",fill: "#d80", 
+		markerProperty:"thumb", 
+		markerDomain:"https://plog.alpanic.net/", 
+		markerScale:4 
+		});
 
 	  /*
       // group F

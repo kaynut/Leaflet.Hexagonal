@@ -90,11 +90,11 @@
 			// markerImageScaler: float
 			markerImageScaler: 1.15,	
 			// markerIconScaler: float
-			markerIconScaler: 0.7,		
+			markerIconScaler: 0.75,		
 			// thumbFetchSize: integer
 			thumbFetchSize: 128,
 			// thumbImageTint: false || color
-			thumbImageTint:"#303234",
+			thumbImageTint: false, 
 			// thumbIconColor: false || color
 			thumbIconColor:"#303234",
 
@@ -515,7 +515,7 @@
 			// add marker
 			if(marker) {
 
-				var thumb = this.fetchThumb(marker);
+				var thumb = this.fetchThumb(marker,meta);
 				if(thumb !== false) {
 					point.style.thumb = thumb;
 					this.markers[group].push(point);
@@ -1677,11 +1677,20 @@
 							}
 						}
 					
-						// draw selected
+						// selected
 						var sel = false;
 						if(selTs && hex.selected >= selTs) {
 							sel = true; 
 							selection.highlighted.push({marker: [hex.marker[0], hex.marker[1]]});
+
+							// draw highlight
+							var hMarker = this.markers[hex.marker[0]][hex.marker[1]];
+							var hPath = new Path2D(hMarker.cell.path);
+							ctx.strokeStyle = this.options.highlightStrokeColor;
+							ctx.lineWidth = this.options.highlightStrokeWidth;
+							ctx.stroke(hPath);
+				
+
 						}
 
 						// draw
@@ -1723,11 +1732,19 @@
 							}
 						}
 
-						// draw hexagon selected
+						// selected
 						var sel = false;
 						if(selTs && hex.selected >= selTs) {
 							sel = true; 
 							selection.highlighted.push({ point: [hex.point[0], hex.point[1]]}); 
+
+							// draw highlight
+							var hPoint = this.points[hex.point[0]][hex.point[1]];
+							var hPath = new Path2D(hPoint.cell.path);
+							ctx.strokeStyle = this.options.highlightStrokeColor;
+							ctx.lineWidth = this.options.highlightStrokeWidth;
+							ctx.stroke(hPath);
+
 						}
 						
 						tHexagonsDrawn += this.drawPoint(ctx, hex, style, sel, clicker);
@@ -1788,12 +1805,12 @@
 
 			}
 
-
+/*
 			// draw highlights
 			ctx.globalCompositeOperation = "source-over";
 			for(var i=0;i<selection.highlighted.length; i++) {
 				this.drawHighlight(ctx, selection.highlighted[i]); 
-			} 
+			} */
 
 			// draw gutter
 			if(this.display.gutter) {
@@ -1923,19 +1940,28 @@
 
 		drawHighlight: function drawHighlight(ctx, gid) {
 
+			// alt highlight
+			return;
+
 			if(gid.marker) {
-				// var m = this.markers[gid.marker[0]][gid.marker[1]];
-				var hPath = new Path2D(this.markers[gid.marker[0]][gid.marker[1]].cell.path);
-				ctx.strokeStyle = this.options.highlightStrokeColor;
-				ctx.lineWidth = this.options.highlightStrokeWidth;
-				ctx.stroke(hPath);	
+				var m = this.markers[gid.marker[0]][gid.marker[1]];
+				console.log(m);
+				if(m.visible) {
+					var hPath = new Path2D(m.cell.path);
+					ctx.strokeStyle = this.options.highlightStrokeColor;
+					ctx.lineWidth = this.options.highlightStrokeWidth;
+					ctx.stroke(hPath);
+				}	
 			}
 			else if(gid.point) {
-				// var p = this.points[gid.point[0]][gid.point[1]];
-				var hPath = new Path2D(this.points[gid.point[0]][gid.point[1]].cell.path);
-				ctx.strokeStyle = this.options.highlightStrokeColor;
-				ctx.lineWidth = this.options.highlightStrokeWidth;
-				ctx.stroke(hPath);	
+				var p = this.points[gid.point[0]][gid.point[1]];
+				console.log(p);
+				if(p.visible) {
+					var hPath = new Path2D(p.cell.path);
+					ctx.strokeStyle = this.options.highlightStrokeColor;
+					ctx.lineWidth = this.options.highlightStrokeWidth;
+					ctx.stroke(hPath);
+				}	
 			}
 		},
 		drawGutter: function drawGutter(ctx) {
@@ -2723,6 +2749,14 @@ console.log(info);
 
 		// #######################################################
 		// #region thumb
+		preloadThumb(name,source,meta) {
+			var id = name || this._genHash(source);
+			if(typeof meta != "object") { meta = {id:id, tint:false, opacity:false} }
+			else {
+				meta.id = id;
+			}
+			this.fetchThumb(source, meta);
+		},
 		fetchThumb: function fetchThumb(source, meta=false) {
 			if(typeof source != "string") { 
 				console.warn("Leaflet.Hexagonal","fetchThumb(): invalid sourceType", typeof source);
@@ -2739,9 +2773,6 @@ console.log(info);
 				return source;
 			}
 
-			// id - hash
-			var id = this._genHash(source);
-
 			// meta
 			if(typeof meta != "object") { meta = {id:false, tint:false, opacity:false} }
 			var id = meta.id || this._genHash(source);
@@ -2756,16 +2787,19 @@ console.log(info);
 
 
 			var type = false;
+			var isPath = false;
 			var start = source.substring(0,14).toLowerCase();
 			var end = source.substring(l-4,l).toLowerCase();
 			
 			// imageUrl
 			if(end==".jpg" || end=="jpeg" || end==".png") {
 				type = "image";
+				isPath = true;
 			}
 			// svgUrl
 			else if(end==".svg") {
 				type = "icon";
+				isPath = true;
 			}
 			// svgString
 			else if(start.startsWith("<svg ") || start.startsWith("<?xml")) {
@@ -2787,6 +2821,15 @@ console.log(info);
 				return false;
 			}
 
+			// domain
+			if(isPath) {
+				var domain = meta.markerDomain || false;
+				if(typeof domain == "string" && domain!="") { 
+					if(!domain.endsWith("/") && !domain.endsWith("=")) { domain += "/"; }
+					if(source.startsWith("./")) { source =  source.replace("./",domain); }
+					else if(marker.startsWith("/")) { source = source.replace("/",domain); }
+				}
+			}
 
 			// thumb it
 			this.thumbsInfo.called++;
@@ -2801,6 +2844,7 @@ console.log(info);
 				var thumb = document.createElement("CANVAS");
 				thumb.width = size;
 				thumb.height = size;
+				thumb.style.imageRendering = "pixelated";
 				var ctx = thumb.getContext("2d");
 
 				var r = this.width-this.height;
@@ -3062,8 +3106,9 @@ console.log(info);
 		_valMarker: function _valMarker(meta) {
 			var prop = meta.markerProperty || "marker";
 			var marker = meta[prop];
-			if(typeof marker == "string") { return marker;  }
-			return false;
+			if(!marker) { return false;  }
+			if(typeof marker != "string") { return false;  }
+			return marker;
 		},
 		_valLink: function _valLink(meta,group) {
 			var prop = meta.linkProperty || "link";
@@ -3107,6 +3152,7 @@ console.log(info);
 			var stroke = meta[pstroke] || false;
 			var pscale = meta.scaleProperty || "scale";
 			var scale = meta[pscale] || 1;
+			scale = meta["markerScale"] || scale;
 			return {
 				fill:fill,
 				stroke:stroke,
