@@ -56,12 +56,18 @@
 
 		// layer
 		var layer = new L.Hexagonal({
-         hexagonSize:12,
-		 hexagonGap:4,
-         linkWidth:2,
-		 linkOpacity:1,
-		 selectionMode:"group"
-      }).addTo(map);
+			hexagonSize:18,
+			hexagonGap:9,
+			linkWidth:4,
+			linkOpacity:1,
+			//linkMode:"line",
+			selectionMode:"group",
+			clusterMode:"max",
+			clusterProperty:"dem",
+			clusterScale:"linear",
+			clusterMin:0,
+			clusterMax:1500
+      	}).addTo(map);
 
       //layer.options.hexagonOrientation = "circle"; //"pointyTop"; //"circle";
       
@@ -71,11 +77,11 @@
 
       // group E
       layer.setGroupStyle("Track1",{fill: "#d80", link:true});      
-      layer.addGeojson("../assets/track2.geojson", {
-		group:"E",fill: "#d80", 
+      layer.addGeojson("../assets/track3.json", {
+		group:"E",fill: "#ca0", 
 		markerProperty:"thumb", 
 		markerDomain:"https://plog.alpanic.net/", 
-		markerScale:4 
+		markerScale:4
 		});
 
 	  /*

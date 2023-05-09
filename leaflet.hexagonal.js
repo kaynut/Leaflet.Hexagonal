@@ -939,6 +939,7 @@
 					point.position = [p.x,p.y];
 					point.filter = this.checkFilter(point);
 
+					
 					// skip filtered
 					if(!point.filter) {
 						continue;
@@ -1757,6 +1758,7 @@
 
 
 			// draw links:ok
+			console.log(links);
 			if(links.length && this.display.links) {
 
 				ctx.globalAlpha = this.options.linkOpacity || 1;
@@ -1764,10 +1766,16 @@
 
 				for(var i=0; i<links.length; i++) {
 
-					var cluster = false;
 					var link = links[i].start;
 					var cluster = link.cell.cluster;
-
+					if(!cluster) {  
+						if(links[i].end.cell.cluster) {
+							cluster = links[i].end.cell.cluster;
+						}
+						else {
+							cluster = { population:0, sum:0, avg:0, min:0, max:0 };  
+						}
+					}
 
 					// style 
 					style.fill = links[i].style?.fill || this.groupStyle[link.group]?.fill || this.options.fillDefault;
@@ -1805,12 +1813,6 @@
 
 			}
 
-/*
-			// draw highlights
-			ctx.globalCompositeOperation = "source-over";
-			for(var i=0;i<selection.highlighted.length; i++) {
-				this.drawHighlight(ctx, selection.highlighted[i]); 
-			} */
 
 			// draw gutter
 			if(this.display.gutter) {
