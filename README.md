@@ -112,20 +112,26 @@ layer.addGeojson(geojson_obj);
 
 ### Adding markers
 
-The function **addMarker(...)** will add an image/icon and therefor needs a source, defined in the metadata-argument. 
+The function **addMarker(...)** will add an image/icon and therefor needs a source, defined in the metadata-argument. For raster-images you should use the image-property, for vector-icons you should use the icon-property.<br>
+For geojson-files you can alter the those properties by using imageProperty:"myImage" or iconProperty:"myIcon". If you use relative paths with your imgae/icon sources you can use imageDomain:"www.example.com/images" or iconDomain:"www.example.com/icons".<br>
+For icons it may be easier to load all needed icons ahead of time and just refer to them using a name: Use the function **preloadThumb(...)** 
 
 ```js
-// add an image: mandatory property 'marker' takes a url
-layer.addMarker( [129,39] , { marker: "./assets/image0.jpg" });
+// add an image: mandatory property 'image' takes a url
+layer.addMarker( [129,39] , { image: "./assets/image0.jpg" });
 
-// add an icon: mandatory property 'marker' takes a url
-layer.addMarker( [129,39] , { marker: "./assets/token.svg" });
+// add an icon: mandatory property 'icon' takes a url
+layer.addMarker( [129,39] , { icon: "./assets/token.svg" });
 
-// add an image: mandatory property 'marker' takes a dataUrl
-layer.addMarker( [131,41] , { marker: "data:image/png;base64,..." });
+// add an image: mandatory property 'image' takes a dataUrl
+layer.addMarker( [131,41] , { image: "data:image/png;base64,..." });
 
-// add an icon: mandatory property 'marker' takes a svg-string
-layer.addMarker( [128,38] , { marker: '<svg xmlns="http://www.w3.org/2000/svg" ... </svg>"' });
+// add an icon: mandatory property 'icon' takes a svg-string
+layer.addMarker( [128,38] , { icon: '<svg xmlns="http://www.w3.org/2000/svg" ... </svg>"' });
+
+// preload icon and add marker via reference
+layer.preloadThumb("myToken", "./assets/token.svg");
+layer.addMarker( [127,38] , { icon: "myToken" });
 
 ``` 
 [Click here to see an example](https://codepen.io/kaynut/pen/vYzjgXm?editors=0010)

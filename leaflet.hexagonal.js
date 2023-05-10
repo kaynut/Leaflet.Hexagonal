@@ -90,13 +90,13 @@
 			// markerImageScaler: float
 			markerImageScaler: 1.15,	
 			// markerIconScaler: float
-			markerIconScaler: 0.75,		
+			markerIconScaler: 0.6,		
 			// thumbFetchSize: integer
-			thumbFetchSize: 128,
+			thumbFetchSize: 64,
 			// thumbImageTint: false || color
 			thumbImageTint: false, 
 			// thumbIconColor: false || color
-			thumbIconColor:"#303234",
+			thumbIconColor:"#444",
 
 
 			// linkDisplay: boolean || {minZoom,maxZoom}
@@ -471,7 +471,7 @@
 			// tags
 			var tags = this._valTags(meta);
 
-			// marker
+			// marker / type
 			var marker = this._valMarker(meta);
 
 			// style (fill, stroke, scale)
@@ -500,7 +500,8 @@
 			
 				data: data,
 
-				marker: marker,
+				marker: marker.marker,
+				type: marker.type,
 				link:link,
 
 				selected:0,
@@ -513,9 +514,9 @@
 			this.points[group].push(point);
 
 			// add marker
-			if(marker) {
+			if(marker.marker) {
 
-				var thumb = this.fetchThumb(marker,meta);
+				var thumb = this.fetchThumb(marker.marker,meta, marker.type);
 				if(thumb !== false) {
 					point.style.thumb = thumb;
 					this.markers[group].push(point);
@@ -719,12 +720,6 @@
 
 			// meta
 			meta = meta || {};
-
-			var marker = this._valMarker(meta);
-			if(!marker) {
-				marker = "error";
-			}
-
 
 			return this.addPoint(latlng, meta);
 	
@@ -1581,7 +1576,7 @@
 			window.clearTimeout(self._refreshPoints_debounce);
 			self._refreshPoints_debounce = window.setTimeout(function () {
 				self._update("onRefresh");
-			}, 50);
+			}, 100);
 		},
 		_onDraw: function _onDraw(majorChange) {
 			var startTime = performance.now();
@@ -1758,7 +1753,6 @@
 
 
 			// draw links:ok
-			console.log(links);
 			if(links.length && this.display.links) {
 
 				ctx.globalAlpha = this.options.linkOpacity || 1;
@@ -1768,7 +1762,7 @@
 
 					var link = links[i].start;
 					var cluster = link.cell.cluster;
-					if(!cluster) {  
+					if(!cluster) {  // devel
 						if(links[i].end.cell.cluster) {
 							cluster = links[i].end.cell.cluster;
 						}
@@ -1884,9 +1878,10 @@
 			ctx.stroke(hPath);
 	
 
-			// thumb
+			// thumb // todo
 			ctx.save();
-			ctx.clip(hPath);
+			ctx.clip(hPath); 
+			ctx.imageSmoothingQuality = "high";
 			ctx.drawImage(thumb.image, 0,0,size,size, ix0,iy0, sizeH,sizeH); 
 			ctx.restore();
 
@@ -1938,33 +1933,6 @@
 
 			return 1;
 			
-		},
-
-		drawHighlight: function drawHighlight(ctx, gid) {
-
-			// alt highlight
-			return;
-
-			if(gid.marker) {
-				var m = this.markers[gid.marker[0]][gid.marker[1]];
-				console.log(m);
-				if(m.visible) {
-					var hPath = new Path2D(m.cell.path);
-					ctx.strokeStyle = this.options.highlightStrokeColor;
-					ctx.lineWidth = this.options.highlightStrokeWidth;
-					ctx.stroke(hPath);
-				}	
-			}
-			else if(gid.point) {
-				var p = this.points[gid.point[0]][gid.point[1]];
-				console.log(p);
-				if(p.visible) {
-					var hPath = new Path2D(p.cell.path);
-					ctx.strokeStyle = this.options.highlightStrokeColor;
-					ctx.lineWidth = this.options.highlightStrokeWidth;
-					ctx.stroke(hPath);
-				}	
-			}
 		},
 		drawGutter: function drawGutter(ctx) {
 			if(!this.gutter.length) { return; }
@@ -2691,7 +2659,7 @@
 		// #######################################################
 		// #region info
 		setInfo: function setInfo(info) {
-console.log(info);
+
 			// clear current
 			if(this.info) {
 				this.infoLayer.clearLayers();
@@ -2727,7 +2695,10 @@ console.log(info);
 		
 		},
 		buildInfo: function buildInfo(info) {
-			var html = info.selected.length;
+			var sel0 = info.selected[0];
+			var p0 = this.points[sel0[0]][sel0[1]];
+
+			var html = info.selected.length; console.log(info,p0);
 			return html;
 
 		},
@@ -2759,7 +2730,7 @@ console.log(info);
 			}
 			this.fetchThumb(source, meta);
 		},
-		fetchThumb: function fetchThumb(source, meta=false) {
+		fetchThumb: function fetchThumb(source, meta=false, thumbType="icon") {
 			if(typeof source != "string") { 
 				console.warn("Leaflet.Hexagonal","fetchThumb(): invalid sourceType", typeof source);
 				return false; 
@@ -2825,7 +2796,13 @@ console.log(info);
 
 			// domain
 			if(isPath) {
-				var domain = meta.markerDomain || false;
+				var domain = false;
+				if(thumbType=="image") {
+					domain = meta.imageDomain || false;
+				}
+				else if(thumbType=="icon") {
+					domain = meta.iconDomain || false;
+				} 
 				if(typeof domain == "string" && domain!="") { 
 					if(!domain.endsWith("/") && !domain.endsWith("=")) { domain += "/"; }
 					if(source.startsWith("./")) { source =  source.replace("./",domain); }
@@ -2846,9 +2823,9 @@ console.log(info);
 				var thumb = document.createElement("CANVAS");
 				thumb.width = size;
 				thumb.height = size;
-				thumb.style.imageRendering = "pixelated";
-				var ctx = thumb.getContext("2d");
 
+				var ctx = thumb.getContext("2d");
+				
 				var r = this.width-this.height;
 				var ix,iy,iwh;
 				if(r>0) {
@@ -2862,7 +2839,7 @@ console.log(info);
 					iwh = this.width;
 				}
 				
-
+				ctx.imageSmoothingQuality = "high";
 				ctx.drawImage(this, ix,iy,iwh,iwh, 0, 0, size,size);
 
 				if(type=="image" && imageTint) {
@@ -2872,9 +2849,11 @@ console.log(info);
 				}
 
 				if(type=="icon" && iconColor) {
-					ctx.fillStyle = iconColor;
+					ctx.fillStyle = "#000"; //iconColor;
+					ctx.globalAlpha = 0.7;
 					ctx.globalCompositeOperation = "source-in";
-					ctx.fillRect(0,0,size,size);
+					ctx.fillRect(0.5,0.5,size,size);
+					ctx.globalAlpha = 1;
 				}
 
 				that.thumbs[id].image = thumb;
@@ -3104,12 +3083,30 @@ console.log(info);
 			if(typeof name == "string") { return name;  }
 			if(typeof name == "number") { return name+""; }
 			return "";
-		},
+		},/*
 		_valMarker: function _valMarker(meta) {
 			var prop = meta.markerProperty || "marker";
 			var marker = meta[prop];
 			if(!marker) { return false;  }
 			if(typeof marker != "string") { return false;  }
+			return marker;
+		},*/
+		_valMarker: function _valMarker(meta) {
+			var marker = { };
+			var prop0 = meta.imageProperty || "image";
+			var prop1 = meta.iconProperty || "icon";
+			
+			if(meta[prop0]) {
+				marker.marker = meta[prop0];
+				marker.type = "image";
+			}
+			else if(meta[prop1]) {
+				marker.marker = meta[prop1];
+				marker.type = "icon";
+			}
+			if(typeof marker.marker != "string") { 
+				return { marker:false, type:"point" };  
+			}
 			return marker;
 		},
 		_valLink: function _valLink(meta,group) {

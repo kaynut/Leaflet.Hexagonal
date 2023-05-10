@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-	<title>Leaflet.Hexagonal - examplePoints</title>
+	<title>Leaflet.Hexagonal - exampleTracks</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
    <meta charset="utf-8">
 
@@ -49,55 +49,47 @@
 
 
 		// map
-		var center = { lat: 65, lng: -15 };
-		var map = L.map('map').setView(center, 8);
+		var center = { lat: 64.8, lng: -23.8 };
+		var map = L.map('map').setView(center, 10);
 		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 
 
 		// layer
 		var layer = new L.Hexagonal({
-			hexagonSize:18,
-			hexagonGap:9,
-			linkWidth:4,
+			hexagonSize:30,
+			hexagonGap:15,
+			linkWidth:10,
 			linkOpacity:1,
-			//linkMode:"line",
-			selectionMode:"group",
-			clusterMode:"max",
-			clusterProperty:"dem",
+			hexagonOrientation:"circle",
+			selectionMode:"point",
+			/*clusterMode:"max",
+			clusterProperty:"alti",
 			clusterScale:"linear",
 			clusterMin:0,
-			clusterMax:1500
+			clusterMax:1500*/
       	}).addTo(map);
 
-      //layer.options.hexagonOrientation = "circle"; //"pointyTop"; //"circle";
-      
-
-	  layer.preloadThumb("token", "../assets/token.svg");
-
-
-      // group E
-      layer.setGroupStyle("Track1",{fill: "#d80", link:true});      
-      layer.addGeojson("../assets/track3.json", {
-		group:"E",fill: "#ca0", 
-		markerProperty:"thumb", 
-		markerDomain:"https://plog.alpanic.net/", 
-		markerScale:4
+		// preload icons
+		layer.preloadThumb("camping", "./iconCamping.svg");
+		layer.preloadThumb("parking", "./iconParking.svg");
+		layer.preloadThumb("skiing", "./iconSkiing.svg");
+		layer.preloadThumb("espresso", "./iconEspresso.svg");
+		layer.preloadThumb("summit", "./iconSummit.svg");
+    
+		layer.addGeojson("../examples/track1.json", {
+			group:"A",fill: "#c90", 
+			imageProperty:"thumb", 
+			iconProperty:"icon",
+			markerScale:2
 		});
 
-	  /*
-      // group F
-      layer.setGroupStyle("F",{fill: "#8d0"});
-      layer.addPoint({ lat: 47.089036, lng: 14.787597 }, {group:"F" });
-      layer.addPoint({ lat: 48.089036, lng: 14.787597 }, {group:"F", link:true, id:"F2" });
-      layer.addPoint({ lat: 49.089036, lng: 14.787597 }, {group:"F", link:true, id:"F3" });
+		layer.addGeojson("../examples/track2.json", {
+			group:"B",fill: "#9c0", 
+			imageProperty:"thumb", 
+			iconProperty:"icon",
+			markerScale:2
+		});
 
-      // add a image-marker: svg-icon 
-      layer.addMarker({ lat: 45.089036, lng: 14.787597 }, {group:"F", marker:"../assets/person.svg", scale:1.5, fill:"#ddd"});
-      // add a image-marker: jpg-image
-      layer.addMarker({ lat: 46.073231,  lng: 14.787597 }, {group:"F", marker:"../assets/image0.jpg", scale:1.5, link:true  });
-	  */
-
-console.log(layer.markers, layer.points);
 
 		// gui
 	   var gui = new lil.GUI();
