@@ -19,6 +19,7 @@
 // SKIP: clusterMode: clusterIndicator (if single or clustered)
 // SKIP: tint and stuff to drawMarker?
 
+
 /*!
  * Leaflet.Hexagonal.js v0.9.0
  * 
