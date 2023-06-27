@@ -3109,56 +3109,17 @@
 			var stroke = meta[pstroke] || false;
 			var pscale = meta.scaleProperty || "scale";
 			var scale = meta[pscale] || 1;
-			
-			console.log(scale);
 
 			// markerScaler
-			if(marker.source && scale==1) {
+			if(marker.source && scale!=meta[pscale]) {
 				scale = this.options.markerScaler;
 			}
-			console.log(scale,"<<");
+
 			return {
 				fill:fill,
 				stroke:stroke,
 				scale:scale
 			};
-		},
-		_valStyling: function valStyling(meta) {
-			// marker
-			var marker = { source:false, type:"point" };
-			var prop0 = meta.imageProperty || "image";
-			var prop1 = meta.iconProperty || "icon";
-			
-			if(meta[prop0]) {
-				marker.source = meta[prop0];
-				marker.type = "image";
-			}
-			else if(meta[prop1]) {
-				marker.source = meta[prop1];
-				marker.type = "icon";
-			}
-
-			// style
-			var pfill = meta.fillProperty || "fill";
-			var fill = meta[pfill] || false;
-			var pstroke = meta.strokeProperty || "stroke";
-			var stroke = meta[pstroke] || false;
-			var pscale = meta.scaleProperty || "scale";
-			var scale = meta[pscale] || 1;
-			var style = {
-				fill:fill,
-				stroke:stroke,
-				scale:scale
-			};
-
-			// markerScaler
-			if(marker.source && scale!==meta[pscale]) {
-				var mscale = meta.markerScalerProperty || "markerScaler";
-				if(meta[mscale]) { style.scale = meta[mscale]; }
-			}
-
-			return {}
-
 		},
 		_valLink: function _valLink(meta,group) {
 			var prop = meta.linkProperty || "link";
