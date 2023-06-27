@@ -292,8 +292,9 @@ layer.options.hexagonSize = 24;
 |<div style="min-width:150px">option</div>|<div style="min-width:100px">values</div>|<div style="min-width:100px">default</div>|<div style="min-width:300px">description</div>|
 |:--|:--|:--|:--|
 |markerDisplay|boolean<br>{...}|true|Whether or not markers should be displayed.<br>To limit the display to a zoomrange, pass { minZoom:x, maxZoom:y }|
-|markerImageScaler|float|1.15|The amount a raster-image is scaled|
-|markerIconScaler|float|0.7|The amount a vector-image is scaled|
+|markerScaler|float|1|The amount marker will be scaled up, compared to the grid|
+|markerImageScaler|float|1.15|The amount a raster-image within a marker is scaled|
+|markerIconScaler|float|0.7|The amount a vector-image within a marker is scaled|
 |thumbFetchSize|pixels|128|Thumbsize in pixels for a marker-image or marker-icon|
 |thumbImageTint|color|"303234"|Color to tint the raster-image with|
 |thumbIconColor|color|"#303234"|Color to draw the vector-image with|

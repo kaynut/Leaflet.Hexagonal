@@ -88,6 +88,8 @@
 
 			// markerDisplay: boolean || {minZoom,maxZoom}
 			markerDisplay: true,
+			// markerScaler: float
+			markerScaler: 1,
 			// markerImageScaler: float
 			markerImageScaler: 1.15,	
 			// markerIconScaler: float
@@ -476,7 +478,7 @@
 			var marker = this._valMarker(meta);
 
 			// style (fill, stroke, scale)
-			var style = this._valStyle(meta);
+			var style = this._valStyle(meta, marker);
 
 			// dist
 			var dist = this._valDist(meta, latlng, group, link);
@@ -501,7 +503,7 @@
 			
 				data: data,
 
-				marker: marker.marker,
+				marker: marker.source,
 				type: marker.type,
 				link:link,
 
@@ -515,8 +517,8 @@
 			this.points[group].push(point);
 
 			// add marker
-			if(marker.marker) {
-				var thumb = this.fetchThumb(marker.marker,meta, marker.type);
+			if(marker.source) {
+				var thumb = this.fetchThumb(marker.source, meta, marker.type);
 				if(thumb !== false) {
 					point.style.thumb = thumb;
 					this.markers[group].push(point);
@@ -2722,7 +2724,7 @@
 
 		// #######################################################
 		// #region thumb
-		preloadThumb(name,source,meta) {
+		preloadThumb: function preloadThumb(name,source,meta) {
 			var id = name || this._genHash(source);
 			if(typeof meta != "object") { meta = {id:id, tint:false, opacity:false} }
 			else {
@@ -3085,22 +3087,78 @@
 			return "";
 		},
 		_valMarker: function _valMarker(meta) {
-			var marker = { };
+			var marker = { source:false, type:"point" };
 			var prop0 = meta.imageProperty || "image";
 			var prop1 = meta.iconProperty || "icon";
 			
 			if(meta[prop0]) {
-				marker.marker = meta[prop0];
+				marker.source = meta[prop0];
 				marker.type = "image";
 			}
 			else if(meta[prop1]) {
-				marker.marker = meta[prop1];
+				marker.source = meta[prop1];
 				marker.type = "icon";
 			}
-			if(typeof marker.marker != "string") { 
-				return { marker:false, type:"point" };  
-			}
+
 			return marker;
+		},
+		_valStyle: function _valStyle(meta, marker = {}) {
+			var pfill = meta.fillProperty || "fill";
+			var fill = meta[pfill] || false;
+			var pstroke = meta.strokeProperty || "stroke";
+			var stroke = meta[pstroke] || false;
+			var pscale = meta.scaleProperty || "scale";
+			var scale = meta[pscale] || 1;
+			
+			console.log(scale);
+
+			// markerScaler
+			if(marker.source && scale==1) {
+				scale = this.options.markerScaler;
+			}
+			console.log(scale,"<<");
+			return {
+				fill:fill,
+				stroke:stroke,
+				scale:scale
+			};
+		},
+		_valStyling: function valStyling(meta) {
+			// marker
+			var marker = { source:false, type:"point" };
+			var prop0 = meta.imageProperty || "image";
+			var prop1 = meta.iconProperty || "icon";
+			
+			if(meta[prop0]) {
+				marker.source = meta[prop0];
+				marker.type = "image";
+			}
+			else if(meta[prop1]) {
+				marker.source = meta[prop1];
+				marker.type = "icon";
+			}
+
+			// style
+			var pfill = meta.fillProperty || "fill";
+			var fill = meta[pfill] || false;
+			var pstroke = meta.strokeProperty || "stroke";
+			var stroke = meta[pstroke] || false;
+			var pscale = meta.scaleProperty || "scale";
+			var scale = meta[pscale] || 1;
+			var style = {
+				fill:fill,
+				stroke:stroke,
+				scale:scale
+			};
+
+			// markerScaler
+			if(marker.source && scale!==meta[pscale]) {
+				var mscale = meta.markerScalerProperty || "markerScaler";
+				if(meta[mscale]) { style.scale = meta[mscale]; }
+			}
+
+			return {}
+
 		},
 		_valLink: function _valLink(meta,group) {
 			var prop = meta.linkProperty || "link";
@@ -3136,20 +3194,6 @@
 
 			// else => []
 			return [];
-		},
-		_valStyle: function _valStyle(meta) {
-			var pfill = meta.fillProperty || "fill";
-			var fill = meta[pfill] || false;
-			var pstroke = meta.strokeProperty || "stroke";
-			var stroke = meta[pstroke] || false;
-			var pscale = meta.scaleProperty || "scale";
-			var scale = meta[pscale] || 1;
-			scale = meta["markerScale"] || scale;
-			return {
-				fill:fill,
-				stroke:stroke,
-				scale:scale
-			};
 		},
 		_valData: function _valData(meta) {
 			var mks = Object.keys(meta);
