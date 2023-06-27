@@ -121,7 +121,7 @@
 			// gutterFill: false || "#color"
 			gutterFill: false, //"#101214",
 			// gutterStroke: false || "#color"
-			gutterStroke: "#f02224",
+			gutterStroke: "#202224",
 
 			// clusterMode: "population" || "sum" || "avg" || "min" || "max" || false (style for hexagon-cluster: depending on point data) 	
 			clusterMode: false,
@@ -1190,7 +1190,7 @@
 
 			// gutter
 			if(this.display.gutter) {	
-				//this.gutter = this.calcGutterCells(hexagonBounds, hexagonSize, hexagonOffset);
+				this.gutter = this.calcGutterCells(hexagonBounds, hexagonSize, hexagonOffset);
 			}
 
 			this.totals.hexagons = Object.keys(this.hexagonals).length; 
