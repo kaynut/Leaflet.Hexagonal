@@ -121,7 +121,7 @@
 			// gutterFill: false || "#color"
 			gutterFill: false, //"#101214",
 			// gutterStroke: false || "#color"
-			gutterStroke: "#202224",
+			gutterStroke: "#f02224",
 
 			// clusterMode: "population" || "sum" || "avg" || "min" || "max" || false (style for hexagon-cluster: depending on point data) 	
 			clusterMode: false,
