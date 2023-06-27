@@ -29,16 +29,16 @@
 			
 		const hexagonals = new L.Hexagonal({hexagonSize:32}).addTo(map);	
 
-		hexagonals.addPoint({lng:-16.1, lat:65.1}, {id:"A2", marker:{image:"./assets/image0.jpg"}});
-		hexagonals.addMarker({lng:-16.2, lat:65.3}, {id:"A4"});
-
+		hexagonals.addPoint({lng:-16.1, lat:65.1}, {id:"A2", image:"./assets/image0.jpg"});
+		hexagonals.addMarker({lng:-16.2, lat:65.3}, {id:"A4", icon:"./assets/token.svg"});
+/*
 		fetch('./assets/test.geojson')
 		.then((response) => response.json())
 		.then((data) => {
 			hexagonals.addGeojson(data);
 		});
 
-	  
+	  */
 
 
    	</script>

@@ -516,7 +516,6 @@
 
 			// add marker
 			if(marker.marker) {
-
 				var thumb = this.fetchThumb(marker.marker,meta, marker.type);
 				if(thumb !== false) {
 					point.style.thumb = thumb;
@@ -3084,14 +3083,7 @@
 			if(typeof name == "string") { return name;  }
 			if(typeof name == "number") { return name+""; }
 			return "";
-		},/*
-		_valMarker: function _valMarker(meta) {
-			var prop = meta.markerProperty || "marker";
-			var marker = meta[prop];
-			if(!marker) { return false;  }
-			if(typeof marker != "string") { return false;  }
-			return marker;
-		},*/
+		},
 		_valMarker: function _valMarker(meta) {
 			var marker = { };
 			var prop0 = meta.imageProperty || "image";
