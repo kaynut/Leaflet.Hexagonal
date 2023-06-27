@@ -1190,6 +1190,7 @@
 
 			// gutter
 			if(this.display.gutter) {	
+				console.log(this.display.gutter);
 				this.gutter = this.calcGutterCells(hexagonBounds, hexagonSize, hexagonOffset);
 			}
 
