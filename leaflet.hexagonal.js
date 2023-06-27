@@ -3110,7 +3110,7 @@
 			var pscale = meta.scaleProperty || "scale";
 			var scale = meta[pscale] || 1;
 
-			// markerScaler
+			// markerScaler 
 			if(marker.source && scale!=meta[pscale]) {
 				scale = this.options.markerScaler;
 			}
