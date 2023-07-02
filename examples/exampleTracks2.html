@@ -54,42 +54,72 @@
 		var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
 
 
-		// layer
-		var layer = new L.Hexagonal({
-			hexagonSize:30,
-			hexagonGap:20,
-			linkWidth:5,
-			linkOpacity:1,
-			hexagonOrientation:"circle",
-			selectionMode:"point",
-			/*clusterMode:"max",
-			clusterProperty:"alti",
-			clusterScale:"linear",
-			clusterMin:0,
-			clusterMax:1500*/
-			markerScaler:2.75
-      	}).addTo(map);
 
-		// preload icons
-		layer.preloadThumb("camping", "./iconCamping.svg");
-		layer.preloadThumb("parking", "./iconParking.svg");
-		layer.preloadThumb("skiing", "./iconSkiing.svg");
-		layer.preloadThumb("espresso", "./iconEspresso.svg");
-		layer.preloadThumb("summit", "./iconSummit.svg");
-    
-		layer.addGeojson("../examples/track1.json", {
+		// layerPoints
+		var layerPoints = new L.Hexagonal({
+			hexagonSize:10,
+			hexagonGap:1,
+			linkWidth:3,
+			linkOpacity:1,
+			hexagonOrientation:"circle", //"flatTop", //
+            hexagonDisplay:true,
+            markerDisplay:false,
+            linkDisplay:true,
+			selectionMode:"point",
+			//markerScaler:3.5,
+            // container: document.createElement("canvas"),
+            opacity:0.85
+      	}).addTo(map);
+        layerPoints.addGeojson("../examples/track1.json", {
 			group:"A",fill: "#c90", 
 			imageProperty:"thumb", 
 			iconProperty:"icon",
-			markerScale:1.8
+			//markerScale:1.8
 		});
-
-		layer.addGeojson("../examples/track2.json", {
+		layerPoints.addGeojson("../examples/track2.json", {
 			group:"B",fill: "#9c0", 
 			imageProperty:"thumb", 
 			iconProperty:"icon",
-			markerScale:1.8
+			//markerScale:1.8
 		});
+
+
+		// layerMarker
+		var layerMarker = new L.Hexagonal({
+			hexagonSize:33,
+			hexagonGap:3,
+			linkWidth:4,
+			linkOpacity:1,
+			hexagonOrientation:"circle", //"flatTop", //
+			selectionMode:"point",
+            hexagonDisplay:false,
+            markerDisplay:true,
+            linkDisplay:false,
+			markerScaler:1,
+            // container: document.createElement("canvas"),
+            opacity:0.85
+      	}).addTo(map);
+        layerMarker.preloadThumb("camping", "./iconCamping.svg");
+		layerMarker.preloadThumb("parking", "./iconParking.svg");
+		layerMarker.preloadThumb("skiing", "./iconSkiing.svg");
+		layerMarker.preloadThumb("espresso", "./iconEspresso.svg");
+		layerMarker.preloadThumb("summit", "./iconSummit.svg");
+        layerMarker.addGeojson("../examples/track1.json", {
+			group:"A",fill: "#c90", 
+			imageProperty:"thumb", 
+			iconProperty:"icon",
+			//markerScale:1.8
+		});
+
+		layerMarker.addGeojson("../examples/track2.json", {
+			group:"B",fill: "#9c0", 
+			imageProperty:"thumb", 
+			iconProperty:"icon",
+			//markerScale:1.8
+		});
+
+    
+
 
 
 		// gui

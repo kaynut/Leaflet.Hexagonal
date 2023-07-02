@@ -51,7 +51,7 @@
 		options: {
 
 			// container, layer
-			container: document.createElement("CANVAS"),
+			container: undefined,
 			zIndex: undefined,
 			opacity: 0.7,
 			visible: true,
@@ -83,7 +83,7 @@
 			// strokeDefault: "color" || false
 			strokeDefault: "#303234", 	
 			// borderDefault: pixels
-			borderDefault: 1,
+			borderDefault: 1.5,
 
 
 			// markerDisplay: boolean || {minZoom,maxZoom}
@@ -93,7 +93,7 @@
 			// markerImageScaler: float
 			markerImageScaler: 1.15,	
 			// markerIconScaler: float
-			markerIconScaler: 0.6,		
+			markerIconScaler: 0.65,		
 			// thumbFetchSize: integer
 			thumbFetchSize: 64,
 			// thumbImageTint: false || color
@@ -320,7 +320,9 @@
 			this._isZoomVisible() ? this._zoomShow() : this._zoomHide();
 		},
 		_initContainer: function _initContainer() {
-			var t = this._container = this.options.container;
+			//var t = this._container = this.options.container;
+			var t = document.createElement("canvas");
+			this._container = t;
 			e.DomUtil.addClass(t, "leaflet-layer");
 			this._zoomAnimated && e.DomUtil.addClass(this._container, "leaflet-zoom-animated");
 		},
